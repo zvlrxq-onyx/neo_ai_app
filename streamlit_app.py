@@ -9,6 +9,7 @@ if "messages" not in st.session_state: st.session_state.messages = []
 if "all_chats" not in st.session_state: st.session_state.all_chats = {}
 if "current_chat_id" not in st.session_state: st.session_state.current_chat_id = None
 if "show_about" not in st.session_state: st.session_state.show_about = False
+if "editing_chat_id" not in st.session_state: st.session_state.editing_chat_id = None
 
 # --- 2. CONFIG API ---
 try:
@@ -31,12 +32,12 @@ def get_base64_logo():
 
 encoded_logo = get_base64_logo()
 
-# --- 5. ULTRA PREMIUM CSS (ELASTIC & SMOOTH EDITION) ---
+# --- 5. ULTRA PREMIUM CSS (ANTI-FLASH & SMOOTH EDITION) ---
 def get_pro_css():
     neon_cyan = "#00ffff"
     return f"""
     <style>
-    /* ANTI-FLASH: Kunci warna background agar tidak kedip */
+    /* ANTI-FLASH: Kunci warna latar agar tidak berkedip saat rerun */
     html, body, [data-testid="stAppViewContainer"], .stApp {{
         background-color: #080808 !important;
         color: #e0e0e0 !important;
@@ -44,7 +45,7 @@ def get_pro_css():
     
     [data-testid="stStatusWidget"] {{ display: none; }}
 
-    /* GLOBAL TRANSITION: Efek kenyal (elastic) */
+    /* GLOBAL SMOOTH TRANSITION */
     * {{ transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }}
 
     /* Logo & Title */
@@ -59,11 +60,11 @@ def get_pro_css():
     
     .neon-title {{
         text-align: center; color: {neon_cyan}; font-size: 3.5rem; 
-        font-weight: 900; letter-spacing: 12px; margin-bottom: 10px;
+        font-weight: 900; letter-spacing: 12px; margin-bottom: 5px;
         text-transform: uppercase; text-shadow: 0 0 20px {neon_cyan}44;
     }}
 
-    /* SIDEBAR BUTTONS HOVER */
+    /* SIDEBAR BUTTONS HOVER SMOOTH */
     section[data-testid="stSidebar"] {{ 
         background-color: #050505 !important; 
         border-right: 1px solid {neon_cyan}22; 
@@ -83,7 +84,6 @@ def get_pro_css():
         border-color: {neon_cyan} !important;
         background: rgba(0, 255, 255, 0.12) !important;
         box-shadow: 0 0 25px {neon_cyan}66 !important;
-        color: {neon_cyan} !important;
     }}
 
     /* CHAT INPUT EXPAND SMOOTH */
@@ -95,26 +95,22 @@ def get_pro_css():
     div[data-testid="stChatInput"]:focus-within {{ width: 100% !important; }}
     .stChatInput textarea {{ border-radius: 30px !important; background: #111 !important; border: 1px solid {neon_cyan}22 !important; }}
 
-    /* ABOUT BOX - SUPER SMOOTH & DETAILED */
-    .about-box {{
+    /* ABOUT BOX & RENAME BOX ANIMATION */
+    .fluid-box {{
         background: linear-gradient(145deg, rgba(0, 255, 255, 0.05), rgba(0, 0, 0, 0.2));
         border: 1px solid {neon_cyan}33;
         border-left: 5px solid {neon_cyan};
         border-radius: 20px;
         padding: 20px;
         margin-top: 20px;
-        animation: aboutSlide 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+        animation: fluidSlide 0.7s cubic-bezier(0.23, 1, 0.32, 1);
         backdrop-filter: blur(10px);
     }}
     
-    @keyframes aboutSlide {{
-        from {{ opacity: 0; transform: translateY(30px) scale(0.9); filter: blur(10px); }}
+    @keyframes fluidSlide {{
+        from {{ opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(5px); }}
         to {{ opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }}
     }}
-
-    .about-title {{ color: {neon_cyan}; font-weight: 800; font-size: 1.1rem; letter-spacing: 2px; margin-bottom: 10px; }}
-    .about-content {{ color: #ccc; font-size: 0.85rem; line-height: 1.6; }}
-    .about-tag {{ display: inline-block; background: {neon_cyan}22; color: {neon_cyan}; padding: 2px 8px; border-radius: 5px; font-size: 0.7rem; margin-top: 10px; font-weight: bold; }}
 
     header, footer {{ visibility: hidden; }}
     </style>
@@ -134,42 +130,65 @@ with st.sidebar:
 
     st.markdown("---")
     
-    # History List
+    # Render History with Rename Feature
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
         display_name = chat_id.split(" | ")[0]
-        if st.button(display_name, key=f"h_{chat_id}", use_container_width=True):
-            st.session_state.messages = st.session_state.all_chats[chat_id]
-            st.session_state.current_chat_id = chat_id
-            st.rerun()
+        col_main, col_edit = st.columns([0.8, 0.2])
+        with col_main:
+            if st.button(display_name, key=f"h_{chat_id}", use_container_width=True):
+                st.session_state.messages = st.session_state.all_chats[chat_id]
+                st.session_state.current_chat_id = chat_id
+                st.rerun()
+        with col_edit:
+            if st.button("✏️", key=f"e_{chat_id}"):
+                st.session_state.editing_chat_id = chat_id
+                st.rerun()
+
+    if st.session_state.editing_chat_id:
+        st.markdown('<div class="fluid-box">', unsafe_allow_html=True)
+        new_name = st.text_input("RENAME TO:", value=st.session_state.editing_chat_id.split(" | ")[0])
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("SAVE"):
+                suffix = st.session_state.editing_chat_id.split(" | ")[1]
+                new_full_id = f"{new_name} | {suffix}"
+                st.session_state.all_chats[new_full_id] = st.session_state.all_chats.pop(st.session_state.editing_chat_id)
+                st.session_state.editing_chat_id = None
+                st.rerun()
+        with c2:
+            if st.button("BACK"):
+                st.session_state.editing_chat_id = None
+                st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("<div style='height:10vh;'></div>", unsafe_allow_html=True)
-    
     if st.button("ABOUT NEO", key="about_btn", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
 
-    # DETAILED ABOUT WITH SMOOTH ANIMATION
     if st.session_state.show_about:
         st.markdown(f"""
-        <div class="about-box">
-            <div class="about-title">SYSTEM ARCHITECTURE</div>
-            <div class="about-content">
-                NEO AI is a custom-built neural interface developed by <b>Muhammad Jibran Al Kaffie</b>. 
-                Utilizing the <b>Llama-3.3-70B</b> engine, it delivers high-performance reasoning, 
-                computational analysis, and creative synthesis.
-                <br><br>
-                Designed for speed, the interface features a <b>Fluid-UI</b> system that ensures 
-                seamless transitions and an immersive dark-core experience.
+        <div class="fluid-box">
+            <div style="color:cyan; font-weight:800; margin-bottom:5px;">SYSTEM SPEC</div>
+            <div style="color:#aaa; font-size:0.85rem;">
+                <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
+                <b>Engine:</b> Llama-3.3-70B<br>
+                <b>Interface:</b> V 2.5 (Fluid UI)
             </div>
-            <div class="about-tag">V 2.0 - STABLE</div>
-            <div class="about-tag">NEURAL-LINK: ACTIVE</div>
         </div>
         """, unsafe_allow_html=True)
 
 # --- 7. MAIN INTERFACE ---
-st.markdown(f'<div class="center-container"><div class="logo-circle"></div><h1 class="neon-title">NEO AI</h1><p style="text-align:center; opacity:0.7; font-size:1.2rem;">Hi, is there anything I can help you with?</p></div>', unsafe_allow_html=True)
+st.markdown(f"""
+    <div class="center-container">
+        <div class="logo-circle"></div>
+        <h1 class="neon-title">NEO AI</h1>
+        <p style="text-align:center; opacity:0.8; font-size:1.3rem; margin-top: 10px; font-weight:500;">
+            Hi, is there anything I can help you with?
+        </p>
+    </div>
+""", unsafe_allow_html=True)
 
-# Container for Messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
@@ -178,28 +197,5 @@ for message in st.session_state.messages:
 if prompt := st.chat_input("ENTER COMMAND..."):
     if st.session_state.current_chat_id is None:
         st.session_state.current_chat_id = f"{prompt[:20]}... | {time.time()}"
-    
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant"):
-        res_area = st.empty()
-        full_res = ""
-        msgs = [{"role": "system", "content": "You are NEO AI, a high-level assistant created by Muhammad Jibran Al Kaffie. Be concise, sharp, and helpful."}] + st.session_state.messages
-        
-        try:
-            comp = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
-            for chunk in comp:
-                content = chunk.choices[0].delta.content
-                if content:
-                    full_res += content
-                    res_area.markdown(full_res + "▌")
-            res_area.markdown(full_res)
-            st.session_state.messages.append({"role": "assistant", "content": full_res})
-            st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
-        except:
-            st.error("CONNECTION INTERRUPTED")
-            
     st.rerun()
