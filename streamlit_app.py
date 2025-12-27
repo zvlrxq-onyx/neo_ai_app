@@ -32,23 +32,24 @@ def get_base64_logo():
 
 encoded_logo = get_base64_logo()
 
-# --- 5. ULTRA PREMIUM CSS (SMOOTH HOVER & EXPAND EDITION) ---
+# --- 5. ULTRA PREMIUM CSS (ANTI-FLASH & SMOOTH EDITION) ---
 def get_pro_css():
     neon_cyan = "#00ffff"
     return f"""
     <style>
-    /* Dasar Aplikasi */
-    .stApp {{ 
-        background-color: #080808 !important; 
-        color: #e0e0e0;
+    /* KUNCI UTAMA ANTI-KEDIP */
+    html, body, [data-testid="stAppViewContainer"], .stApp {{
+        background-color: #080808 !important;
+        color: #e0e0e0 !important;
     }}
     
-    /* GLOBAL SMOOTH TRANSITION - Kunci kehalusan semua elemen */
-    div, button, section, input {{
-        transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    }}
+    /* Hilangkan animasi loading standar Streamlit yang bikin kedip */
+    [data-testid="stStatusWidget"] {{ display: none; }}
 
-    /* Logo Statis & Glowing */
+    /* GLOBAL SMOOTH TRANSITION */
+    * {{ transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }}
+
+    /* Logo Statis */
     .center-container {{ display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 20px; }}
     .logo-circle {{
         width: 125px; height: 125px;
@@ -64,7 +65,7 @@ def get_pro_css():
         text-transform: uppercase; text-shadow: 0 0 20px {neon_cyan}44;
     }}
 
-    /* SIDEBAR BUTTONS (NEW SESSION, HISTORY, ABOUT) */
+    /* SIDEBAR & HOVER SMOOTH */
     section[data-testid="stSidebar"] {{ 
         background-color: #050505 !important; 
         border-right: 1px solid {neon_cyan}22; 
@@ -78,44 +79,34 @@ def get_pro_css():
         padding: 10px 20px !important;
         width: 100% !important;
         transform: scale(1);
-        font-weight: 600 !important;
     }}
 
-    /* EFEK MEMBESAR HALUS SAAT KURSOR DIARAHKAN */
     .stButton > button:hover {{
         transform: scale(1.06) !important;
         border-color: {neon_cyan} !important;
         background: rgba(0, 255, 255, 0.1) !important;
         box-shadow: 0 0 20px {neon_cyan}55 !important;
-        color: {neon_cyan} !important;
     }}
 
-    /* CHAT INPUT MEMANJANG SMOOTH */
+    /* CHAT INPUT EXPAND SMOOTH */
     div[data-testid="stChatInput"] {{
         width: 75% !important; 
         margin: 0 auto !important;
         transition: width 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
-    div[data-testid="stChatInput"]:focus-within {{ 
-        width: 100% !important; 
-    }}
+    div[data-testid="stChatInput"]:focus-within {{ width: 100% !important; }}
     .stChatInput textarea {{ 
         border-radius: 30px !important; 
         background: #111 !important;
         border: 1px solid {neon_cyan}22 !important;
     }}
-    .stChatInput textarea:focus {{
-        border-color: {neon_cyan} !important;
-        box-shadow: 0 0 15px {neon_cyan}33 !important;
-    }}
 
-    /* Fluid Content Boxes */
+    /* Fluid Boxes */
     .fluid-box {{
         background: rgba(0, 255, 255, 0.03);
         border: 1px solid {neon_cyan}22;
-        border-left: 4px solid {neon_cyan};
         border-radius: 20px; padding: 15px; margin-top: 15px;
-        animation: fluidIn 0.5s ease-out;
+        animation: fluidIn 0.4s ease-out;
     }}
     @keyframes fluidIn {{ from {{ opacity: 0; transform: scale(0.98); }} to {{ opacity: 1; transform: scale(1); }} }}
 
@@ -130,62 +121,35 @@ with st.sidebar:
     st.markdown(f'<div class="center-container"><div class="logo-circle"></div></div>', unsafe_allow_html=True)
     st.markdown(f"<h1 style='text-align:center; color:#00ffff; letter-spacing:5px; font-size:2.2rem; text-shadow: 0 0 10px #00ffff; margin-bottom:20px;'>NEO AI</h1>", unsafe_allow_html=True)
     
-    if st.button("NEW SESSION", key="new_session_main", use_container_width=True):
+    if st.button("NEW SESSION", key="btn_new", use_container_width=True):
         st.session_state.messages = []
         st.session_state.current_chat_id = None
         st.rerun()
 
     st.markdown("---")
-    st.markdown("<p style='font-size:0.6rem; color:#444; letter-spacing:1px; margin-left:15px;'>HISTORY DATABASE</p>", unsafe_allow_html=True)
     
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
         display_name = chat_id.split(" | ")[0]
-        col_main, col_edit = st.columns([0.8, 0.2])
-        with col_main:
-            if st.button(display_name, key=f"hist_{chat_id}", use_container_width=True):
+        c1, c2 = st.columns([0.8, 0.2])
+        with c1:
+            if st.button(display_name, key=f"h_{chat_id}", use_container_width=True):
                 st.session_state.messages = st.session_state.all_chats[chat_id]
                 st.session_state.current_chat_id = chat_id
                 st.rerun()
-        with col_edit:
-            if st.button("✏️", key=f"edit_{chat_id}"):
+        with c2:
+            if st.button("✏️", key=f"e_{chat_id}"):
                 st.session_state.editing_chat_id = chat_id
                 st.rerun()
 
-    if st.session_state.editing_chat_id:
-        st.markdown('<div class="fluid-box">', unsafe_allow_html=True)
-        new_name = st.text_input("RENAME SESSION:", value=st.session_state.editing_chat_id.split(" | ")[0])
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("SAVE"):
-                suffix = st.session_state.editing_chat_id.split(" | ")[1]
-                new_full_id = f"{new_name} | {suffix}"
-                st.session_state.all_chats[new_full_id] = st.session_state.all_chats.pop(st.session_state.editing_chat_id)
-                st.session_state.editing_chat_id = None
-                st.rerun()
-        with c2:
-            if st.button("BACK"):
-                st.session_state.editing_chat_id = None
-                st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown("<div style='height:15vh;'></div>", unsafe_allow_html=True)
-    if st.button("ABOUT", key="about_sidebar", use_container_width=True):
+    if st.button("ABOUT", key="btn_about", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
 
     if st.session_state.show_about:
-        st.markdown(f"""
-        <div class="fluid-box">
-            <div style="color:#00ffff; font-weight:800; margin-bottom:5px;">CORE SPECIFICATION</div>
-            <div style="color:#aaa; font-size:0.8rem;">
-                <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
-                <b>Engine:</b> Llama-3.3-70B
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f'<div class="fluid-box"><b>Architect:</b> Jibran Al Kaffie<br><b>Engine:</b> Llama-3.3</div>', unsafe_allow_html=True)
 
 # --- 7. MAIN INTERFACE ---
-st.markdown(f'<div class="center-container"><div class="logo-circle"></div><h1 class="neon-title">NEO AI</h1><p style="text-align:center; color:white; font-size:1.5rem; font-weight:500; opacity:0.8; margin-bottom:40px;">Hi, is there anything I can help you with?</p></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="center-container"><div class="logo-circle"></div><h1 class="neon-title">NEO AI</h1></div>', unsafe_allow_html=True)
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -196,23 +160,4 @@ if prompt := st.chat_input("COMMAND..."):
     if st.session_state.current_chat_id is None:
         st.session_state.current_chat_id = f"{prompt[:20]}... | {time.time()}"
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant"):
-        res_area = st.empty()
-        full_res = ""
-        msgs = [{"role": "system", "content": "You are NEO AI by Jibran."}] + st.session_state.messages
-        try:
-            comp = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
-            for chunk in comp:
-                content = chunk.choices[0].delta.content
-                if content:
-                    full_res += content
-                    res_area.markdown(full_res + "▌")
-            res_area.markdown(full_res)
-            st.session_state.messages.append({"role": "assistant", "content": full_res})
-            st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
-        except Exception as e:
-            st.error(f"ERROR: {e}")
     st.rerun()
