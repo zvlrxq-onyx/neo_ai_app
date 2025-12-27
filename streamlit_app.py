@@ -116,7 +116,7 @@ st.markdown(get_pro_css(), unsafe_allow_html=True)
 # --- 6. SIDEBAR (HISTORY MANAGEMENT) ---
 with st.sidebar:
     st.markdown(f'<div class="center-container"><div class="logo-circle"></div></div>', unsafe_allow_html=True)
-    st.markdown(f"<h3 style='text-align:center; color:#00ffff; letter-spacing:3px;'>INTERFACE</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align:center; color:#00ffff; letter-spacing:3px;'>NEO AI</h3>", unsafe_allow_html=True)
     
     if st.button("NEW SESSION", use_container_width=True):
         st.session_state.messages = []
