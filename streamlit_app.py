@@ -63,7 +63,6 @@ def get_pro_css():
         border-right: 1px solid {neon_cyan}22; 
     }}
 
-    /* Tombol Utama (New Session, About) */
     .stButton > button {{
         background: transparent !important;
         color: #ffffff !important;
@@ -83,7 +82,7 @@ def get_pro_css():
         box-shadow: 0 0 15px {neon_cyan}33 !important;
     }}
 
-    /* KHUSUS Tombol Pensil (Pencil Only) */
+    /* Pencil Icon Button Scaling & Glow */
     div[data-testid="column"]:nth-child(2) button {{
         filter: hue-rotate(170deg) brightness(1.2) drop-shadow(0 0 8px {neon_cyan});
         border: none !important;
@@ -95,7 +94,7 @@ def get_pro_css():
         transform: scale(0.98) !important;
     }}
 
-    /* About Box */
+    /* About Box Smooth Appearance */
     .about-box {{
         background: rgba(0, 255, 255, 0.02);
         border: 1px solid {neon_cyan}22;
@@ -111,9 +110,9 @@ def get_pro_css():
     }}
 
     .about-header {{ color: {neon_cyan}; font-size: 0.9rem; font-weight: 800; letter-spacing: 2px; margin-bottom: 8px; }}
-    .about-body {{ color: #999; font-size: 0.8rem; line-height: 1.5; }}
+    .about-body {{ color: #999; font-size: 0.8rem; line-height: 1.6; text-align: justify; }}
 
-    /* Chat Input */
+    /* Chat Input Appearance */
     div[data-testid="stChatInput"] {{
         width: 75% !important; margin: 0 auto !important;
         transition: width 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
@@ -150,7 +149,6 @@ with st.sidebar:
                 st.session_state.current_chat_id = chat_id
                 st.rerun()
         with col_edit:
-            # Menggunakan Pensil Biasa (Tanpa Kertas)
             if st.button("✏️", key=f"edit_{chat_id}"):
                 st.session_state.editing_chat_id = chat_id
                 st.rerun()
@@ -158,7 +156,7 @@ with st.sidebar:
     # Rename Modal
     if st.session_state.editing_chat_id:
         st.markdown("<br>", unsafe_allow_html=True)
-        new_name = st.text_input("NEW NAME:", value=st.session_state.editing_chat_id.split(" | ")[0])
+        new_name = st.text_input("RENAME SESSION:", value=st.session_state.editing_chat_id.split(" | ")[0])
         c1, c2 = st.columns(2)
         with c1:
             if st.button("SAVE"):
@@ -183,11 +181,12 @@ with st.sidebar:
     if st.session_state.show_about:
         st.markdown(f"""
         <div class="about-box">
-            <div class="about-header">SYSTEM INFO</div>
+            <div class="about-header">CORE SPECIFICATION</div>
             <div class="about-body">
-                <b>Developer:</b> Muhammad Jibran Al Kaffie<br>
-                <b>Core:</b> Llama-3.3-70B<br><br>
-                NEO AI adalah sistem cerdas berbasis neural-network dengan antarmuka futuristik untuk analisis data real-time.
+                <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
+                <b>Engine:</b> Llama-3.3-70B<br><br>
+                NEO AI is a high-performance neural-network interface designed for advanced computational reasoning and real-time technical analysis. 
+                Built with a focus on seamless workflow integration and futuristic aesthetics, it represents the pinnacle of personal AI assistance.
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -212,7 +211,7 @@ if prompt := st.chat_input("COMMAND..."):
     with st.chat_message("assistant"):
         res_area = st.empty()
         full_res = ""
-        msgs = [{"role": "system", "content": "Kamu adalah NEO AI buatan Muhammad Jibran Al Kaffie."}] + st.session_state.messages
+        msgs = [{"role": "system", "content": "You are NEO AI, a sophisticated assistant built by Muhammad Jibran Al Kaffie. Respond with intelligence and professional tone."}] + st.session_state.messages
         
         try:
             comp = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
