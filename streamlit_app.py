@@ -19,10 +19,10 @@ except:
     st.error("SYSTEM ERROR: API KEY NOT FOUND")
     st.stop()
 
-# --- 3. PAGE CONFIG (PENTING: Harus di atas) ---
+# --- 3. PAGE CONFIG ---
 st.set_page_config(page_title="NEO AI", page_icon="⚡", layout="centered")
 
-# --- 4. OPTIMIZED LOGO LOADER (Mengurangi Lag) ---
+# --- 4. OPTIMIZED LOGO LOADER ---
 @st.cache_data
 def get_base64_logo():
     if os.path.exists("logo.png"):
@@ -32,21 +32,18 @@ def get_base64_logo():
 
 encoded_logo = get_base64_logo()
 
-# --- 5. ULTRA PREMIUM CSS (ANTI-FLICKER EDITION) ---
+# --- 5. ULTRA PREMIUM CSS (SMOOTH EXPAND EDITION) ---
 def get_pro_css():
     neon_cyan = "#00ffff"
     return f"""
     <style>
-    /* Mencegah kedipan putih/gelap saat rerun */
     .stApp {{ 
         background-color: #080808 !important; 
         color: #e0e0e0;
     }}
     
-    /* Global Smoothness yang lebih efisien */
-    * {{ 
-        transition: background-color 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
-    }}
+    /* Global Transition */
+    * {{ transition: all 0.4s ease; }}
 
     /* Logo & Title */
     .center-container {{ display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 20px; }}
@@ -56,9 +53,7 @@ def get_pro_css():
         background-size: cover; background-position: center;
         border-radius: 50%; border: 2px solid {neon_cyan};
         box-shadow: 0 0 30px {neon_cyan}33;
-        animation: float 4s ease-in-out infinite;
     }}
-    @keyframes float {{ 0%, 100% {{ transform: translateY(0px); }} 50% {{ transform: translateY(-10px); }} }}
     
     .neon-title {{
         text-align: center; color: {neon_cyan}; font-size: 3.5rem; 
@@ -71,7 +66,7 @@ def get_pro_css():
         font-weight: 500; margin-bottom: 40px; opacity: 0.8;
     }}
 
-    /* Sidebar Styling */
+    /* Sidebar Buttons (Pill) */
     section[data-testid="stSidebar"] {{ 
         background-color: #050505 !important; 
         border-right: 1px solid {neon_cyan}22; 
@@ -82,44 +77,43 @@ def get_pro_css():
         color: #ffffff !important;
         border: 1px solid {neon_cyan}44 !important;
         border-radius: 30px !important;
-        padding: 10px 20px !important;
         width: 100% !important;
     }}
+    .stButton > button:hover {{ border-color: {neon_cyan} !important; background: {neon_cyan}11 !important; }}
 
-    .stButton > button:hover {{
-        border-color: {neon_cyan} !important;
-        background: rgba(0, 255, 255, 0.08) !important;
-        box-shadow: 0 0 20px {neon_cyan}44 !important;
-    }}
-
-    /* CHAT INPUT */
+    /* --- CHAT INPUT ANIMATION (FIXED) --- */
     div[data-testid="stChatInput"] {{
         width: 70% !important; 
         margin: 0 auto !important;
+        transition: width 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
-    div[data-testid="stChatInput"]:focus-within {{ width: 100% !important; }}
-    .stChatInput textarea {{ border-radius: 30px !important; background: #111 !important; }}
-
-    /* Pencil Icon Glow */
-    div[data-testid="column"]:nth-child(2) button {{
-        filter: hue-rotate(170deg) brightness(1.2) drop-shadow(0 0 8px {neon_cyan});
-        border: none !important;
+    
+    /* Lebarkan saat ada interaksi di dalam container input */
+    div[data-testid="stChatInput"]:focus-within {{
+        width: 100% !important;
     }}
 
-    /* Fluid Box Animation */
+    .stChatInput textarea {{
+        border-radius: 30px !important; 
+        background: #111 !important;
+        border: 1px solid {neon_cyan}22 !important;
+        transition: border 0.4s ease !important;
+    }}
+
+    .stChatInput textarea:focus {{
+        border-color: {neon_cyan} !important;
+        box-shadow: 0 0 15px {neon_cyan}33 !important;
+    }}
+
+    /* Fluid Boxes */
     .fluid-box {{
         background: rgba(0, 255, 255, 0.03);
         border: 1px solid {neon_cyan}22;
         border-left: 4px solid {neon_cyan};
-        border-radius: 20px;
-        padding: 15px; margin-top: 15px;
-        animation: fluidIn 0.5s ease-out;
+        border-radius: 20px; padding: 15px; margin-top: 15px;
+        animation: fluidIn 0.4s ease-out;
     }}
-    
-    @keyframes fluidIn {{
-        from {{ opacity: 0; transform: translateY(10px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
-    }}
+    @keyframes fluidIn {{ from {{ opacity: 0; transform: translateY(5px); }} to {{ opacity: 1; transform: translateY(0); }} }}
 
     header, footer {{ visibility: hidden; }}
     </style>
@@ -138,7 +132,6 @@ with st.sidebar:
         st.rerun()
 
     st.markdown("---")
-    st.markdown("<p style='font-size:0.6rem; color:#444; letter-spacing:1px; margin-left:15px;'>HISTORY DATABASE</p>", unsafe_allow_html=True)
     
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
         display_name = chat_id.split(" | ")[0]
@@ -197,7 +190,6 @@ for message in st.session_state.messages:
 if prompt := st.chat_input("COMMAND..."):
     if st.session_state.current_chat_id is None:
         st.session_state.current_chat_id = f"{prompt[:20]}... | {time.time()}"
-
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     with st.chat_message("user"):
