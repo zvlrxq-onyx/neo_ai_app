@@ -28,7 +28,7 @@ if os.path.exists("logo.png"):
     with open("logo.png", "rb") as f:
         encoded_logo = base64.b64encode(f.read()).decode()
 
-# --- 5. ULTRA PREMIUM CSS ---
+# --- 5. ULTRA PREMIUM CSS (ROUNDED EDITION) ---
 def get_pro_css():
     neon_cyan = "#00ffff"
     return f"""
@@ -57,15 +57,9 @@ def get_pro_css():
         text-transform: uppercase; text-shadow: 0 0 20px {neon_cyan}44;
     }}
 
-    /* Welcome Text (ChatGPT Style) */
     .welcome-text {{
-        text-align: center;
-        color: #ffffff;
-        font-size: 1.5rem;
-        font-weight: 500;
-        margin-bottom: 40px;
-        opacity: 0.9;
-        text-shadow: 0 0 10px rgba(255,255,255,0.2);
+        text-align: center; color: #ffffff; font-size: 1.5rem;
+        font-weight: 500; margin-bottom: 40px; opacity: 0.9;
     }}
 
     /* Sidebar & Button Animations */
@@ -74,12 +68,13 @@ def get_pro_css():
         border-right: 1px solid {neon_cyan}22; 
     }}
 
+    /* MEMBUAT TOMBOL JADI LINGKARAN SUDUTNYA (PILL SHAPE) */
     .stButton > button {{
         background: transparent !important;
         color: #ffffff !important;
         border: 1px solid {neon_cyan}44 !important;
-        border-radius: 4px !important;
-        padding: 10px !important;
+        border-radius: 30px !important; /* Sudut membulat penuh */
+        padding: 10px 20px !important;
         width: 100% !important;
         text-transform: uppercase;
         letter-spacing: 2px;
@@ -93,24 +88,24 @@ def get_pro_css():
         box-shadow: 0 0 15px {neon_cyan}33 !important;
     }}
 
+    /* Pencil Icon Button Glow */
     div[data-testid="column"]:nth-child(2) button {{
         filter: hue-rotate(170deg) brightness(1.2) drop-shadow(0 0 8px {neon_cyan});
         border: none !important;
         background: transparent !important;
-        font-size: 1.2rem !important;
     }}
 
     .stButton > button:active {{
         transform: scale(0.98) !important;
     }}
 
-    /* About Box */
+    /* About Box Rounded */
     .about-box {{
         background: rgba(0, 255, 255, 0.02);
         border: 1px solid {neon_cyan}22;
         border-left: 4px solid {neon_cyan};
-        border-radius: 4px; padding: 15px;
-        margin-top: 15px;
+        border-radius: 20px; /* Sudut box about juga membulat */
+        padding: 15px; margin-top: 15px;
         animation: aboutSlide 0.5s ease-out;
     }}
     
@@ -119,15 +114,16 @@ def get_pro_css():
         to {{ opacity: 1; transform: scale(1); }}
     }}
 
-    .about-header {{ color: {neon_cyan}; font-size: 0.9rem; font-weight: 800; letter-spacing: 2px; margin-bottom: 8px; }}
+    .about-header {{ color: {neon_cyan}; font-size: 0.9rem; font-weight: 800; margin-bottom: 8px; }}
     .about-body {{ color: #999; font-size: 0.8rem; line-height: 1.6; }}
 
-    /* Chat Input */
+    /* Chat Input Rounded */
     div[data-testid="stChatInput"] {{
         width: 75% !important; margin: 0 auto !important;
-        transition: width 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
-    div[data-testid="stChatInput"]:focus-within {{ width: 100% !important; }}
+    .stChatInput textarea {{
+        border-radius: 30px !important; /* Input chat juga membulat */
+    }}
 
     header, footer {{ visibility: hidden; }}
     </style>
@@ -146,8 +142,9 @@ with st.sidebar:
         st.rerun()
 
     st.markdown("---")
-    st.markdown("<p style='font-size:0.6rem; color:#444; letter-spacing:1px; margin-left:5px;'>HISTORY</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:0.6rem; color:#444; letter-spacing:1px; margin-left:15px;'>HISTORY DATABASE</p>", unsafe_allow_html=True)
     
+    # Render History List
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
         display_name = chat_id.split(" | ")[0]
         col_main, col_edit = st.columns([0.8, 0.2])
@@ -162,6 +159,7 @@ with st.sidebar:
                 st.session_state.editing_chat_id = chat_id
                 st.rerun()
 
+    # Rename Modal (Rounded)
     if st.session_state.editing_chat_id:
         st.markdown("<br>", unsafe_allow_html=True)
         new_name = st.text_input("RENAME SESSION:", value=st.session_state.editing_chat_id.split(" | ")[0])
@@ -192,7 +190,7 @@ with st.sidebar:
             <div class="about-body">
                 <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
                 <b>Engine:</b> Llama-3.3-70B<br><br>
-                NEO AI is a high-performance neural-network interface designed for advanced computational reasoning and real-time technical analysis. 
+                NEO AI is a high-performance neural-interface designed for advanced computational reasoning. 
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -217,7 +215,7 @@ if prompt := st.chat_input("COMMAND..."):
     with st.chat_message("assistant"):
         res_area = st.empty()
         full_res = ""
-        msgs = [{"role": "system", "content": "You are NEO AI, a sophisticated assistant built by Muhammad Jibran Al Kaffie."}] + st.session_state.messages
+        msgs = [{"role": "system", "content": "You are NEO AI, built by Muhammad Jibran Al Kaffie."}] + st.session_state.messages
         
         try:
             comp = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
