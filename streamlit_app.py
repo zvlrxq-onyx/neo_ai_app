@@ -8,21 +8,20 @@ import base64
 if "messages" not in st.session_state: st.session_state.messages = []
 if "all_chats" not in st.session_state: st.session_state.all_chats = {}
 if "current_chat_id" not in st.session_state: st.session_state.current_chat_id = None
-if "dark_mode" not in st.session_state: st.session_state.dark_mode = True
 if "show_about" not in st.session_state: st.session_state.show_about = False
 
-# --- 2. CONFIG API (STREAMLIT SECRETS) ---
+# --- 2. CONFIG API ---
 try:
     GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
     client = Groq(api_key=GROQ_API_KEY)
 except:
-    st.error("SYSTEM ERROR: GROQ_API_KEY NOT FOUND IN SECRETS")
+    st.error("SYSTEM ERROR: API KEY NOT FOUND")
     st.stop()
 
 # --- 3. PAGE CONFIG ---
 st.set_page_config(page_title="NEO AI", page_icon="⚡", layout="centered")
 
-# --- 4. LOGO LOADER (ROOT DIRECTORY) ---
+# --- 4. LOGO LOADER ---
 encoded_logo = ""
 if os.path.exists("logo.png"):
     with open("logo.png", "rb") as f:
@@ -33,17 +32,17 @@ def get_pro_css():
     neon_cyan = "#00ffff"
     return f"""
     <style>
-    /* Global Smoothness */
+    /* Global Smoothness & Transition */
     * {{ transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }}
     
     .stApp {{ background: #0a0a0a; color: #e0e0e0; }}
 
     /* Logo Bulat di Tengah */
     .center-container {{
-        display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 30px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 20px;
     }}
     .logo-circle {{
-        width: 130px; height: 130px;
+        width: 120px; height: 120px;
         background-image: url("data:image/png;base64,{encoded_logo}");
         background-size: cover; background-position: center;
         border-radius: 50%;
@@ -56,7 +55,7 @@ def get_pro_css():
         box-shadow: 0 0 45px {neon_cyan};
     }}
 
-    /* Title Styling */
+    /* Title Styling Utama */
     .neon-title {{
         text-align: center; color: {neon_cyan}; font-size: 3.5rem; 
         font-weight: 900; letter-spacing: 12px; margin-bottom: 40px;
@@ -78,7 +77,7 @@ def get_pro_css():
         color: white !important;
     }}
 
-    /* About Box Smooth & Pro */
+    /* About Box Smooth & Professional */
     .about-box {{
         background: rgba(0, 255, 255, 0.03);
         border-left: 4px solid {neon_cyan};
@@ -94,15 +93,18 @@ def get_pro_css():
     .about-text {{ color: #d1d1d1; font-size: 0.9rem; line-height: 1.7; }}
 
     /* Sidebar Styling */
-    section[data-testid="stSidebar"] {{ background-color: #080808 !important; border-right: 1px solid {neon_cyan}22; }}
+    section[data-testid="stSidebar"] {{ 
+        background-color: #080808 !important; 
+        border-right: 1px solid {neon_cyan}22; 
+    }}
     .stButton button {{
         background: transparent !important; color: white !important;
         border: 1px solid {neon_cyan}33 !important; border-radius: 10px !important;
-        transition: all 0.3s ease !important;
     }}
     .stButton button:hover {{
         transform: scale(1.03) !important;
-        background: {neon_cyan}11 !important; border-color: {neon_cyan} !important;
+        background: {neon_cyan}11 !important;
+        border-color: {neon_cyan} !important;
         box-shadow: 0 0 15px {neon_cyan}22;
     }}
 
@@ -113,26 +115,28 @@ def get_pro_css():
 
 st.markdown(get_pro_css(), unsafe_allow_html=True)
 
-# --- 6. SIDEBAR (HISTORY MANAGEMENT) ---
+# --- 6. SIDEBAR (HISTORY & NAVIGATION) ---
 with st.sidebar:
+    # Logo & Nama Besar di Sidebar
     st.markdown(f'<div class="center-container"><div class="logo-circle"></div></div>', unsafe_allow_html=True)
-    st.markdown(f"<h3 style='text-align:center; color:#00ffff; letter-spacing:3px;'>NEO AI</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h1 style='text-align:center; color:#00ffff; letter-spacing:5px; font-size:2.2rem; text-shadow: 0 0 10px #00ffff; margin-bottom:20px;'>NEO AI</h1>", unsafe_allow_html=True)
     
     if st.button("NEW SESSION", use_container_width=True):
         st.session_state.messages = []
         st.session_state.current_chat_id = None
         st.rerun()
 
-    st.markdown("<br><p style='font-size:0.7rem; color:#444; margin-left:5px;'>HISTORY LOGS</p>", unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("<p style='font-size:0.7rem; color:#444; margin-left:5px;'>HISTORY LOGS</p>", unsafe_allow_html=True)
     
-    # Render History tanpa duplikasi (Fixed Bug)
+    # Render History Lists
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
         if st.button(chat_id, key=f"hist_{chat_id}", use_container_width=True):
             st.session_state.messages = st.session_state.all_chats[chat_id]
             st.session_state.current_chat_id = chat_id
             st.rerun()
 
-    st.markdown("<div style='height:25vh;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:20vh;'></div>", unsafe_allow_html=True)
     
     if st.button("ABOUT NEO AI", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
@@ -162,14 +166,15 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 8. CHAT INPUT & CORE LOGIC (Fixed History Bug) ---
+# --- 8. CHAT CORE LOGIC (ANTI-DUPLICATE HISTORY) ---
 if prompt := st.chat_input("COMMAND..."):
-    # Lock Chat ID pada pesan pertama
-    if not st.session_state.messages:
-        # Gunakan 20 karakter pertama sebagai judul permanen sesi ini
-        session_id = prompt[:25] + "..." if len(prompt) > 25 else prompt
+    # Lock Chat ID hanya di pesan pertama
+    if st.session_state.current_chat_id is None:
+        timestamp = time.strftime("%H:%M")
+        session_id = f"{prompt[:15]}... ({timestamp})"
         st.session_state.current_chat_id = session_id
 
+    # Tambahkan pesan user ke session state
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -177,8 +182,7 @@ if prompt := st.chat_input("COMMAND..."):
     with st.chat_message("assistant"):
         res_area = st.empty()
         full_res = ""
-        # Context Memory
-        msgs = [{"role": "system", "content": "Kamu adalah NEO AI buatan Muhammad Jibran Al Kaffie. Jawablah dengan nada cerdas, futuristik, dan profesional."}] + st.session_state.messages
+        msgs = [{"role": "system", "content": "Kamu adalah NEO AI buatan Muhammad Jibran Al Kaffie. Jawab dengan nada cerdas dan futuristik."}] + st.session_state.messages
         
         try:
             comp = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
@@ -192,7 +196,7 @@ if prompt := st.chat_input("COMMAND..."):
             # Save Assistant Response
             st.session_state.messages.append({"role": "assistant", "content": full_res})
             
-            # Update History (Hanya pada ID yang sudah dikunci di awal)
+            # Update History Logs
             st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
             
         except Exception as e:
