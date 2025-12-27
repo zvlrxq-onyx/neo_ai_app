@@ -167,7 +167,7 @@ with st.sidebar:
         """, unsafe_allow_html=True)
 
 # --- 7. MAIN INTERFACE ---
-st.markdown(f'<div class="center-container"><div class="logo-circle"></div><h1 class="neon-title">NEO AI</h1><p style="text-align:center; opacity:0.7; font-size:1.2rem;">Ready for Command.</p></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="center-container"><div class="logo-circle"></div><h1 class="neon-title">NEO AI</h1><p style="text-align:center; opacity:0.7; font-size:1.2rem;">Hi, is there anything I can help you with?</p></div>', unsafe_allow_html=True)
 
 # Container for Messages
 for message in st.session_state.messages:
