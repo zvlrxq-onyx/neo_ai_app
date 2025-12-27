@@ -9,6 +9,7 @@ if "messages" not in st.session_state: st.session_state.messages = []
 if "all_chats" not in st.session_state: st.session_state.all_chats = {}
 if "current_chat_id" not in st.session_state: st.session_state.current_chat_id = None
 if "show_about" not in st.session_state: st.session_state.show_about = False
+if "editing_chat_id" not in st.session_state: st.session_state.editing_chat_id = None
 
 # --- 2. CONFIG API ---
 try:
@@ -63,21 +64,24 @@ def get_pro_css():
         animation: proScaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     }}
     @keyframes proScaleIn {{ from {{ transform: scale(0.9); opacity: 0; }} to {{ transform: scale(1); opacity: 1; }} }}
-    .about-title {{ color: {neon_cyan}; font-size: 1.1rem; font-weight: 800; letter-spacing: 2px; margin-bottom: 12px; }}
-    .about-text {{ color: #d1d1d1; font-size: 0.9rem; line-height: 1.7; }}
     section[data-testid="stSidebar"] {{ background-color: #080808 !important; border-right: 1px solid {neon_cyan}22; }}
-    .stButton button {{
-        background: transparent !important; color: white !important;
-        border: 1px solid {neon_cyan}33 !important; border-radius: 10px !important;
+    
+    /* Edit Button Styling */
+    .edit-btn {{
+        font-size: 0.8rem;
+        color: {neon_cyan};
+        background: transparent;
+        border: none;
+        cursor: pointer;
     }}
-    .stButton button:hover {{ transform: scale(1.03) !important; background: {neon_cyan}11 !important; border-color: {neon_cyan} !important; }}
+    
     header, footer {{ visibility: hidden; }}
     </style>
     """
 
 st.markdown(get_pro_css(), unsafe_allow_html=True)
 
-# --- 6. SIDEBAR (HISTORY & NAVIGATION) ---
+# --- 6. SIDEBAR (HISTORY & EDITING) ---
 with st.sidebar:
     st.markdown(f'<div class="center-container"><div class="logo-circle"></div></div>', unsafe_allow_html=True)
     st.markdown(f"<h1 style='text-align:center; color:#00ffff; letter-spacing:5px; font-size:2.2rem; text-shadow: 0 0 10px #00ffff; margin-bottom:20px;'>NEO AI</h1>", unsafe_allow_html=True)
@@ -90,16 +94,48 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("<p style='font-size:0.7rem; color:#444; margin-left:5px;'>HISTORY LOGS</p>", unsafe_allow_html=True)
     
-    # Render History Lists (Menampilkan judul bersih saja)
+    # Render History Lists with Rename Feature
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
-        # Mengambil judul asli sebelum tanda pemisah "|"
         display_name = chat_id.split(" | ")[0]
-        if st.button(display_name, key=f"hist_{chat_id}", use_container_width=True):
-            st.session_state.messages = st.session_state.all_chats[chat_id]
-            st.session_state.current_chat_id = chat_id
-            st.rerun()
+        
+        col1, col2 = st.columns([0.8, 0.2])
+        
+        with col1:
+            if st.button(display_name, key=f"hist_{chat_id}", use_container_width=True):
+                st.session_state.messages = st.session_state.all_chats[chat_id]
+                st.session_state.current_chat_id = chat_id
+                st.rerun()
+        
+        with col2:
+            if st.button("✏️", key=f"edit_{chat_id}"):
+                st.session_state.editing_chat_id = chat_id
+                st.rerun()
 
-    st.markdown("<div style='height:20vh;'></div>", unsafe_allow_html=True)
+    # Rename Input Box (Only show when editing)
+    if st.session_state.editing_chat_id:
+        st.markdown("---")
+        new_name = st.text_input("Rename to:", value=st.session_state.editing_chat_id.split(" | ")[0])
+        col_a, col_b = st.columns(2)
+        with col_a:
+            if st.button("Save"):
+                unique_suffix = st.session_state.editing_chat_id.split(" | ")[1]
+                new_full_id = f"{new_name} | {unique_suffix}"
+                
+                # Update dictionary
+                st.session_state.all_chats[new_full_id] = st.session_state.all_chats.pop(st.session_state.editing_chat_id)
+                
+                # Update current chat ID if we are in it
+                if st.session_state.current_chat_id == st.session_state.editing_chat_id:
+                    st.session_state.current_chat_id = new_full_id
+                
+                st.session_state.editing_chat_id = None
+                st.rerun()
+        with col_b:
+            if st.button("Cancel"):
+                st.session_state.editing_chat_id = None
+                st.rerun()
+
+    st.markdown("<div style='height:15vh;'></div>", unsafe_allow_html=True)
     if st.button("ABOUT NEO AI", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
@@ -107,13 +143,8 @@ with st.sidebar:
     if st.session_state.show_about:
         st.markdown(f"""
         <div class="about-box">
-            <div class="about-title">PROJECT SPECIFICATION</div>
-            <div class="about-text">
-                <b>NEO AI v4.0</b> dikembangkan oleh <b>Muhammad Jibran Al Kaffie</b>. 
-                <br><br>
-                Sistem ini menggunakan <b>Neo-Intelligence Architecture</b> dan <b>Llama-3.3-70B</b> core 
-                untuk analisis teknis tingkat tinggi dan pemecahan masalah secara real-time.
-            </div>
+            <p style='color:cyan; font-weight:bold;'>PROJECT SPECIFICATION</p>
+            <p style='font-size:0.8rem;'><b>DEV:</b> Muhammad Jibran Al Kaffie<br><b>CORE:</b> Llama-3.3-70B</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -124,12 +155,10 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 8. CHAT CORE LOGIC (CLEAN HISTORY) ---
+# --- 8. CHAT CORE LOGIC ---
 if prompt := st.chat_input("COMMAND..."):
     if st.session_state.current_chat_id is None:
-        # Judul bersih untuk tampilan
         clean_title = prompt[:20] + "..." if len(prompt) > 20 else prompt
-        # ID Unik pakai timestamp rahasia agar tidak tabrakan (tidak muncul di sidebar)
         st.session_state.current_chat_id = f"{clean_title} | {time.time()}"
 
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -152,6 +181,6 @@ if prompt := st.chat_input("COMMAND..."):
             st.session_state.messages.append({"role": "assistant", "content": full_res})
             st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
         except Exception as e:
-            st.error(f"SYSTEM OVERLOAD: {e}")
+            st.error(f"OFFLINE: {e}")
             
     st.rerun()
