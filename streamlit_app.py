@@ -19,26 +19,34 @@ except:
     st.error("SYSTEM ERROR: API KEY NOT FOUND")
     st.stop()
 
-# --- 3. PAGE CONFIG ---
+# --- 3. PAGE CONFIG (PENTING: Harus di atas) ---
 st.set_page_config(page_title="NEO AI", page_icon="⚡", layout="centered")
 
-# --- 4. LOGO LOADER ---
-encoded_logo = ""
-if os.path.exists("logo.png"):
-    with open("logo.png", "rb") as f:
-        encoded_logo = base64.b64encode(f.read()).decode()
+# --- 4. OPTIMIZED LOGO LOADER (Mengurangi Lag) ---
+@st.cache_data
+def get_base64_logo():
+    if os.path.exists("logo.png"):
+        with open("logo.png", "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return ""
 
-# --- 5. ULTRA PREMIUM CSS (FLUID ANIMATION EDITION) ---
+encoded_logo = get_base64_logo()
+
+# --- 5. ULTRA PREMIUM CSS (ANTI-FLICKER EDITION) ---
 def get_pro_css():
     neon_cyan = "#00ffff"
     return f"""
     <style>
-    /* Global Smoothness */
-    * {{ 
-        transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); 
+    /* Mencegah kedipan putih/gelap saat rerun */
+    .stApp {{ 
+        background-color: #080808 !important; 
+        color: #e0e0e0;
     }}
     
-    .stApp {{ background: #080808; color: #e0e0e0; }}
+    /* Global Smoothness yang lebih efisien */
+    * {{ 
+        transition: background-color 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
+    }}
 
     /* Logo & Title */
     .center-container {{ display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 20px; }}
@@ -52,8 +60,6 @@ def get_pro_css():
     }}
     @keyframes float {{ 0%, 100% {{ transform: translateY(0px); }} 50% {{ transform: translateY(-10px); }} }}
     
-    .logo-circle:hover {{ transform: scale(1.1) rotate(5deg); box-shadow: 0 0 50px {neon_cyan}66; }}
-
     .neon-title {{
         text-align: center; color: {neon_cyan}; font-size: 3.5rem; 
         font-weight: 900; letter-spacing: 12px; margin-bottom: 10px;
@@ -65,7 +71,7 @@ def get_pro_css():
         font-weight: 500; margin-bottom: 40px; opacity: 0.8;
     }}
 
-    /* Sidebar Buttons */
+    /* Sidebar Styling */
     section[data-testid="stSidebar"] {{ 
         background-color: #050505 !important; 
         border-right: 1px solid {neon_cyan}22; 
@@ -81,17 +87,15 @@ def get_pro_css():
     }}
 
     .stButton > button:hover {{
-        transform: scale(1.05) !important;
         border-color: {neon_cyan} !important;
         background: rgba(0, 255, 255, 0.08) !important;
         box-shadow: 0 0 20px {neon_cyan}44 !important;
     }}
 
-    /* CHAT INPUT ANIMATION */
+    /* CHAT INPUT */
     div[data-testid="stChatInput"] {{
         width: 70% !important; 
         margin: 0 auto !important;
-        transition: width 0.9s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
     div[data-testid="stChatInput"]:focus-within {{ width: 100% !important; }}
     .stChatInput textarea {{ border-radius: 30px !important; background: #111 !important; }}
@@ -100,26 +104,22 @@ def get_pro_css():
     div[data-testid="column"]:nth-child(2) button {{
         filter: hue-rotate(170deg) brightness(1.2) drop-shadow(0 0 8px {neon_cyan});
         border: none !important;
-        background: transparent !important;
     }}
 
-    /* FLUID BOX ANIMATION (ABOUT & EDIT) */
+    /* Fluid Box Animation */
     .fluid-box {{
         background: rgba(0, 255, 255, 0.03);
         border: 1px solid {neon_cyan}22;
         border-left: 4px solid {neon_cyan};
         border-radius: 20px;
         padding: 15px; margin-top: 15px;
-        animation: fluidIn 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+        animation: fluidIn 0.5s ease-out;
     }}
     
     @keyframes fluidIn {{
-        from {{ opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(10px); }}
-        to {{ opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }}
+        from {{ opacity: 0; transform: translateY(10px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
     }}
-
-    .about-header {{ color: {neon_cyan}; font-size: 0.9rem; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px; }}
-    .about-body {{ color: #aaa; font-size: 0.82rem; line-height: 1.6; }}
 
     header, footer {{ visibility: hidden; }}
     </style>
@@ -153,7 +153,6 @@ with st.sidebar:
                 st.session_state.editing_chat_id = chat_id
                 st.rerun()
 
-    # RENAME BOX WITH FLUID ANIMATION
     if st.session_state.editing_chat_id:
         st.markdown('<div class="fluid-box">', unsafe_allow_html=True)
         new_name = st.text_input("RENAME SESSION:", value=st.session_state.editing_chat_id.split(" | ")[0])
@@ -163,8 +162,6 @@ with st.sidebar:
                 suffix = st.session_state.editing_chat_id.split(" | ")[1]
                 new_full_id = f"{new_name} | {suffix}"
                 st.session_state.all_chats[new_full_id] = st.session_state.all_chats.pop(st.session_state.editing_chat_id)
-                if st.session_state.current_chat_id == st.session_state.editing_chat_id:
-                    st.session_state.current_chat_id = new_full_id
                 st.session_state.editing_chat_id = None
                 st.rerun()
         with c2:
@@ -178,15 +175,13 @@ with st.sidebar:
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
 
-    # ABOUT BOX WITH FLUID ANIMATION
     if st.session_state.show_about:
         st.markdown(f"""
         <div class="fluid-box">
-            <div class="about-header">CORE SPECIFICATION</div>
-            <div class="about-body">
+            <div style="color:#00ffff; font-weight:800; margin-bottom:5px;">CORE SPECIFICATION</div>
+            <div style="color:#aaa; font-size:0.8rem;">
                 <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
-                <b>Engine:</b> Llama-3.3-70B<br><br>
-                NEO AI is a high-performance neural-interface designed for advanced computational reasoning and creative synthesis. 
+                <b>Engine:</b> Llama-3.3-70B
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -201,10 +196,10 @@ for message in st.session_state.messages:
 # --- 8. CHAT LOGIC ---
 if prompt := st.chat_input("COMMAND..."):
     if st.session_state.current_chat_id is None:
-        clean_title = prompt[:20] + "..." if len(prompt) > 20 else prompt
-        st.session_state.current_chat_id = f"{clean_title} | {time.time()}"
+        st.session_state.current_chat_id = f"{prompt[:20]}... | {time.time()}"
 
     st.session_state.messages.append({"role": "user", "content": prompt})
+    
     with st.chat_message("user"):
         st.markdown(prompt)
 
@@ -224,6 +219,6 @@ if prompt := st.chat_input("COMMAND..."):
             st.session_state.messages.append({"role": "assistant", "content": full_res})
             st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
         except Exception as e:
-            st.error(f"OVERLOAD: {e}")
+            st.error(f"ERROR: {e}")
             
     st.rerun()
