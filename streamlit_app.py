@@ -32,23 +32,18 @@ def get_base64_logo():
 
 encoded_logo = get_base64_logo()
 
-# --- 5. ULTRA PREMIUM CSS (ANTI-FLASH & SMOOTH EDITION) ---
+# --- 5. ULTRA PREMIUM CSS (ANTI-FLASH & SMOOTH) ---
 def get_pro_css():
     neon_cyan = "#00ffff"
     return f"""
     <style>
-    /* ANTI-FLASH: Kunci warna latar agar tidak berkedip saat rerun */
     html, body, [data-testid="stAppViewContainer"], .stApp {{
         background-color: #080808 !important;
         color: #e0e0e0 !important;
     }}
-    
     [data-testid="stStatusWidget"] {{ display: none; }}
-
-    /* GLOBAL SMOOTH TRANSITION */
     * {{ transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }}
 
-    /* Logo & Title */
     .center-container {{ display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 20px; }}
     .logo-circle {{
         width: 125px; height: 125px;
@@ -57,60 +52,37 @@ def get_pro_css():
         border-radius: 50%; border: 2px solid {neon_cyan};
         box-shadow: 0 0 30px {neon_cyan}33;
     }}
-    
     .neon-title {{
         text-align: center; color: {neon_cyan}; font-size: 3.5rem; 
         font-weight: 900; letter-spacing: 12px; margin-bottom: 5px;
         text-transform: uppercase; text-shadow: 0 0 20px {neon_cyan}44;
     }}
 
-    /* SIDEBAR BUTTONS HOVER SMOOTH */
-    section[data-testid="stSidebar"] {{ 
-        background-color: #050505 !important; 
-        border-right: 1px solid {neon_cyan}22; 
-    }}
-
+    section[data-testid="stSidebar"] {{ background-color: #050505 !important; border-right: 1px solid {neon_cyan}22; }}
     .stButton > button {{
-        background: transparent !important;
-        color: #ffffff !important;
-        border: 1px solid {neon_cyan}44 !important;
-        border-radius: 30px !important;
-        padding: 10px 20px !important;
-        width: 100% !important;
+        background: transparent !important; color: #ffffff !important;
+        border: 1px solid {neon_cyan}44 !important; border-radius: 30px !important; width: 100% !important;
     }}
-
     .stButton > button:hover {{
-        transform: scale(1.08) !important;
-        border-color: {neon_cyan} !important;
-        background: rgba(0, 255, 255, 0.12) !important;
-        box-shadow: 0 0 25px {neon_cyan}66 !important;
+        transform: scale(1.08) !important; border-color: {neon_cyan} !important;
+        background: rgba(0, 255, 255, 0.12) !important; box-shadow: 0 0 25px {neon_cyan}66 !important;
     }}
 
-    /* CHAT INPUT EXPAND SMOOTH */
     div[data-testid="stChatInput"] {{
-        width: 75% !important; 
-        margin: 0 auto !important;
+        width: 75% !important; margin: 0 auto !important;
         transition: width 0.9s cubic-bezier(0.23, 1, 0.32, 1) !important;
     }}
     div[data-testid="stChatInput"]:focus-within {{ width: 100% !important; }}
     .stChatInput textarea {{ border-radius: 30px !important; background: #111 !important; border: 1px solid {neon_cyan}22 !important; }}
 
-    /* ABOUT BOX & RENAME BOX ANIMATION */
     .fluid-box {{
         background: linear-gradient(145deg, rgba(0, 255, 255, 0.05), rgba(0, 0, 0, 0.2));
-        border: 1px solid {neon_cyan}33;
-        border-left: 5px solid {neon_cyan};
-        border-radius: 20px;
-        padding: 20px;
-        margin-top: 20px;
+        border: 1px solid {neon_cyan}33; border-left: 5px solid {neon_cyan};
+        border-radius: 20px; padding: 20px; margin-top: 20px;
         animation: fluidSlide 0.7s cubic-bezier(0.23, 1, 0.32, 1);
         backdrop-filter: blur(10px);
     }}
-    
-    @keyframes fluidSlide {{
-        from {{ opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(5px); }}
-        to {{ opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }}
-    }}
+    @keyframes fluidSlide {{ from {{ opacity: 0; transform: translateY(20px); }} to {{ opacity: 1; transform: translateY(0); }} }}
 
     header, footer {{ visibility: hidden; }}
     </style>
@@ -130,23 +102,23 @@ with st.sidebar:
 
     st.markdown("---")
     
-    # Render History with Rename Feature
+    # Render History & Rename
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
         display_name = chat_id.split(" | ")[0]
-        col_main, col_edit = st.columns([0.8, 0.2])
-        with col_main:
+        col_m, col_e = st.columns([0.8, 0.2])
+        with col_m:
             if st.button(display_name, key=f"h_{chat_id}", use_container_width=True):
                 st.session_state.messages = st.session_state.all_chats[chat_id]
                 st.session_state.current_chat_id = chat_id
                 st.rerun()
-        with col_edit:
+        with col_e:
             if st.button("✏️", key=f"e_{chat_id}"):
                 st.session_state.editing_chat_id = chat_id
                 st.rerun()
 
     if st.session_state.editing_chat_id:
         st.markdown('<div class="fluid-box">', unsafe_allow_html=True)
-        new_name = st.text_input("RENAME TO:", value=st.session_state.editing_chat_id.split(" | ")[0])
+        new_name = st.text_input("RENAME:", value=st.session_state.editing_chat_id.split(" | ")[0])
         c1, c2 = st.columns(2)
         with c1:
             if st.button("SAVE"):
@@ -162,40 +134,63 @@ with st.sidebar:
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("<div style='height:10vh;'></div>", unsafe_allow_html=True)
-    if st.button("ABOUT NEO", key="about_btn", use_container_width=True):
+    if st.button("ABOUT NEO", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
 
     if st.session_state.show_about:
-        st.markdown(f"""
-        <div class="fluid-box">
-            <div style="color:cyan; font-weight:800; margin-bottom:5px;">SYSTEM SPEC</div>
-            <div style="color:#aaa; font-size:0.85rem;">
-                <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
-                <b>Engine:</b> Llama-3.3-70B<br>
-                <b>Interface:</b> V 2.5 (Fluid UI)
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f'<div class="fluid-box"><b>Architect:</b> Jibran Al Kaffie<br><b>Engine:</b> Llama-3.3</div>', unsafe_allow_html=True)
 
 # --- 7. MAIN INTERFACE ---
 st.markdown(f"""
     <div class="center-container">
         <div class="logo-circle"></div>
         <h1 class="neon-title">NEO AI</h1>
-        <p style="text-align:center; opacity:0.8; font-size:1.3rem; margin-top: 10px; font-weight:500;">
+        <p style="text-align:center; opacity:0.8; font-size:1.3rem; margin-top: 10px;">
             Hi, is there anything I can help you with?
         </p>
     </div>
 """, unsafe_allow_html=True)
 
+# Tampilkan chat yang sudah ada
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 8. CHAT LOGIC ---
+# --- 8. CHAT LOGIC (FIXED) ---
 if prompt := st.chat_input("ENTER COMMAND..."):
+    # Buat ID Chat baru jika belum ada
     if st.session_state.current_chat_id is None:
         st.session_state.current_chat_id = f"{prompt[:20]}... | {time.time()}"
+    
+    # Tambah chat user ke memori
     st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    # Tampilkan chat user langsung
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # Proses jawaban AI
+    with st.chat_message("assistant"):
+        res_area = st.empty()
+        full_res = ""
+        msgs = [{"role": "system", "content": "You are NEO AI by Jibran."}] + st.session_state.messages
+        
+        try:
+            # Streaming dari Groq
+            completion = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
+            for chunk in completion:
+                content = chunk.choices[0].delta.content
+                if content:
+                    full_res += content
+                    res_area.markdown(full_res + "▌")
+            res_area.markdown(full_res)
+            
+            # Simpan jawaban AI ke memori
+            st.session_state.messages.append({"role": "assistant", "content": full_res})
+            st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
+        except Exception as e:
+            st.error(f"ERROR: {e}")
+
+    # Rerun hanya setelah semua data tersimpan
     st.rerun()
