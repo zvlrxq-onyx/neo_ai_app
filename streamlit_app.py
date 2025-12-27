@@ -20,7 +20,7 @@ except:
     st.stop()
 
 # --- 3. PAGE CONFIG ---
-st.set_page_config(page_title="NEO AI", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="NEO AI", page_icon="⚡", layout="centered")
 
 # --- 4. LOGO LOADER ---
 encoded_logo = ""
@@ -28,188 +28,202 @@ if os.path.exists("logo.png"):
     with open("logo.png", "rb") as f:
         encoded_logo = base64.b64encode(f.read()).decode()
 
-# --- 5. FIXED LAYOUT CSS ---
+# --- 5. ULTRA PREMIUM CSS (FLUID ANIMATION EDITION) ---
 def get_pro_css():
     neon_cyan = "#00ffff"
     return f"""
     <style>
-    /* Hide Default Elements */
-    [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {{ display: none; }}
-    header, footer {{ visibility: hidden; }}
-
-    /* Global Transitions */
-    * {{ transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }}
+    /* Global Smoothness */
+    * {{ 
+        transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); 
+    }}
     
-    .stApp {{ background: #080808; color: #e0e0e0; overflow: hidden; }}
+    .stApp {{ background: #080808; color: #e0e0e0; }}
 
-    /* Main Content Shift */
-    .main-content {{
-        margin-left: 320px;
-        transition: margin-left 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        padding: 20px;
-        height: 100vh;
-        overflow-y: auto;
-    }}
-
-    /* Sidebar Locked to Left */
-    .custom-sidebar {{
-        position: fixed;
-        left: 0; top: 0; bottom: 0;
-        width: 300px;
-        background: #050505;
-        border-right: 1px solid {neon_cyan}22;
-        z-index: 1000;
-        padding: 25px;
-        transform: translateX(0);
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        display: flex;
-        flex-direction: column;
-    }}
-
-    /* Toggle Logic */
-    #sidebar-toggle {{ display: none; }}
-    #sidebar-toggle:checked ~ .custom-sidebar {{ transform: translateX(-100%); }}
-    #sidebar-toggle:checked ~ .main-content {{ margin-left: 0; }}
-
-    /* Hamburger Menu */
-    .hamburger {{
-        position: fixed;
-        left: 20px; top: 20px;
-        z-index: 1001;
-        cursor: pointer;
-        padding: 10px;
-        background: #0d0d0d;
-        border: 1px solid {neon_cyan}44;
-        border-radius: 50%;
-        width: 45px; height: 45px;
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-    }}
-    .bar {{ width: 20px; height: 2px; background: {neon_cyan}; border-radius: 2px; }}
-
-    /* Element Styling */
-    .logo-circle-sidebar {{
-        width: 80px; height: 80px;
+    /* Logo & Title */
+    .center-container {{ display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 20px; }}
+    .logo-circle {{
+        width: 125px; height: 125px;
         background-image: url("data:image/png;base64,{encoded_logo}");
         background-size: cover; background-position: center;
         border-radius: 50%; border: 2px solid {neon_cyan};
-        margin: 0 auto 15px;
+        box-shadow: 0 0 30px {neon_cyan}33;
+        animation: float 4s ease-in-out infinite;
     }}
+    @keyframes float {{ 0%, 100% {{ transform: translateY(0px); }} 50% {{ transform: translateY(-10px); }} }}
+    
+    .logo-circle:hover {{ transform: scale(1.1) rotate(5deg); box-shadow: 0 0 50px {neon_cyan}66; }}
 
     .neon-title {{
-        text-align: center; color: {neon_cyan}; font-size: 3rem; 
-        font-weight: 900; letter-spacing: 10px; text-transform: uppercase;
-        text-shadow: 0 0 20px {neon_cyan}44;
+        text-align: center; color: {neon_cyan}; font-size: 3.5rem; 
+        font-weight: 900; letter-spacing: 12px; margin-bottom: 10px;
+        text-transform: uppercase; text-shadow: 0 0 20px {neon_cyan}44;
     }}
 
-    /* Round Buttons */
+    .welcome-text {{
+        text-align: center; color: #ffffff; font-size: 1.5rem;
+        font-weight: 500; margin-bottom: 40px; opacity: 0.8;
+    }}
+
+    /* Sidebar Buttons */
+    section[data-testid="stSidebar"] {{ 
+        background-color: #050505 !important; 
+        border-right: 1px solid {neon_cyan}22; 
+    }}
+
     .stButton > button {{
-        border-radius: 30px !important;
-        border: 1px solid {neon_cyan}44 !important;
         background: transparent !important;
-        color: white !important;
-        text-transform: uppercase;
-        font-weight: 600 !important;
-        letter-spacing: 1px;
+        color: #ffffff !important;
+        border: 1px solid {neon_cyan}44 !important;
+        border-radius: 30px !important;
+        padding: 10px 20px !important;
+        width: 100% !important;
     }}
-    .stButton > button:hover {{ 
+
+    .stButton > button:hover {{
+        transform: scale(1.05) !important;
         border-color: {neon_cyan} !important;
-        background: {neon_cyan}11 !important;
-        transform: scale(1.02);
+        background: rgba(0, 255, 255, 0.08) !important;
+        box-shadow: 0 0 20px {neon_cyan}44 !important;
     }}
 
-    /* Chat Input Fix */
+    /* CHAT INPUT ANIMATION */
     div[data-testid="stChatInput"] {{
-        width: 80% !important; margin: 0 auto !important;
+        width: 70% !important; 
+        margin: 0 auto !important;
+        transition: width 0.9s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
-    .stChatInput textarea {{ border-radius: 25px !important; }}
+    div[data-testid="stChatInput"]:focus-within {{ width: 100% !important; }}
+    .stChatInput textarea {{ border-radius: 30px !important; background: #111 !important; }}
 
-    /* Fluid About Box */
+    /* Pencil Icon Glow */
+    div[data-testid="column"]:nth-child(2) button {{
+        filter: hue-rotate(170deg) brightness(1.2) drop-shadow(0 0 8px {neon_cyan});
+        border: none !important;
+        background: transparent !important;
+    }}
+
+    /* FLUID BOX ANIMATION (ABOUT & EDIT) */
     .fluid-box {{
         background: rgba(0, 255, 255, 0.03);
         border: 1px solid {neon_cyan}22;
         border-left: 4px solid {neon_cyan};
-        border-radius: 15px; padding: 12px; margin-top: 10px;
-        font-size: 0.8rem;
+        border-radius: 20px;
+        padding: 15px; margin-top: 15px;
+        animation: fluidIn 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+    }}
+    
+    @keyframes fluidIn {{
+        from {{ opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(10px); }}
+        to {{ opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }}
     }}
 
-    /* Pencil Icon */
-    div[data-testid="column"]:nth-child(2) button {{
-        filter: hue-rotate(170deg) brightness(1.2);
-        border: none !important;
-    }}
+    .about-header {{ color: {neon_cyan}; font-size: 0.9rem; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px; }}
+    .about-body {{ color: #aaa; font-size: 0.82rem; line-height: 1.6; }}
+
+    header, footer {{ visibility: hidden; }}
     </style>
-
-    <input type="checkbox" id="sidebar-toggle">
-    <label for="sidebar-toggle" class="hamburger">
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-    </label>
     """
 
 st.markdown(get_pro_css(), unsafe_allow_html=True)
 
-# --- 6. SIDEBAR CONTENT (WRAPPED) ---
-with st.container():
-    st.markdown('<div class="custom-sidebar">', unsafe_allow_html=True)
-    st.markdown('<div class="logo-circle-sidebar"></div>', unsafe_allow_html=True)
-    st.markdown(f"<h3 style='text-align:center; color:#00ffff; letter-spacing:3px;'>NEO AI</h3>", unsafe_allow_html=True)
-    st.markdown("<hr style='border-color:#ffffff11; margin: 10px 0;'>", unsafe_allow_html=True)
+# --- 6. SIDEBAR ---
+with st.sidebar:
+    st.markdown(f'<div class="center-container"><div class="logo-circle"></div></div>', unsafe_allow_html=True)
+    st.markdown(f"<h1 style='text-align:center; color:#00ffff; letter-spacing:5px; font-size:2.2rem; text-shadow: 0 0 10px #00ffff; margin-bottom:20px;'>NEO AI</h1>", unsafe_allow_html=True)
     
-    # Sidebar Actions
-    if st.button("NEW SESSION", key="new_sess_btn", use_container_width=True):
+    if st.button("NEW SESSION", use_container_width=True):
         st.session_state.messages = []
         st.session_state.current_chat_id = None
         st.rerun()
-    
-    st.markdown("<p style='font-size:0.6rem; color:#555; margin-top:15px; margin-left:10px;'>RECENT HISTORY</p>", unsafe_allow_html=True)
-    
-    # History Area (Scrollable)
-    hist_container = st.container()
-    with hist_container:
-        for chat_id in reversed(list(st.session_state.all_chats.keys())):
-            display_name = chat_id.split(" | ")[0]
-            c1, c2 = st.columns([0.8, 0.2])
-            with c1:
-                if st.button(display_name, key=f"h_{chat_id}", use_container_width=True):
-                    st.session_state.messages = st.session_state.all_chats[chat_id]
-                    st.session_state.current_chat_id = chat_id
-                    st.rerun()
-            with c2:
-                if st.button("✏️", key=f"e_{chat_id}"):
-                    st.session_state.editing_chat_id = chat_id
-                    st.rerun()
 
-    # Bottom Sidebar
-    st.markdown("<div style='flex-grow:1;'></div>", unsafe_allow_html=True)
-    if st.button("ABOUT", key="about_btn", use_container_width=True):
+    st.markdown("---")
+    st.markdown("<p style='font-size:0.6rem; color:#444; letter-spacing:1px; margin-left:15px;'>HISTORY DATABASE</p>", unsafe_allow_html=True)
+    
+    for chat_id in reversed(list(st.session_state.all_chats.keys())):
+        display_name = chat_id.split(" | ")[0]
+        col_main, col_edit = st.columns([0.8, 0.2])
+        with col_main:
+            if st.button(display_name, key=f"hist_{chat_id}", use_container_width=True):
+                st.session_state.messages = st.session_state.all_chats[chat_id]
+                st.session_state.current_chat_id = chat_id
+                st.rerun()
+        with col_edit:
+            if st.button("✏️", key=f"edit_{chat_id}"):
+                st.session_state.editing_chat_id = chat_id
+                st.rerun()
+
+    # RENAME BOX WITH FLUID ANIMATION
+    if st.session_state.editing_chat_id:
+        st.markdown('<div class="fluid-box">', unsafe_allow_html=True)
+        new_name = st.text_input("RENAME SESSION:", value=st.session_state.editing_chat_id.split(" | ")[0])
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("SAVE"):
+                suffix = st.session_state.editing_chat_id.split(" | ")[1]
+                new_full_id = f"{new_name} | {suffix}"
+                st.session_state.all_chats[new_full_id] = st.session_state.all_chats.pop(st.session_state.editing_chat_id)
+                if st.session_state.current_chat_id == st.session_state.editing_chat_id:
+                    st.session_state.current_chat_id = new_full_id
+                st.session_state.editing_chat_id = None
+                st.rerun()
+        with c2:
+            if st.button("BACK"):
+                st.session_state.editing_chat_id = None
+                st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("<div style='height:15vh;'></div>", unsafe_allow_html=True)
+    if st.button("ABOUT", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
 
+    # ABOUT BOX WITH FLUID ANIMATION
     if st.session_state.show_about:
-        st.markdown("""<div class="fluid-box"><b>Architect:</b> M. Jibran Al Kaffie<br><b>Engine:</b> Llama-3.3-70B</div>""", unsafe_allow_html=True)
-    
-    st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="fluid-box">
+            <div class="about-header">CORE SPECIFICATION</div>
+            <div class="about-body">
+                <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
+                <b>Engine:</b> Llama-3.3-70B<br><br>
+                NEO AI is a high-performance neural-interface designed for advanced computational reasoning and creative synthesis. 
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-# --- 7. MAIN CONTENT AREA ---
-st.markdown('<div class="main-content">', unsafe_allow_html=True)
+# --- 7. MAIN INTERFACE ---
+st.markdown(f'<div class="center-container"><div class="logo-circle"></div><h1 class="neon-title">NEO AI</h1><p class="welcome-text">Hi, is there anything I can help you with?</p></div>', unsafe_allow_html=True)
 
-# Main Title & Greeting
-st.markdown('<div style="text-align:center; margin-top:50px;">', unsafe_allow_html=True)
-st.markdown(f'<h1 class="neon-title">NEO AI</h1>', unsafe_allow_html=True)
-st.markdown('<p style="color:white; font-size:1.4rem; opacity:0.8;">Hi, is there anything I can help you with?</p>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Chat Display
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Chat Input Logic
+# --- 8. CHAT LOGIC ---
 if prompt := st.chat_input("COMMAND..."):
     if st.session_state.current_chat_id is None:
-        st.session_state.current_chat_id = f"{prompt[:20]} | {time.time()}"
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.rerun()
+        clean_title = prompt[:20] + "..." if len(prompt) > 20 else prompt
+        st.session_state.current_chat_id = f"{clean_title} | {time.time()}"
 
-st.markdown('</div>', unsafe_allow_html=True)
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        res_area = st.empty()
+        full_res = ""
+        msgs = [{"role": "system", "content": "You are NEO AI, built by Muhammad Jibran Al Kaffie."}] + st.session_state.messages
+        
+        try:
+            comp = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
+            for chunk in comp:
+                content = chunk.choices[0].delta.content
+                if content:
+                    full_res += content
+                    res_area.markdown(full_res + "▌")
+            res_area.markdown(full_res)
+            st.session_state.messages.append({"role": "assistant", "content": full_res})
+            st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
+        except Exception as e:
+            st.error(f"OVERLOAD: {e}")
+            
+    st.rerun()
