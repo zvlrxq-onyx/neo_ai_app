@@ -53,8 +53,19 @@ def get_pro_css():
 
     .neon-title {{
         text-align: center; color: {neon_cyan}; font-size: 3.5rem; 
-        font-weight: 900; letter-spacing: 12px; margin-bottom: 40px;
+        font-weight: 900; letter-spacing: 12px; margin-bottom: 10px;
         text-transform: uppercase; text-shadow: 0 0 20px {neon_cyan}44;
+    }}
+
+    /* Welcome Text (ChatGPT Style) */
+    .welcome-text {{
+        text-align: center;
+        color: #ffffff;
+        font-size: 1.5rem;
+        font-weight: 500;
+        margin-bottom: 40px;
+        opacity: 0.9;
+        text-shadow: 0 0 10px rgba(255,255,255,0.2);
     }}
 
     /* Sidebar & Button Animations */
@@ -82,7 +93,6 @@ def get_pro_css():
         box-shadow: 0 0 15px {neon_cyan}33 !important;
     }}
 
-    /* Pencil Icon Button Scaling & Glow */
     div[data-testid="column"]:nth-child(2) button {{
         filter: hue-rotate(170deg) brightness(1.2) drop-shadow(0 0 8px {neon_cyan});
         border: none !important;
@@ -94,7 +104,7 @@ def get_pro_css():
         transform: scale(0.98) !important;
     }}
 
-    /* About Box Smooth Appearance */
+    /* About Box */
     .about-box {{
         background: rgba(0, 255, 255, 0.02);
         border: 1px solid {neon_cyan}22;
@@ -110,9 +120,9 @@ def get_pro_css():
     }}
 
     .about-header {{ color: {neon_cyan}; font-size: 0.9rem; font-weight: 800; letter-spacing: 2px; margin-bottom: 8px; }}
-    .about-body {{ color: #999; font-size: 0.8rem; line-height: 1.6; text-align: justify; }}
+    .about-body {{ color: #999; font-size: 0.8rem; line-height: 1.6; }}
 
-    /* Chat Input Appearance */
+    /* Chat Input */
     div[data-testid="stChatInput"] {{
         width: 75% !important; margin: 0 auto !important;
         transition: width 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
@@ -125,7 +135,7 @@ def get_pro_css():
 
 st.markdown(get_pro_css(), unsafe_allow_html=True)
 
-# --- 6. SIDEBAR (LOGIC) ---
+# --- 6. SIDEBAR ---
 with st.sidebar:
     st.markdown(f'<div class="center-container"><div class="logo-circle"></div></div>', unsafe_allow_html=True)
     st.markdown(f"<h1 style='text-align:center; color:#00ffff; letter-spacing:5px; font-size:2.2rem; text-shadow: 0 0 10px #00ffff; margin-bottom:20px;'>NEO AI</h1>", unsafe_allow_html=True)
@@ -138,7 +148,6 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("<p style='font-size:0.6rem; color:#444; letter-spacing:1px; margin-left:5px;'>HISTORY</p>", unsafe_allow_html=True)
     
-    # Render History List
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
         display_name = chat_id.split(" | ")[0]
         col_main, col_edit = st.columns([0.8, 0.2])
@@ -153,15 +162,14 @@ with st.sidebar:
                 st.session_state.editing_chat_id = chat_id
                 st.rerun()
 
-    # Rename Modal
     if st.session_state.editing_chat_id:
         st.markdown("<br>", unsafe_allow_html=True)
         new_name = st.text_input("RENAME SESSION:", value=st.session_state.editing_chat_id.split(" | ")[0])
         c1, c2 = st.columns(2)
         with c1:
             if st.button("SAVE"):
-                unique_suffix = st.session_state.editing_chat_id.split(" | ")[1]
-                new_full_id = f"{new_name} | {unique_suffix}"
+                suffix = st.session_state.editing_chat_id.split(" | ")[1]
+                new_full_id = f"{new_name} | {suffix}"
                 st.session_state.all_chats[new_full_id] = st.session_state.all_chats.pop(st.session_state.editing_chat_id)
                 if st.session_state.current_chat_id == st.session_state.editing_chat_id:
                     st.session_state.current_chat_id = new_full_id
@@ -173,7 +181,6 @@ with st.sidebar:
                 st.rerun()
 
     st.markdown("<div style='height:15vh;'></div>", unsafe_allow_html=True)
-    
     if st.button("ABOUT", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
@@ -186,13 +193,12 @@ with st.sidebar:
                 <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
                 <b>Engine:</b> Llama-3.3-70B<br><br>
                 NEO AI is a high-performance neural-network interface designed for advanced computational reasoning and real-time technical analysis. 
-                Built with a focus on seamless workflow integration and futuristic aesthetics, it represents the pinnacle of personal AI assistance.
             </div>
         </div>
         """, unsafe_allow_html=True)
 
 # --- 7. MAIN INTERFACE ---
-st.markdown(f'<div class="center-container"><div class="logo-circle"></div><h1 class="neon-title">NEO AI</h1></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="center-container"><div class="logo-circle"></div><h1 class="neon-title">NEO AI</h1><p class="welcome-text">Hi, is there anything I can help you with?</p></div>', unsafe_allow_html=True)
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -211,7 +217,7 @@ if prompt := st.chat_input("COMMAND..."):
     with st.chat_message("assistant"):
         res_area = st.empty()
         full_res = ""
-        msgs = [{"role": "system", "content": "You are NEO AI, a sophisticated assistant built by Muhammad Jibran Al Kaffie. Respond with intelligence and professional tone."}] + st.session_state.messages
+        msgs = [{"role": "system", "content": "You are NEO AI, a sophisticated assistant built by Muhammad Jibran Al Kaffie."}] + st.session_state.messages
         
         try:
             comp = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
