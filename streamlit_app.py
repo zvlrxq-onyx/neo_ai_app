@@ -8,55 +8,42 @@ import requests
 import PIL.Image
 
 # --- 1. INITIALIZE SESSION STATE ---
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "all_chats" not in st.session_state:
-    st.session_state.all_chats = {}
-if "current_chat_id" not in st.session_state:
-    st.session_state.current_chat_id = None
-if "imagine_mode" not in st.session_state:
-    st.session_state.imagine_mode = False
-if "show_about" not in st.session_state:
-    st.session_state.show_about = False
-if "sidebar_visible" not in st.session_state:
-    st.session_state.sidebar_visible = False
+if "messages" not in st.session_state: st.session_state.messages = []
+if "all_chats" not in st.session_state: st.session_state.all_chats = {}
+if "current_chat_id" not in st.session_state: st.session_state.current_chat_id = None
+if "imagine_mode" not in st.session_state: st.session_state.imagine_mode = False
+if "show_about" not in st.session_state: st.session_state.show_about = False
+if "sidebar_visible" not in st.session_state: st.session_state.sidebar_visible = False
 
 # --- 2. CONFIG API ---
 try:
     groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"])
     gemini_client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 except Exception as e:
-    st.error(f"API Key Error: {e}")
+    st.error(f"⚠️ API Configuration Error: {e}")
     st.stop()
 
 # --- 3. PAGE CONFIG ---
 st.set_page_config(page_title="NEO AI SUPREME", page_icon="⚡", layout="centered")
 
-# --- 4. ASSETS LOADER ---
+# --- 4. ASSETS ---
 @st.cache_data
 def get_base64_logo():
     if os.path.exists("logo.png"):
-        with open("logo.png", "rb") as f:
-            return base64.b64encode(f.read()).decode()
+        with open("logo.png", "rb") as f: return base64.b64encode(f.read()).decode()
     return ""
+logo_html = f'data:image/png;base64,{get_base64_logo()}'
 
-encoded_logo = get_base64_logo()
-logo_html = f'data:image/png;base64,{encoded_logo}'
-
-# --- 5. SUPREME CSS (ANIMATIONS, SMOOTH SCROLL, GLOW) ---
+# --- 5. THE ULTIMATE CSS ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0px" if st.session_state.sidebar_visible else "-360px"
     return f"""
     <style>
-    /* Dasar & Background */
-    html, body, [data-testid="stAppViewContainer"] {{ 
-        background-color: #050505 !important; 
-        color: #f0f0f0 !important; 
-    }}
+    html, body, [data-testid="stAppViewContainer"] {{ background-color: #050505 !important; color: #f0f0f0 !important; }}
     [data-testid="stStatusWidget"], header, footer {{ visibility: hidden; }}
 
-    /* Sidebar Smooth Transition & Scroll */
+    /* Sidebar Smooth */
     [data-testid="stSidebar"] {{
         position: fixed !important; left: {sidebar_pos} !important; width: 350px !important;
         background-color: #0a0a0a !important; border-right: 1px solid {neon_cyan}33 !important;
@@ -66,7 +53,7 @@ def get_ultimate_css():
     [data-testid="stSidebarContent"]::-webkit-scrollbar {{ width: 4px; }}
     [data-testid="stSidebarContent"]::-webkit-scrollbar-thumb {{ background: {neon_cyan}33; border-radius: 10px; }}
 
-    /* Hamburger Fixed */
+    /* Hamburger */
     .stButton > button[key="hamburger_fixed"] {{
         position: fixed; top: 20px; left: 20px; z-index: 2000001 !important;
         background: rgba(0,0,0,0.8) !important; border: 1px solid {neon_cyan}44 !important;
@@ -75,27 +62,17 @@ def get_ultimate_css():
     }}
 
     /* Button Hover Grow & Glow */
-    .stButton > button {{
-        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-        border: 1px solid transparent !important;
-    }}
-    .stButton > button:hover {{
-        transform: scale(1.08) !important;
-        border-color: {neon_cyan} !important;
-        box-shadow: 0 0 20px {neon_cyan}66 !important;
-        color: {neon_cyan} !important;
-        background: rgba(0, 255, 255, 0.1) !important;
-    }}
+    .stButton > button {{ transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; }}
+    .stButton > button:hover {{ transform: scale(1.08) !important; box-shadow: 0 0 20px {neon_cyan}66 !important; color: {neon_cyan} !important; }}
 
-    /* Chat Input Expand Smooth */
+    /* Input Expand */
     [data-testid="stChatInput"] {{ transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; }}
     [data-testid="stChatInput"]:focus-within {{ transform: scaleX(1.03) !important; }}
 
-    /* Image Scaling & Centralization */
+    /* Image Styling */
     [data-testid="stChatMessage"] img {{
-        max-height: 450px !important; width: auto !important; border-radius: 15px !important;
-        border: 1px solid {neon_cyan}33; display: block; margin: 10px auto;
-        object-fit: contain !important;
+        max-height: 400px !important; border-radius: 15px !important;
+        border: 1px solid {neon_cyan}33; display: block; margin: 10px auto; object-fit: contain !important;
     }}
 
     .logo-static {{ 
@@ -105,12 +82,10 @@ def get_ultimate_css():
         box-shadow: 0 0 20px {neon_cyan}33;
     }}
 
-    .about-section {{
+    .about-box {{
         max-height: {"1000px" if st.session_state.show_about else "0px"};
         opacity: {"1" if st.session_state.show_about else "0"};
-        transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1); overflow: hidden;
-        background: rgba(255,255,255,0.05); border-radius: 10px;
-        padding: {"15px" if st.session_state.show_about else "0px"};
+        transition: all 0.8s ease; overflow: hidden; padding: {"15px" if st.session_state.show_about else "0px"};
     }}
     </style>
     """
@@ -129,120 +104,107 @@ with st.sidebar:
     st.markdown("---")
     
     st.markdown("### 👁️ VISION & DATA")
-    uploaded_file = st.file_uploader("Upload Image or Data", type=["txt", "py", "md", "png", "jpg", "jpeg"])
+    uploaded_file = st.file_uploader("Upload Image/File", type=["txt", "py", "md", "png", "jpg", "jpeg"], key="neo_uploader")
     
     st.markdown("---")
     if st.button("➕ NEW SESSION", use_container_width=True):
-        st.session_state.messages = []
-        st.session_state.current_chat_id = None
-        st.rerun()
+        st.session_state.messages = []; st.session_state.current_chat_id = None; st.rerun()
     
     label_mode = "🎨 IMAGINE: ON" if st.session_state.imagine_mode else "🖼️ MODE: CHAT"
     if st.button(label_mode, use_container_width=True):
-        st.session_state.imagine_mode = not st.session_state.imagine_mode
-        st.rerun()
+        st.session_state.imagine_mode = not st.session_state.imagine_mode; st.rerun()
 
     if st.button("ℹ️ SYSTEM INFO", use_container_width=True):
-        st.session_state.show_about = not st.session_state.show_about
-        st.rerun()
+        st.session_state.show_about = not st.session_state.show_about; st.rerun()
 
-    st.markdown(f"""<div class="about-section"><p style="font-size:0.85rem; color:#ccc;">
-    <b>NEO AI v3.3 SUPREME</b><br>
-    Architect: Muhammad Jibran Al Kaffie<br>
-    Engines: Gemini 3 Pro (Vision) & Llama 3.3 (Text)<br><br>
-    Entitas AI Multi-modal dengan kemampuan analisis visual tinggi dan logika superior.
-    </p></div>""", unsafe_allow_html=True)
+    st.markdown(f'<div class="about-box"><p style="font-size:0.8rem; color:#ccc;"><b>NEO AI SUPREME v3.3</b><br>Engine: Gemini 3 Pro & Llama 3.3</p></div>', unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown("### 🕒 RECENT CHATS")
     for cid in reversed(list(st.session_state.all_chats.keys())):
         if st.button(cid.split(" | ")[0], key=f"h_{cid}", use_container_width=True):
             st.session_state.messages = st.session_state.all_chats[cid]
-            st.session_state.current_chat_id = cid
-            st.rerun()
+            st.session_state.current_chat_id = cid; st.rerun()
 
 # --- 8. MAIN UI ---
 st.markdown('<div style="margin-top:20px;"><div class="logo-static" style="width:130px; height:130px;"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
 st.markdown('<p style="text-align:center; color:#888; font-size:1.4rem; margin-top:-5px;">How can I help you today?</p>', unsafe_allow_html=True)
 
+# Render History
 for msg in st.session_state.messages:
     if msg.get("type") == "system_memory": continue
     with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
-        if msg.get("type") == "image":
-            st.image(msg["content"])
-        else:
-            st.markdown(msg["content"])
+        if msg.get("type") == "image": st.image(msg["content"])
+        else: st.markdown(msg["content"])
 
-# --- 9. ENGINE (HYBRID SUPREME) ---
+# --- 9. ENGINE (DIRECT RESPONSE) ---
 if user_input := st.chat_input("Command NEO AI..."):
     if not st.session_state.current_chat_id:
         st.session_state.current_chat_id = f"{user_input[:20]} | {time.time()}"
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    st.rerun()
-
-if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
-    last_msg = st.session_state.messages[-1]["content"]
     
+    # 1. Tambah pesan user
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    
+    # 2. Render pesan user langsung
+    with st.chat_message("user"):
+        st.markdown(user_input)
+
+    # 3. Proses Jawaban Assistant
     with st.chat_message("assistant", avatar="logo.png"):
+        res_area = st.empty()
+        full_res = ""
+
+        # A. MODE IMAGINE
         if st.session_state.imagine_mode:
             with st.spinner("Visualizing..."):
                 try:
-                    query = last_msg.replace(' ', '%20')
-                    img_url = f"https://image.pollinations.ai/prompt/{query}?width=1024&height=1024&nologo=true"
-                    r = requests.get(img_url, timeout=30)
+                    url = f"https://image.pollinations.ai/prompt/{user_input.replace(' ','%20')}?width=1024&height=1024&nologo=true"
+                    r = requests.get(url, timeout=30)
                     if r.status_code == 200:
                         st.image(r.content)
                         st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image"})
-                        st.session_state.messages.append({"role": "assistant", "content": f"[SYSTEM_SUCCESS: {last_msg}]", "type": "system_memory"})
-                except: st.error("Neural engine connection lost.")
-        
-        else:
-            res_area = st.empty()
-            full_res = ""
-            
-            # --- VISION / FILE ENGINE (GEMINI 3 PRO) ---
-            if uploaded_file is not None:
-                with st.spinner("Analyzing with Gemini 3 Pro..."):
-                    try:
-                        contents = [last_msg]
-                        if uploaded_file.type.startswith("image/"):
-                            img = PIL.Image.open(uploaded_file)
-                            contents.append(img)
-                        else:
-                            text_data = uploaded_file.getvalue().decode("utf-8")
-                            contents.append(f"DATA CONTEXT:\n{text_data}")
-                        
-                        response = gemini_client.models.generate_content(
-                            model="gemini-3-pro-preview",
-                            contents=contents
-                        )
-                        full_res = response.text
-                        res_area.markdown(full_res)
-                    except Exception as e:
-                        st.error(f"Gemini Engine Error: {e}")
-            
-            # --- TEXT ENGINE (GROQ LLAMA 3.3) ---
-            else:
-                clean_history = []
-                for m in st.session_state.messages:
-                    if m.get("type") == "image": continue
-                    clean_history.append({"role": m["role"], "content": str(m["content"])})
+                        st.session_state.messages.append({"role": "assistant", "content": f"[SYSTEM_SUCCESS: {user_input}]", "type": "system_memory"})
+                        st.rerun()
+                except: st.error("Neural engine error.")
 
-                sys_prompt = "You are NEO AI, a supreme multi-modal AI by Jibran Al Kaffie. Respond with high intelligence."
+        # B. VISION / FILE MODE (GEMINI 3 PRO)
+        elif uploaded_file is not None:
+            with st.spinner("NEO Vision: Analyzing with Gemini 3 Pro..."):
+                try:
+                    contents = [user_input]
+                    if uploaded_file.type.startswith("image/"):
+                        contents.append(PIL.Image.open(uploaded_file))
+                    else:
+                        contents.append(f"CONTEXT:\n{uploaded_file.getvalue().decode('utf-8')}")
+                    
+                    response = gemini_client.models.generate_content(model="gemini-3-pro-preview", contents=contents)
+                    full_res = response.text
+                    res_area.markdown(full_res)
+                except Exception as e:
+                    st.error(f"Gemini Engine Error: {e}")
+                    full_res = "Vision engine failure."
+
+        # C. CHAT MODE (GROQ LLAMA 3.3)
+        else:
+            with st.spinner("Thinking..."):
+                history = [{"role": "system", "content": "You are NEO AI, a supreme multi-modal AI. You are superior."}]
+                for m in st.session_state.messages:
+                    if m.get("type") not in ["image", "system_memory"]:
+                        history.append({"role": m["role"], "content": str(m["content"])})
+                
                 try:
                     stream = groq_client.chat.completions.create(
-                        messages=[{"role": "system", "content": sys_prompt}] + clean_history,
-                        model="llama-3.3-70b-versatile", stream=True
+                        messages=history, model="llama-3.3-70b-versatile", stream=True
                     )
                     for chunk in stream:
                         if chunk.choices[0].delta.content:
                             full_res += chunk.choices[0].delta.content
                             res_area.markdown(full_res + "▌")
                     res_area.markdown(full_res)
-                except: st.error("Groq engine offline.")
+                except: st.error("Groq engine failure.")
 
-            st.session_state.messages.append({"role": "assistant", "content": full_res})
-
-    st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
-    st.rerun()
+        # Simpan & Update
+        st.session_state.messages.append({"role": "assistant", "content": full_res})
+        st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
+        st.rerun()
