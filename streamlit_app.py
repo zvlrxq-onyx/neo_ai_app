@@ -231,6 +231,11 @@ with st.sidebar:
 st.markdown('<div style="margin-top:20px;"><div class="logo-main"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; animation: textGlow 2s infinite alternate;'>NEO AI</h1>", unsafe_allow_html=True)
 
+# --- WELCOME MESSAGE ---
+if not st.session_state.messages:
+    with st.chat_message("assistant", avatar="logo.png" if os.path.exists("logo.png") else None):
+        st.markdown("Hi, is there anything I can help you with?")
+
 for msg in st.session_state.messages:
     avatar_img = "logo.png" if msg["role"] == "assistant" and os.path.exists("logo.png") else None
     with st.chat_message(msg["role"], avatar=avatar_img):
