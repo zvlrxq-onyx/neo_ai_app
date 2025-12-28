@@ -218,7 +218,7 @@ if prompt := st.chat_input("Command NEO AI..."):
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     with st.chat_message("assistant", avatar="logo.png" if os.path.exists("logo.png") else None):
         if st.session_state.imagine_mode:
-            with st.spinner("Decoding visuals..."):
+            with st.spinner("Visualizing..."):
                 url = f"https://image.pollinations.ai/prompt/{st.session_state.messages[-1]['content'].replace(' ', '%20')}?width=1024&height=1024&nologo=true"
                 r = requests.get(url)
                 if r.status_code == 200:
