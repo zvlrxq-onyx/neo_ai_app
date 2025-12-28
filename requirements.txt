@@ -1,6 +1,6 @@
 streamlit
 groq
-google-generativeai
+google-genai
 pillow
 requests
 python-dotenv
