@@ -35,7 +35,7 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ULTIMATE CSS (ENHANCED WITH SMOOTH ANIMATIONS, CYAN EFFECTS, AND IMPROVED LAYOUT) ---
+# --- 5. THE ULTIMATE CSS (ENHANCED WITH SYMMETRIC LAYOUT, SMOOTH ANIMATIONS, CYAN EFFECTS) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0" if st.session_state.sidebar_visible else "-350px"
@@ -47,6 +47,10 @@ def get_ultimate_css():
         color: #e0e0e0 !important;
         scroll-behavior: smooth !important;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }}
     [data-testid="stStatusWidget"] {{ visibility: hidden; }}
 
@@ -142,42 +146,60 @@ def get_ultimate_css():
     }}
     @keyframes slideInDown {{ from {{ opacity: 0; transform: translateY(-15px); }} to {{ opacity: 1; transform: translateY(0); }} }}
 
-    /* CHAT MESSAGES STYLING FOR USER (RIGHT-ALIGNED) AND AI (LEFT-ALIGNED) */
+    /* SYMMETRIC CHAT CONTAINER */
+    .chat-container {{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }}
+
+    /* CHAT MESSAGES STYLING FOR USER (RIGHT-ALIGNED) AND AI (LEFT-ALIGNED) WITH SYMMETRY */
     .stChatMessage {{
-        max-width: 70% !important;
-        margin: 10px 0 !important;
+        width: 100% !important;
+        max-width: 60% !important;
+        margin: 15px 0 !important;
         animation: fadeIn 0.5s ease-out;
+        display: flex;
+        justify-content: flex-start;
     }}
     .stChatMessage[data-testid*="user"] {{
-        margin-left: auto !important;
-        margin-right: 0 !important;
+        justify-content: flex-end !important;
         text-align: right !important;
         background: rgba(0, 255, 255, 0.1) !important;
         border: 1px solid {neon_cyan}33 !important;
         border-radius: 15px 15px 5px 15px !important;
-        padding: 10px !important;
+        padding: 15px !important;
+        margin-left: auto !important;
+        margin-right: 10% !important;
     }}
     .stChatMessage[data-testid*="assistant"] {{
-        margin-left: 0 !important;
-        margin-right: auto !important;
+        justify-content: flex-start !important;
         text-align: left !important;
         background: rgba(0, 0, 0, 0.5) !important;
         border: 1px solid {neon_cyan}22 !important;
         border-radius: 15px 15px 15px 5px !important;
-        padding: 10px !important;
+        padding: 15px !important;
+        margin-right: auto !important;
+        margin-left: 10% !important;
     }}
     @keyframes fadeIn {{
         from {{ opacity: 0; transform: translateY(10px); }}
         to {{ opacity: 1; transform: translateY(0); }}
     }}
 
-    /* WELCOME TEXT STYLING */
+    /* WELCOME TEXT STYLING WITH SYMMETRY */
     .welcome-text {{
         text-align: center;
         color: #00ffff;
         font-size: 1.2rem;
         margin: 20px 0;
         animation: fadeInUp 1s ease-out;
+        width: 100%;
+        max-width: 600px;
     }}
     @keyframes fadeInUp {{
         from {{ opacity: 0; transform: translateY(20px); }}
@@ -247,6 +269,9 @@ st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; a
 # --- WELCOME TEXT (STATIC, LIKE CHATGPT) ---
 st.markdown('<div class="welcome-text">Hi, is there anything I can help you with?</div>', unsafe_allow_html=True)
 
+# --- SYMMETRIC CHAT CONTAINER ---
+st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+
 for msg in st.session_state.messages:
     avatar_img = "logo.png" if msg["role"] == "assistant" and os.path.exists("logo.png") else None
     with st.chat_message(msg["role"], avatar=avatar_img):
@@ -254,6 +279,8 @@ for msg in st.session_state.messages:
             st.image(msg["content"], use_container_width=True)
         else:
             st.markdown(msg["content"])
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 9. ENGINE ---
 if prompt := st.chat_input("Command NEO AI..."):
