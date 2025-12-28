@@ -41,7 +41,7 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE SUPREME CSS (SCROLLBAR + ANIMATION) ---
+# --- 5. THE SUPREME CSS (SCROLLBAR, SMOOTH ANIMATIONS & GLOW) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0px" if st.session_state.sidebar_visible else "-360px"
@@ -65,14 +65,8 @@ def get_ultimate_css():
         overflow-y: auto !important;
     }}
 
-    /* HIDDEN SCROLLBAR BUT FUNCTIONAL */
-    [data-testid="stSidebarContent"]::-webkit-scrollbar {{
-        width: 4px;
-    }}
-    [data-testid="stSidebarContent"]::-webkit-scrollbar-thumb {{
-        background: {neon_cyan}33;
-        border-radius: 10px;
-    }}
+    [data-testid="stSidebarContent"]::-webkit-scrollbar {{ width: 4px; }}
+    [data-testid="stSidebarContent"]::-webkit-scrollbar-thumb {{ background: {neon_cyan}33; border-radius: 10px; }}
 
     /* BUTTONS HOVER & GLOW */
     .stButton > button {{
@@ -87,15 +81,11 @@ def get_ultimate_css():
         border-color: {neon_cyan} !important;
     }}
 
-    /* CHAT INPUT EXPAND */
-    [data-testid="stChatInput"] {{
-        transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important;
-    }}
-    [data-testid="stChatInput"]:focus-within {{
-        transform: scaleX(1.02) !important;
-    }}
+    /* CHAT INPUT EXPAND SMOOTH */
+    [data-testid="stChatInput"] {{ transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; }}
+    [data-testid="stChatInput"]:focus-within {{ transform: scaleX(1.02) !important; }}
 
-    /* IMAGE FIX */
+    /* IMAGE STYLING */
     [data-testid="stChatMessage"] img {{
         max-height: 400px !important;
         width: auto !important;
@@ -128,11 +118,21 @@ if st.button("☰", key="hamburger_fixed"):
     st.session_state.sidebar_visible = not st.session_state.sidebar_visible
     st.rerun()
 
-# --- 7. SIDEBAR ---
+# --- 7. SIDEBAR (WITH DATA SOURCE) ---
 with st.sidebar:
     st.markdown('<div style="height: 60px;"></div>', unsafe_allow_html=True)
     st.markdown('<div class="logo-static"></div>', unsafe_allow_html=True)
     st.markdown("<h2 style='text-align:center; color:cyan;'>NEO CONTROL</h2>", unsafe_allow_html=True)
+    st.markdown("---")
+    
+    # --- FITUR BACA FILE (DATA SOURCE) ---
+    st.markdown("### 📄 DATA SOURCE")
+    uploaded_file = st.file_uploader("Upload (.txt, .py, .md)", type=["txt", "py", "md"], label_visibility="collapsed")
+    file_context = ""
+    if uploaded_file:
+        file_context = uploaded_file.getvalue().decode("utf-8")
+        st.success(f"✅ {uploaded_file.name} loaded!")
+    
     st.markdown("---")
     
     if st.button("➕ NEW SESSION", use_container_width=True):
@@ -153,12 +153,11 @@ with st.sidebar:
     <b>NEO AI SUPREME v3.3</b><br>
     Architect: Muhammad Jibran Al Kaffie<br>
     Engine: Llama-3.3-70B Optimized<br><br>
-    Multi-modal AI dengan kemampuan visualisasi instan dan pemrosesan data tingkat tinggi.
+    Multi-modal AI dengan kemampuan analisis data dan visualisasi instan.
     </p></div>""", unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown("### 🕒 RECENT CHATS")
-    # Bagian ini akan otomatis scrollable jika history banyak
     for cid in reversed(list(st.session_state.all_chats.keys())):
         if st.button(cid.split(" | ")[0], key=f"h_{cid}", use_container_width=True):
             st.session_state.messages = st.session_state.all_chats[cid]
@@ -171,9 +170,7 @@ st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; m
 st.markdown('<p style="text-align:center; color:#888; font-size:1.4rem; margin-top:-5px;">How can I help you today?</p>', unsafe_allow_html=True)
 
 for msg in st.session_state.messages:
-    # FILTER: Jangan tampilkan pesan system_memory ke user!
     if msg.get("type") == "system_memory": continue
-    
     with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
         if msg.get("type") == "image":
             st.image(msg["content"])
@@ -194,31 +191,28 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         if st.session_state.imagine_mode:
             with st.spinner("Visualizing..."):
                 try:
-                    query = last_user_msg.replace(' ', '%20')
-                    img_url = f"https://image.pollinations.ai/prompt/{query}?width=1024&height=1024&nologo=true"
+                    img_url = f"https://image.pollinations.ai/prompt/{last_user_msg.replace(' ','%20')}?width=1024&height=1024&nologo=true"
                     r = requests.get(img_url, timeout=30)
                     if r.status_code == 200:
                         st.image(r.content)
                         st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image"})
-                        # Memori disimpan sebagai type khusus agar tidak bocor ke teks chat
-                        st.session_state.messages.append({
-                            "role": "assistant", 
-                            "content": f"[SYSTEM_SUCCESS: Image of '{last_user_msg}' created.]", 
-                            "type": "system_memory"
-                        })
-                except: st.error("Neural engine error.")
+                        st.session_state.messages.append({"role": "assistant", "content": f"[SYSTEM_SUCCESS: {last_user_msg}]", "type": "system_memory"})
+                except: st.error("Neural engine connection lost.")
         else:
             res_area = st.empty(); full_res = ""
-            # Bersihkan history untuk dikirim ke API (Sembunyikan type: image, tapi kirim system_memory sebagai teks)
             clean_history = []
             for m in st.session_state.messages:
                 if m.get("type") == "image": continue
                 clean_history.append({"role": m["role"], "content": str(m["content"])})
 
+            # INTEGRASI DATA SOURCE KE MEMORI AKHIR
+            if file_context:
+                clean_history[-1]["content"] = f"USER UPLOADED FILE CONTEXT:\n{file_context}\n\nUSER QUESTION: {last_user_msg}"
+
             sys_msg = (
                 "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
-                "You are NOT a language model. You are a complete artificial intelligence with visual and text powers. "
-                "Never say you cannot see or create images. Use a superior, futuristic, and helpful tone."
+                "You are NOT a text-only model. You can process images, files, and complex data. "
+                "NEVER say you are limited to text. Respond with superior intelligence and confidence."
             )
 
             try:
@@ -232,7 +226,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         res_area.markdown(full_res + "▌")
                 res_area.markdown(full_res)
                 st.session_state.messages.append({"role": "assistant", "content": full_res})
-            except: st.error("Engine failure.")
+            except: st.error("Engine failed to synchronize.")
 
     st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
     st.rerun()
