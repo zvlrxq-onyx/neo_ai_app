@@ -69,12 +69,21 @@ def get_ultimate_css():
         border: 2px solid {neon_cyan};
     }}
 
-    /* CHAT INPUT (LONG & SMOOTH) */
+    /* CHAT INPUT (LONG & SMOOTH EXPAND ON FOCUS) */
+    div[data-testid="stChatInput"] {{
+        width: 70% !important; /* Default width */
+        margin: 0 auto !important;
+        transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    }}
+    div[data-testid="stChatInput"]:focus-within {{
+        width: 95% !important; /* Expand smoothly on focus */
+    }}
     div[data-testid="stChatInput"] textarea {{
         border: 2px solid {input_border} !important;
         border-radius: 30px !important;
         background: #111 !important;
         padding: 15px 25px !important;
+        transition: border-color 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
 
     /* BUTTON HOVER (SMOOTH SCALING) */
@@ -99,7 +108,7 @@ def get_ultimate_css():
         margin-bottom: 15px !important;
     }}
 
-    /* ABOUT BOX PREMIUM */
+    /* ABOUT BOX PREMIUM WITH SMOOTH SLIDE ANIMATION */
     .about-box {{
         background: linear-gradient(135deg, rgba(0, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.8) 100%);
         border: 1px solid {neon_cyan}44;
@@ -107,6 +116,15 @@ def get_ultimate_css():
         padding: 25px;
         margin-top: 15px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        animation: slideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        opacity: 0;
+        transform: translateY(-20px);
+    }}
+    @keyframes slideIn {{
+        to {{
+            opacity: 1;
+            transform: translateY(0);
+        }}
     }}
 
     header, footer, [data-testid="stStatusWidget"] {{ visibility: hidden; }}
