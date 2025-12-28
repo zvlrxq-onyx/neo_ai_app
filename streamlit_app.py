@@ -13,7 +13,7 @@ if "all_chats" not in st.session_state: st.session_state.all_chats = {}
 if "current_chat_id" not in st.session_state: st.session_state.current_chat_id = None
 if "imagine_mode" not in st.session_state: st.session_state.imagine_mode = False
 if "show_about" not in st.session_state: st.session_state.show_about = False
-if "sidebar_visible" not in st.session_state: st.session_state.sidebar_visible = True  # Tambah state untuk toggle sidebar
+if "sidebar_visible" not in st.session_state: st.session_state.sidebar_visible = True
 
 # --- 2. CONFIG API ---
 try:
@@ -42,7 +42,6 @@ logo_html = f'data:image/png;base64,{encoded_logo}'
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     input_border = neon_cyan if st.session_state.imagine_mode else "rgba(0, 255, 255, 0.2)"
-    sidebar_transform = "translateX(0)" if st.session_state.sidebar_visible else "translateX(-100%)"
     
     return f"""
     <style>
@@ -58,15 +57,55 @@ def get_ultimate_css():
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
 
-    /* SIDEBAR SLIDE ANIMATION */
-    section[data-testid="stSidebar"] {{
-        transform: {sidebar_transform} !important;
-        transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-        position: fixed !important;
-        left: 0 !important;
-        top: 0 !important;
-        height: 100vh !important;
-        z-index: 1000 !important;
+    /* CUSTOM SIDEBAR */
+    #custom-sidebar {{
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 300px;
+        height: 100vh;
+        background-color: #050505;
+        border-right: 1px solid {neon_cyan}22;
+        transform: translateX(-100%);
+        transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 1000;
+        padding: 20px;
+        overflow-y: auto;
+    }}
+    #custom-sidebar.visible {{
+        transform: translateX(0);
+    }}
+
+    /* HAMBURGER BUTTON */
+    #hamburger {{
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1001;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid {neon_cyan}44;
+        border-radius: 10px;
+        padding: 10px;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        width: 40px;
+        height: 40px;
+    }}
+    #hamburger:hover {{
+        transform: scale(1.1);
+        border-color: {neon_cyan};
+        box-shadow: 0 0 20px {neon_cyan}44;
+    }}
+    #hamburger span {{
+        display: block;
+        width: 25px;
+        height: 3px;
+        background: {neon_cyan};
+        transition: all 0.3s;
+        border-radius: 2px;
     }}
 
     /* ONLY AVATAR IS ROUND */
@@ -97,33 +136,6 @@ def get_ultimate_css():
         background-image: url("{logo_html}");
         background-size: cover; border-radius: 50%;
         border: 2px solid {neon_cyan};
-    }}
-
-    /* HAMBURGER BUTTON */
-    .hamburger {{
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        z-index: 1001;
-        background: rgba(0, 0, 0, 0.8);
-        border: 1px solid {neon_cyan}44;
-        border-radius: 10px;
-        padding: 10px;
-        cursor: pointer;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-    }}
-    .hamburger:hover {{
-        transform: scale(1.1);
-        border-color: {neon_cyan};
-        box-shadow: 0 0 20px {neon_cyan}44;
-    }}
-    .hamburger span {{
-        display: block;
-        width: 25px;
-        height: 3px;
-        background: {neon_cyan};
-        margin: 5px 0;
-        transition: all 0.3s;
     }}
 
     /* INPUT EXPAND */
@@ -187,55 +199,67 @@ def get_ultimate_css():
 
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
 
-# --- HAMBURGER BUTTON ---
-if st.button("☰", key="hamburger", help="Toggle Sidebar"):
-    st.session_state.sidebar_visible = not st.session_state.sidebar_visible
-    st.rerun()
+# --- HAMBURGER & SIDEBAR HTML ---
+hamburger_html = """
+<div id="hamburger" onclick="toggleSidebar()">
+    <span></span>
+    <span></span>
+    <span></span>
+</div>
+"""
 
-# --- 6. SIDEBAR ---
-if st.session_state.sidebar_visible:
-    with st.sidebar:
-        st.markdown('<div class="logo-sidebar"></div>', unsafe_allow_html=True)
-        st.markdown(f"<h2 style='text-align:center; color:cyan; letter-spacing:2px; margin-top:10px;'>NEO AI</h2>", unsafe_allow_html=True)
-        
-        st.markdown("---")
-        if st.button("➕ NEW SESSION", use_container_width=True):
-            st.session_state.messages = []
-            st.session_state.current_chat_id = None
-            st.rerun()
+sidebar_html = f"""
+<div id="custom-sidebar" class="{'visible' if st.session_state.sidebar_visible else ''}">
+    <div class="logo-sidebar"></div>
+    <h2 style='text-align:center; color:cyan; letter-spacing:2px; margin-top:10px;'>NEO AI</h2>
+    <hr style='border-color: rgba(0,255,255,0.2);'>
+    <button class="sidebar-btn" onclick="newSession()">➕ NEW SESSION</button>
+    <button class="sidebar-btn" onclick="toggleImagine()">🎨 IMAGINE: {'ON' if st.session_state.imagine_mode else 'OFF'}</button>
+    <button class="sidebar-btn" onclick="toggleAbout()">ℹ️ SYSTEM INFO</button>
+    <div class="about-box" id="about-content" style="display: {'block' if st.session_state.show_about else 'none'};">
+        <h4 style="color:cyan; margin:0;">NEO CORE SYSTEM v2.5</h4>
+        <p style="font-size:0.85rem; color:#ccc; line-height:1.6; margin-top:10px;">
+            <b>Architect & Developer:</b><br>
+            <span style="color:white; font-size:0.9rem;">Muhammad Jibran Al Kaffie</span><br><br>
+            <b>Technical Specifications:</b><br>
+            - <b>Intelligence:</b> Llama-3.3-70B via Groq LPU.<br>
+            - <b>Imaging Engine:</b> Pollinations Neural Network.<br>
+            - <b>UI/UX Architecture:</b> Neo-Dark Aesthetics.<br><br>
+            <i>"NEO AI is designed to be a future assistant that is elegant, fast, and uncompromising."</i>
+        </p>
+    </div>
+    <hr style='border-color: rgba(0,255,255,0.2);'>
+    <p style='color:#ccc;'>RECENT CHATS</p>
+    <!-- Add chat buttons here if needed -->
+</div>
+"""
 
-        mode_text = "🎨 IMAGINE: " + ("ON" if st.session_state.imagine_mode else "OFF")
-        if st.button(mode_text, use_container_width=True):
-            st.session_state.imagine_mode = not st.session_state.imagine_mode
-            st.rerun()
+js_script = """
+<script>
+function toggleSidebar() {
+    const sidebar = document.getElementById('custom-sidebar');
+    sidebar.classList.toggle('visible');
+}
 
-        if st.button("ℹ️ SYSTEM INFO", use_container_width=True):
-            st.session_state.show_about = not st.session_state.show_about
-            st.rerun()
-        
-        if st.session_state.show_about:
-            st.markdown(f"""
-            <div class="about-box">
-                <h4 style="color:cyan; margin:0;">NEO CORE SYSTEM v2.5</h4>
-                <p style="font-size:0.85rem; color:#ccc; line-height:1.6; margin-top:10px;">
-                    <b>Architect & Developer:</b><br>
-                    <span style="color:white; font-size:0.9rem;">Muhammad Jibran Al Kaffie</span><br><br>
-                    <b>Technical Specifications:</b><br>
-                    - <b>Intelligence:</b> Llama-3.3-70B via Groq LPU.<br>
-                    - <b>Imaging Engine:</b> Pollinations Neural Network.<br>
-                    - <b>UI/UX Architecture:</b> Neo-Dark Aesthetics.<br><br>
-                    <i>"NEO AI is designed to be a future assistant that is elegant, fast, and uncompromising."</i>
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+function newSession() {
+    window.location.reload();
+}
 
-        st.markdown("---")
-        st.caption("RECENT CHATS")
-        for chat_id in reversed(list(st.session_state.all_chats.keys())):
-            if st.button(chat_id.split(" | ")[0], key=f"h_{chat_id}", use_container_width=True):
-                st.session_state.messages = st.session_state.all_chats[chat_id]
-                st.session_state.current_chat_id = chat_id
-                st.rerun()
+function toggleImagine() {
+    // Simulate toggle by reloading or use session state if possible
+    window.location.reload();
+}
+
+function toggleAbout() {
+    const about = document.getElementById('about-content');
+    about.style.display = about.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+"""
+
+st.markdown(hamburger_html, unsafe_allow_html=True)
+st.markdown(sidebar_html, unsafe_allow_html=True)
+st.markdown(js_script, unsafe_allow_html=True)
 
 # --- 7. MAIN INTERFACE ---
 st.markdown('<div class="logo-main"></div>', unsafe_allow_html=True)
