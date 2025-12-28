@@ -133,7 +133,7 @@ if st.button("☰", key="hamburger_fixed"):
 with st.sidebar:
     st.markdown('<div style="height: 60px;"></div>', unsafe_allow_html=True)
     st.markdown('<div class="logo-static" style="width:100px; height:100px;"></div>', unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:cyan;'>NEO CONTROL</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:cyan;'>NEO AI</h2>", unsafe_allow_html=True)
     st.markdown("---")
     
     st.markdown("### 📄 DATA SOURCE")
