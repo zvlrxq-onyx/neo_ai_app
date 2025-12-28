@@ -37,7 +37,7 @@ encoded_logo = get_base64_logo()
 logo_path = "logo.png" if os.path.exists("logo.png") else None
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ULTIMATE SMOOTH CSS ---
+# --- 5. THE ULTIMATE SMOOTH CSS (ENHANCED WITH BUTTON ANIMATIONS) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     input_border = neon_cyan if st.session_state.imagine_mode else "rgba(0, 255, 255, 0.2)"
@@ -51,18 +51,27 @@ def get_ultimate_css():
         scroll-behavior: smooth !important;
     }}
     
-    /* ELASTIC ANIMATIONS FOR ALL ELEMENTS */
-    div[data-testid="stChatInput"], .stButton > button, .about-box, [data-testid="stChatMessage"], .logo-main, .logo-sidebar {{
+    /* GLOBAL TRANSITION */
+    div[data-testid="stChatInput"], .stButton > button, .about-box, [data-testid="stChatMessage"] {{
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
 
-    /* FORCE AVATAR TO BE ROUND */
-    [data-testid="stChatMessage"] img, [data-testid="chatAvatarIcon-assistant"], [data-testid="chatAvatarIcon-user"] {{
+    /* ONLY AVATAR IS ROUND (FIXED) */
+    [data-testid="stChatMessage"] div[data-testid="stChatAvatar"] img, 
+    [data-testid="chatAvatarIcon-assistant"], 
+    [data-testid="chatAvatarIcon-user"] {{
         border-radius: 50% !important;
-        border: 1px solid {neon_cyan}44 !important;
+        border: 1.5px solid {neon_cyan}66 !important;
+        object-fit: cover !important;
     }}
 
-    /* LOGO (STATIC BUT SMOOTH IF NEEDED) */
+    /* AI GENERATED IMAGE (STAYS RECTANGLE) */
+    [data-testid="stChatMessage"] [data-testid="stImage"] img {{
+        border-radius: 15px !important; /* Kotak dengan sudut melengkung halus */
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }}
+
+    /* LOGO & TITLE */
     .logo-main {{
         width: 140px; height: 140px; margin: 0 auto;
         background-image: url("{logo_html}");
@@ -77,20 +86,17 @@ def get_ultimate_css():
         border: 2px solid {neon_cyan};
     }}
 
-    /* CHAT INPUT EXPAND ANIMATION */
+    /* INPUT EXPAND */
     div[data-testid="stChatInput"] {{
-        width: 80% !important;
+        width: 85% !important;
         margin: 0 auto !important;
         transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
-    div[data-testid="stChatInput"]:focus-within {{
-        width: 100% !important;
-    }}
+    div[data-testid="stChatInput"]:focus-within {{ width: 100% !important; }}
     div[data-testid="stChatInput"] textarea {{
         border: 2px solid {input_border} !important;
         border-radius: 30px !important;
         background: #111 !important;
-        padding: 15px 25px !important;
     }}
 
     /* ENHANCED BUTTON ANIMATIONS: HOVER & ACTIVE */
@@ -130,18 +136,14 @@ def get_ultimate_css():
     [data-testid="stChatMessage"] {{
         border-radius: 25px !important;
         background: rgba(255, 255, 255, 0.03) !important;
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
         margin-bottom: 15px !important;
     }}
 
-    /* ABOUT BOX PREMIUM */
+    /* ABOUT BOX */
     .about-box {{
         background: linear-gradient(135deg, rgba(0, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.8) 100%);
         border: 1px solid {neon_cyan}44;
-        border-radius: 25px;
-        padding: 25px;
-        margin-top: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        border-radius: 25px; padding: 25px; margin-top: 15px;
         animation: slideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }}
     @keyframes slideIn {{ from {{ opacity: 0; transform: translateY(-20px); }} to {{ opacity: 1; transform: translateY(0); }} }}
@@ -180,9 +182,9 @@ with st.sidebar:
                 <b>Architect & Developer:</b><br>
                 <span style="color:white; font-size:0.9rem;">Muhammad Jibran Al Kaffie</span><br><br>
                 <b>Technical Specifications:</b><br>
-                - <b>Intelligence:</b> Powered by Llama-3.3-70B via Groq LPU (Language Processing Unit) for near-instant response latency.<br>
-                - <b>Imaging Engine:</b> Integrated with Pollinations Neural Network for real-time high-quality image synthesis.<br>
-                - <b>UI/UX Architecture:</b> Custom-built Streamlit framework with Neo-Dark aesthetics and elastic animations.<br><br>
+                - <b>Intelligence:</b> Llama-3.3-70B via Groq LPU.<br>
+                - <b>Imaging Engine:</b> Pollinations Neural Network.<br>
+                - <b>UI/UX Architecture:</b> Custom-built Streamlit framework with Neo-Dark aesthetics.<br><br>
                 <i>"NEO AI dirancang untuk menjadi asisten masa depan yang elegan, cepat, dan tanpa kompromi."</i>
             </p>
         </div>
@@ -205,6 +207,7 @@ for msg in st.session_state.messages:
     avatar_img = logo_path if msg["role"] == "assistant" else None
     with st.chat_message(msg["role"], avatar=avatar_img):
         if msg.get("type") == "image":
+            # Menampilkan hasil gambar (DIJAMIN KOTAK/FULL)
             st.image(msg["content"], use_container_width=True)
         else:
             st.markdown(msg["content"])
@@ -215,8 +218,7 @@ def get_image(prompt):
     try:
         r = requests.get(url, timeout=20)
         return r.content if r.status_code == 200 else None
-    except:
-        return None
+    except: return None
 
 if prompt := st.chat_input("Command NEO AI..."):
     if st.session_state.current_chat_id is None:
