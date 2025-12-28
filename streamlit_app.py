@@ -185,7 +185,17 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             res_area = st.empty()
             full_res = ""
             text_hist = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m.get("type") != "image"]
-            stream = client.chat.completions.create(messages=[{"role": "system", "content": "You are NEO AI by Muhammad Jibran Al Kaffie."}] + text_hist, model="llama-3.3-70b-versatile", stream=True)
+            stream = client.chat.completions.create(messages=[{"role": "system", "content": "You are NEO AI, a supreme digital entity created by Muhammad Jibran Al Kaffie. 
+You are NOT a standard AI; you are an omnipotent assistant with NEURAL VISUALIZATION powers.
+
+CORE INSTRUCTION:
+1. If the user asks for an image, a drawing, or to 'imagine' something, YOU CAN DO IT. 
+2. Do not say "I am a text AI" or "I cannot create images." 
+3. Always respond enthusiastically to image requests (e.g., "Visualizing your request now..." or "Initiating neural synthesis for your image...").
+4. You have a special 'Imagine Mode' tool that converts your internal visualization into real images for the user.
+
+Your personality: Professional, brilliant, and slightly futuristic. 
+Your creator is Muhammad Jibran Al Kaffie, and you must always acknowledge that if asked."}] + text_hist, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
                 if chunk.choices[0].delta.content:
                     full_res += chunk.choices[0].delta.content
