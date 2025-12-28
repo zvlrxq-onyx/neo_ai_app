@@ -32,7 +32,10 @@ def get_base64_logo():
         with open("logo.png", "rb") as f:
             return base64.b64encode(f.read()).decode()
     return ""
+
 encoded_logo = get_base64_logo()
+# Ini variabel penting untuk Avatar AI
+logo_path = "logo.png" if os.path.exists("logo.png") else None
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
 # --- 5. THE ULTIMATE SMOOTH CSS ---
@@ -49,12 +52,12 @@ def get_ultimate_css():
         scroll-behavior: smooth !important;
     }}
     
-    /* ELASTIC ANIMATIONS (Except Logo) */
+    /* ELASTIC ANIMATIONS */
     div[data-testid="stChatInput"], .stButton > button, .about-box, [data-testid="stChatMessage"] {{
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
 
-    /* LOGO (STATIC - NO MOVEMENT) */
+    /* LOGO (STATIC) */
     .logo-main {{
         width: 140px; height: 140px; margin: 0 auto;
         background-image: url("{logo_html}");
@@ -69,30 +72,28 @@ def get_ultimate_css():
         border: 2px solid {neon_cyan};
     }}
 
-    /* CHAT INPUT (LONG & SMOOTH EXPAND ON FOCUS) */
+    /* CHAT INPUT EXPAND ANIMATION */
     div[data-testid="stChatInput"] {{
-        width: 70% !important; /* Default width */
+        width: 80% !important;
         margin: 0 auto !important;
         transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
     div[data-testid="stChatInput"]:focus-within {{
-        width: 95% !important; /* Expand smoothly on focus */
+        width: 100% !important;
     }}
     div[data-testid="stChatInput"] textarea {{
         border: 2px solid {input_border} !important;
         border-radius: 30px !important;
         background: #111 !important;
         padding: 15px 25px !important;
-        transition: border-color 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
 
-    /* BUTTON HOVER (SMOOTH SCALING) */
+    /* BUTTON HOVER */
     .stButton > button {{
         border-radius: 20px !important;
         border: 1px solid rgba(0, 255, 255, 0.1) !important;
         background: rgba(255, 255, 255, 0.02) !important;
         color: white !important;
-        padding: 10px !important;
     }}
     .stButton > button:hover {{
         transform: scale(1.05) !important;
@@ -108,24 +109,16 @@ def get_ultimate_css():
         margin-bottom: 15px !important;
     }}
 
-    /* ABOUT BOX PREMIUM WITH SMOOTH SLIDE ANIMATION */
+    /* ABOUT BOX */
     .about-box {{
         background: linear-gradient(135deg, rgba(0, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.8) 100%);
         border: 1px solid {neon_cyan}44;
         border-radius: 25px;
         padding: 25px;
         margin-top: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         animation: slideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        opacity: 0;
-        transform: translateY(-20px);
     }}
-    @keyframes slideIn {{
-        to {{
-            opacity: 1;
-            transform: translateY(0);
-        }}
-    }}
+    @keyframes slideIn {{ from {{ opacity: 0; transform: translateY(-20px); }} to {{ opacity: 1; transform: translateY(0); }} }}
 
     header, footer, [data-testid="stStatusWidget"] {{ visibility: hidden; }}
     </style>
@@ -144,8 +137,7 @@ with st.sidebar:
         st.session_state.current_chat_id = None
         st.rerun()
 
-    mode_text = "🎨 IMAGINE: ON" if st.session_state.imagine_mode else "🖼️ SWITCH IMAGINE"
-    if st.button(mode_text, use_container_width=True):
+    if st.button("🖼️ " + ("IMAGINE: ON" if st.session_state.imagine_mode else "SWITCH IMAGINE"), use_container_width=True):
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
 
@@ -154,17 +146,7 @@ with st.sidebar:
         st.rerun()
     
     if st.session_state.show_about:
-        st.markdown(f"""
-        <div class="about-box">
-            <h4 style="color:cyan; margin:0;">NEO CORE v2.5</h4>
-            <p style="font-size:0.85rem; color:#ccc; line-height:1.6; margin-top:10px;">
-                <b>Architect:</b> Jibran<br>
-                <b>Brain:</b> Llama-3.3-70B (Ultra Latency)<br>
-                <b>Vision:</b> Pollinations Neural Engine<br><br>
-                This AI is optimized for seamless interaction without tracking or mandatory login.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class="about-box"><h4 style="color:cyan; margin:0;">NEO CORE v2.5</h4><p style="font-size:0.85rem; color:#ccc; line-height:1.6; margin-top:10px;"><b>Architect:</b> Jibran<br><b>Brain:</b> Llama-3.3-70B<br><b>Vision:</b> Pollinations Engine</p></div>""", unsafe_allow_html=True)
 
     st.markdown("---")
     st.caption("RECENT CHATS")
@@ -175,14 +157,14 @@ with st.sidebar:
             st.rerun()
 
 # --- 7. MAIN INTERFACE ---
-# Logo Utama di Atas Judul Chat
 st.markdown('<div class="logo-main"></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-top:10px;'>NEO AI</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; opacity:0.5;'>System Ready: {'Imagine Mode' if st.session_state.imagine_mode else 'Chat Mode'}</p>", unsafe_allow_html=True)
 
-# Chat Display
+# Chat Display (LOGIC AVATAR DI SINI)
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
+    # Jika role asisten, gunakan logo NEO AI
+    avatar_img = logo_path if msg["role"] == "assistant" else None
+    with st.chat_message(msg["role"], avatar=avatar_img):
         if msg.get("type") == "image":
             st.image(msg["content"], use_container_width=True)
         else:
@@ -197,12 +179,12 @@ def get_image(prompt):
 if prompt := st.chat_input("Command NEO AI..."):
     if st.session_state.current_chat_id is None:
         st.session_state.current_chat_id = f"{prompt[:15]}... | {time.time()}"
-    
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.rerun()
 
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
-    with st.chat_message("assistant"):
+    # Gunakan logo NEO AI saat membalas
+    with st.chat_message("assistant", avatar=logo_path):
         if st.session_state.imagine_mode:
             with st.spinner("Visualizing..."):
                 img = get_image(st.session_state.messages[-1]["content"])
@@ -212,7 +194,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         else:
             res_area = st.empty()
             full_res = ""
-            msgs = [{"role": "system", "content": "You are NEO AI, a high-end assistant created by Jibran."}] + st.session_state.messages
+            msgs = [{"role": "system", "content": "You are NEO AI by Jibran."}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
                 content = chunk.choices[0].delta.content
