@@ -41,89 +41,52 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE SUPREME CSS (BALIKIN ANIMASI SMOOTH) ---
+# --- 5. THE SUPREME CSS (ANIMASI TETAP SMOOTH) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0px" if st.session_state.sidebar_visible else "-360px"
-    
     return f"""
     <style>
     html, body, [data-testid="stAppViewContainer"] {{ background-color: #050505 !important; color: #f0f0f0 !important; }}
     [data-testid="stStatusWidget"], header, footer {{ visibility: hidden; }}
-
-    /* SIDEBAR TRANSITION 0.7s - NO FLICKER */
     [data-testid="stSidebar"] {{
-        position: fixed !important;
-        left: {sidebar_pos} !important;
-        width: 350px !important;
-        background-color: #0a0a0a !important;
-        border-right: 1px solid {neon_cyan}33 !important;
-        transition: left 0.7s cubic-bezier(0.19, 1, 0.22, 1) !important;
-        z-index: 1000000 !important;
-        display: block !important;
-        visibility: visible !important;
+        position: fixed !important; left: {sidebar_pos} !important; width: 350px !important;
+        background-color: #0a0a0a !important; border-right: 1px solid {neon_cyan}33 !important;
+        transition: left 0.7s cubic-bezier(0.19, 1, 0.22, 1) !important; z-index: 1000000 !important;
+        visibility: visible !important; display: block !important;
     }}
-
-    /* HAMBURGER BUTTON */
     .stButton > button[key="hamburger_fixed"] {{
         position: fixed; top: 20px; left: 20px; z-index: 2000000 !important;
-        background: rgba(0,0,0,0.9) !important;
-        border: 2px solid {neon_cyan}44 !important;
-        border-radius: 50% !important;
-        width: 50px !important; height: 50px !important;
-        color: {neon_cyan} !important;
+        background: rgba(0,0,0,0.9) !important; border: 2px solid {neon_cyan}44 !important;
+        border-radius: 50% !important; width: 50px !important; height: 50px !important; color: {neon_cyan} !important;
     }}
-    
-    /* HOVER POP ON BUTTONS */
-    [data-testid="stSidebarContent"] .stButton > button {{
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-        border: 1px solid {neon_cyan}11 !important;
-    }}
-    [data-testid="stSidebarContent"] .stButton > button:hover {{
-        transform: scale(1.08) !important;
-        border-color: {neon_cyan} !important;
-        box-shadow: 0 0 15px {neon_cyan}44 !important;
-    }}
-
-    /* ABOUT PANEL ANIMATION */
-    .about-box {{
-        max-height: {"1000px" if st.session_state.show_about else "0px"};
-        opacity: {"1" if st.session_state.show_about else "0"};
-        overflow: hidden;
-        transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
-        padding: {"20px" if st.session_state.show_about else "0px"};
-        background: rgba(255,255,255,0.03);
-        border-radius: 15px;
-    }}
-
-    /* LOGO & CHAT INPUT */
     .logo-static {{ width: 130px; height: 130px; margin: 0 auto; background-image: url("{logo_html}"); background-size: cover; border-radius: 50%; border: 3px solid {neon_cyan}; }}
-    div[data-testid="stChatInput"] {{ width: 80% !important; margin: 0 auto !important; transition: 0.7s !important; }}
-    div[data-testid="stChatInput"]:focus-within {{ width: 100% !important; }}
+    .about-box {{ max-height: {"1000px" if st.session_state.show_about else "0px"}; opacity: {"1" if st.session_state.show_about else "0"}; overflow: hidden; transition: all 0.8s; padding: {"20px" if st.session_state.show_about else "0px"}; background: rgba(255,255,255,0.03); border-radius: 15px; }}
     </style>
     """
-
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
 
-# --- 6. HAMBURGER ---
+# --- 6. HAMBURGER & SIDEBAR ---
 if st.button("☰", key="hamburger_fixed"):
     st.session_state.sidebar_visible = not st.session_state.sidebar_visible
     st.rerun()
 
-# --- 7. SIDEBAR ---
 with st.sidebar:
     st.markdown('<div style="height: 60px;"></div>', unsafe_allow_html=True)
     st.markdown(f'<div class="logo-static" style="width:100px; height:100px;"></div>', unsafe_allow_html=True)
     st.markdown("<h2 style='text-align:center; color:cyan;'>NEO AI</h2>", unsafe_allow_html=True)
     st.markdown("---")
     
-    # 📄 FITUR DATA SOURCE (FILE ANALYST)
+    # 📄 DOKUMEN READER
     st.markdown("### 📄 DATA SOURCE")
     uploaded_doc = st.file_uploader("Upload file (.txt, .py, .md)", type=["txt", "py", "md"])
     doc_content = ""
     if uploaded_doc:
-        doc_content = uploaded_doc.read().decode("utf-8")
-        st.success(f"File {uploaded_doc.name} loaded!")
+        try:
+            doc_content = uploaded_doc.getvalue().decode("utf-8")
+            st.success(f"✅ {uploaded_doc.name} Loaded!")
+        except:
+            st.error("Gagal membaca file.")
 
     st.markdown("---")
     if st.button("➕ NEW SESSION", use_container_width=True):
@@ -139,17 +102,10 @@ with st.sidebar:
     if st.button("ℹ️ SYSTEM INFO", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
+    
+    st.markdown(f'<div class="about-box"><p style="font-size:0.8rem; color:#ccc;"><b>Architect:</b> Muhammad Jibran Al Kaffie<br><b>Engine:</b> NEO Engine 3.3 Stable</p></div>', unsafe_allow_html=True)
 
-    st.markdown(f"""<div class="about-box"><p style="font-size:0.8rem; color:#ccc;"><b>Architect:</b> Muhammad Jibran Al Kaffie<br><b>Engine:</b> NEO Engine 3.3 Stable</p></div>""", unsafe_allow_html=True)
-
-    st.markdown("---")
-    for cid in reversed(list(st.session_state.all_chats.keys())):
-        if st.button(cid.split(" | ")[0], key=f"h_{cid}", use_container_width=True):
-            st.session_state.messages = st.session_state.all_chats[cid]
-            st.session_state.current_chat_id = cid
-            st.rerun()
-
-# --- 8. MAIN UI ---
+# --- 7. MAIN UI ---
 st.markdown('<div style="margin-top:20px;"><div class="logo-static"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px;'>NEO AI</h1>", unsafe_allow_html=True)
 
@@ -160,7 +116,7 @@ for msg in st.session_state.messages:
         else:
             st.markdown(msg["content"])
 
-# --- 9. ENGINE (DATA ANALYSIS ENABLED) ---
+# --- 8. ENGINE (FIXED LOGIC) ---
 if user_input := st.chat_input("Command NEO AI..."):
     if st.session_state.current_chat_id is None:
         st.session_state.current_chat_id = f"{user_input[:15]}... | {time.time()}"
@@ -170,6 +126,7 @@ if user_input := st.chat_input("Command NEO AI..."):
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     last_user_msg = st.session_state.messages[-1]["content"]
     with st.chat_message("assistant", avatar="logo.png"):
+        
         if st.session_state.imagine_mode:
             with st.spinner("NEO AI is visualizing..."):
                 query = last_user_msg.replace(' ', '%20')
@@ -182,27 +139,35 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             res_area = st.empty()
             full_res = ""
             
-            # Gabungkan konteks file jika ada
-            final_user_prompt = last_user_msg
-            if doc_content:
-                final_user_prompt = f"Data File Content:\n{doc_content}\n\nUser Question: {last_user_msg}"
-
-            text_hist = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages[:-1]]
-            text_hist.append({"role": "user", "content": final_user_prompt})
+            # --- PROTEKSI: Filter hanya pesan teks untuk dikirim ke Groq ---
+            clean_history = []
+            for m in st.session_state.messages[:-1]:
+                if m.get("type") != "image": # Mengabaikan data gambar biner
+                    clean_history.append({"role": m["role"], "content": m["content"]})
             
-            sys_msg = "You are NEO AI by Muhammad Jibran Al Kaffie. Professional, futuristic, and helpful. Always analyze the provided data file content if present."
+            # --- INJEKSI FILE: Masukkan isi file ke prompt terakhir ---
+            final_prompt = last_user_msg
+            if doc_content:
+                final_prompt = f"USER UPLOADED FILE CONTENT:\n\"\"\"\n{doc_content}\n\"\"\"\n\nQUESTION: {last_user_msg}"
+            
+            clean_history.append({"role": "user", "content": final_prompt})
 
-            stream = client.chat.completions.create(
-                messages=[{"role": "system", "content": sys_msg}] + text_hist,
-                model="llama-3.3-70b-versatile",
-                stream=True
-            )
-            for chunk in stream:
-                if chunk.choices[0].delta.content:
-                    full_res += chunk.choices[0].delta.content
-                    res_area.markdown(full_res + "▌")
-            res_area.markdown(full_res)
-            st.session_state.messages.append({"role": "assistant", "content": full_res})
+            sys_msg = "You are NEO AI by Muhammad Jibran Al Kaffie. Professional, futuristic. If a file content is provided, analyze it thoroughly."
+
+            try:
+                stream = client.chat.completions.create(
+                    messages=[{"role": "system", "content": sys_msg}] + clean_history,
+                    model="llama-3.3-70b-versatile",
+                    stream=True
+                )
+                for chunk in stream:
+                    if chunk.choices[0].delta.content:
+                        full_res += chunk.choices[0].delta.content
+                        res_area.markdown(full_res + "▌")
+                res_area.markdown(full_res)
+                st.session_state.messages.append({"role": "assistant", "content": full_res})
+            except Exception as e:
+                st.error(f"Groq Error: {e}")
 
     st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
     st.rerun()
