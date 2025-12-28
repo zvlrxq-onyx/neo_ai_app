@@ -37,7 +37,7 @@ encoded_logo = get_base64_logo()
 logo_path = "logo.png" if os.path.exists("logo.png") else None
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ULTIMATE SMOOTH CSS (ENHANCED WITH BUTTON ANIMATIONS) ---
+# --- 5. THE ULTIMATE SMOOTH CSS ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     input_border = neon_cyan if st.session_state.imagine_mode else "rgba(0, 255, 255, 0.2)"
@@ -51,12 +51,12 @@ def get_ultimate_css():
         scroll-behavior: smooth !important;
     }}
     
-    /* GLOBAL TRANSITION */
+    /* GLOBAL TRANSITION (SMOOTH & ELASTIC) */
     div[data-testid="stChatInput"], .stButton > button, .about-box, [data-testid="stChatMessage"] {{
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
 
-    /* ONLY AVATAR IS ROUND (FIXED) */
+    /* ONLY AVATAR IS ROUND */
     [data-testid="stChatMessage"] div[data-testid="stChatAvatar"] img, 
     [data-testid="chatAvatarIcon-assistant"], 
     [data-testid="chatAvatarIcon-user"] {{
@@ -65,13 +65,13 @@ def get_ultimate_css():
         object-fit: cover !important;
     }}
 
-    /* AI GENERATED IMAGE (STAYS RECTANGLE) */
+    /* AI GENERATED IMAGE (RECTANGLE) */
     [data-testid="stChatMessage"] [data-testid="stImage"] img {{
-        border-radius: 15px !important; /* Kotak dengan sudut melengkung halus */
+        border-radius: 15px !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }}
 
-    /* LOGO & TITLE */
+    /* LOGO (STATIC) */
     .logo-main {{
         width: 140px; height: 140px; margin: 0 auto;
         background-image: url("{logo_html}");
@@ -132,13 +132,6 @@ def get_ultimate_css():
         background: rgba(0, 255, 255, 0.1) !important;
     }}
 
-    /* CHAT BUBBLES */
-    [data-testid="stChatMessage"] {{
-        border-radius: 25px !important;
-        background: rgba(255, 255, 255, 0.03) !important;
-        margin-bottom: 15px !important;
-    }}
-
     /* ABOUT BOX */
     .about-box {{
         background: linear-gradient(135deg, rgba(0, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.8) 100%);
@@ -184,8 +177,8 @@ with st.sidebar:
                 <b>Technical Specifications:</b><br>
                 - <b>Intelligence:</b> Llama-3.3-70B via Groq LPU.<br>
                 - <b>Imaging Engine:</b> Pollinations Neural Network.<br>
-                - <b>UI/UX Architecture:</b> Custom-built Streamlit framework with Neo-Dark aesthetics.<br><br>
-                <i>"NEO AI dirancang untuk menjadi asisten masa depan yang elegan, cepat, dan tanpa kompromi."</i>
+                - <b>UI/UX Architecture:</b> Neo-Dark Aesthetics.<br><br>
+                <i>"NEO AI is designed to be a future assistant that is elegant, fast, and uncompromising."</i>
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -207,7 +200,6 @@ for msg in st.session_state.messages:
     avatar_img = logo_path if msg["role"] == "assistant" else None
     with st.chat_message(msg["role"], avatar=avatar_img):
         if msg.get("type") == "image":
-            # Menampilkan hasil gambar (DIJAMIN KOTAK/FULL)
             st.image(msg["content"], use_container_width=True)
         else:
             st.markdown(msg["content"])
@@ -227,8 +219,22 @@ if prompt := st.chat_input("Command NEO AI..."):
     st.rerun()
 
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+    user_query = st.session_state.messages[-1]["content"].lower()
+    
     with st.chat_message("assistant", avatar=logo_path):
-        if st.session_state.imagine_mode:
+        # CEK PERINTAH KHUSUS GAMBAR
+        if "apakah kamu bisa membuat ku gambar" in user_query or "bisakah kamu membuat gambar" in user_query:
+            if not st.session_state.imagine_mode:
+                response = "Ya, tentu bisa! Tetapi kamu harus menyalakan **Mode Imagine** terlebih dahulu di sidebar untuk menggunakan fitur ini."
+                st.markdown(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+            else:
+                response = "Mode Imagine sudah aktif! Silakan ketik deskripsi gambar yang ingin kamu buat."
+                st.markdown(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+        
+        # JIKA MODE IMAGINE AKTIF
+        elif st.session_state.imagine_mode:
             with st.spinner("Visualizing Imagination..."):
                 img = get_image(st.session_state.messages[-1]["content"])
                 if img:
@@ -236,10 +242,12 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     st.session_state.messages.append({"role": "assistant", "content": img, "type": "image"})
                 else:
                     st.error("Engine busy. Please try again.")
+        
+        # MODE CHAT BIASA
         else:
             res_area = st.empty()
             full_res = ""
-            msgs = [{"role": "system", "content": "You are NEO AI, a high-end assistant created by Muhammad Jibran Al Kaffie."}] + st.session_state.messages
+            msgs = [{"role": "system", "content": f"You are NEO AI, a high-end assistant created by Muhammad Jibran Al Kaffie."}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
                 content = chunk.choices[0].delta.content
