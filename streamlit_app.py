@@ -142,32 +142,33 @@ def get_ultimate_css():
     }}
     @keyframes slideInDown {{ from {{ opacity: 0; transform: translateY(-15px); }} to {{ opacity: 1; transform: translateY(0); }} }}
 
-    /* CHAT MESSAGES STYLING FOR USER (RIGHT) AND AI (LEFT) */
-    .stChatMessage[data-testid="stChatMessage-user"] {{
+    /* CHAT MESSAGES STYLING FOR USER (RIGHT-ALIGNED) AND AI (LEFT-ALIGNED) */
+    .stChatMessage {{
+        max-width: 70% !important;
+        margin: 10px 0 !important;
+        animation: fadeIn 0.5s ease-out;
+    }}
+    .stChatMessage[data-testid*="user"] {{
+        margin-left: auto !important;
+        margin-right: 0 !important;
+        text-align: right !important;
         background: rgba(0, 255, 255, 0.1) !important;
         border: 1px solid {neon_cyan}33 !important;
         border-radius: 15px 15px 5px 15px !important;
-        margin-left: 20% !important;
-        margin-right: 5% !important;
         padding: 10px !important;
-        animation: fadeInRight 0.5s ease-out;
     }}
-    .stChatMessage[data-testid="stChatMessage-assistant"] {{
+    .stChatMessage[data-testid*="assistant"] {{
+        margin-left: 0 !important;
+        margin-right: auto !important;
+        text-align: left !important;
         background: rgba(0, 0, 0, 0.5) !important;
         border: 1px solid {neon_cyan}22 !important;
         border-radius: 15px 15px 15px 5px !important;
-        margin-right: 20% !important;
-        margin-left: 5% !important;
         padding: 10px !important;
-        animation: fadeInLeft 0.5s ease-out;
     }}
-    @keyframes fadeInRight {{
-        from {{ opacity: 0; transform: translateX(20px); }}
-        to {{ opacity: 1; transform: translateX(0); }}
-    }}
-    @keyframes fadeInLeft {{
-        from {{ opacity: 0; transform: translateX(-20px); }}
-        to {{ opacity: 1; transform: translateX(0); }}
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: translateY(10px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
     }}
 
     header, footer {{ visibility: hidden; }}
