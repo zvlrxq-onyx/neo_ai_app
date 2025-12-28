@@ -53,20 +53,33 @@ def get_ultimate_css():
     }}
     [data-testid="stStatusWidget"], header, footer {{ visibility: hidden; }}
 
-    /* SIDEBAR + SCROLLBAR CUSTOMIZATION */
+    /* SIDEBAR + SCROLLBAR CUSTOMIZATION WITH ENHANCED SCROLL LINE */
     [data-testid="stSidebar"] {{
         position: fixed !important; 
         left: {sidebar_pos} !important; 
         width: 350px !important;
         background-color: #0a0a0a !important; 
-        border-right: 1px solid {neon_cyan}33 !important;
+        border-right: 3px solid {neon_cyan} !important; /* Thicker border for separation */
         transition: left 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
         z-index: 1000000 !important;
         overflow-y: auto !important;
     }}
 
-    [data-testid="stSidebarContent"]::-webkit-scrollbar {{ width: 4px; }}
-    [data-testid="stSidebarContent"]::-webkit-scrollbar-thumb {{ background: {neon_cyan}33; border-radius: 10px; }}
+    [data-testid="stSidebarContent"]::-webkit-scrollbar {{
+        width: 8px; /* Wider scrollbar for better visibility */
+    }}
+    [data-testid="stSidebarContent"]::-webkit-scrollbar-track {{
+        background: rgba(0, 255, 255, 0.1); /* Subtle track background */
+        border-radius: 10px;
+    }}
+    [data-testid="stSidebarContent"]::-webkit-scrollbar-thumb {{
+        background: {neon_cyan}66; /* More visible thumb */
+        border-radius: 10px;
+        border: 1px solid {neon_cyan}33;
+    }}
+    [data-testid="stSidebarContent"]::-webkit-scrollbar-thumb:hover {{
+        background: {neon_cyan}99; /* Glow on hover */
+    }}
 
     /* BUTTONS HOVER & GLOW */
     .stButton > button {{
@@ -81,14 +94,21 @@ def get_ultimate_css():
         border-color: {neon_cyan} !important;
     }}
 
-    /* CHAT INPUT EXPAND SMOOTH & STRETCH EFFECT */
+    /* CHAT INPUT EXPAND SMOOTH & STRETCH EFFECT (ENHANCED) */
     [data-testid="stChatInput"] {{ 
         transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; 
         transform-origin: center !important;
     }}
     [data-testid="stChatInput"]:focus-within {{ 
-        transform: scaleX(1.05) scaleY(1.02) !important; 
-        box-shadow: 0 0 20px {neon_cyan}33 !important;
+        transform: scaleX(1.15) scaleY(1.05) !important; 
+        box-shadow: 0 0 25px {neon_cyan}55 !important;
+        border: 2px solid {neon_cyan} !important;
+    }}
+
+    /* BLUR EFFECT FOR STREAMING RESPONSE */
+    .blurred {{
+        filter: blur(2px) !important;
+        transition: filter 0.5s ease !important;
     }}
 
     /* IMAGE STYLING */
@@ -138,7 +158,7 @@ if st.button("☰", key="hamburger_fixed"):
 with st.sidebar:
     st.markdown('<div style="height: 60px;"></div>', unsafe_allow_html=True)
     st.markdown('<div class="logo-static"></div>', unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:cyan;'>NEO CONTROL</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:cyan;'>NEO AI</h2>", unsafe_allow_html=True)  # Changed from NEO CONTROL to NEO AI
     st.markdown("---")
     
     # --- FITUR BACA FILE (DATA SOURCE) ---
@@ -241,7 +261,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 for chunk in stream:
                     if chunk.choices[0].delta.content:
                         full_res += chunk.choices[0].delta.content
-                        res_area.markdown(full_res + "▌")
+                        res_area.markdown(f'<div class="blurred">{full_res}▌</div>', unsafe_allow_html=True)
                 res_area.markdown(full_res)
                 st.session_state.messages.append({"role": "assistant", "content": full_res})
             except: st.error("Engine failed to synchronize.")
