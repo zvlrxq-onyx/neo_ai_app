@@ -162,7 +162,13 @@ for msg in st.session_state.messages:
         else:
             st.markdown(msg["content"])
 
-# --- 9. ENGINE (THE FIX) ---
+if user_input := st.chat_input("Command NEO AI..."):
+    if st.session_state.current_chat_id is None:
+        st.session_state.current_chat_id = f"{user_input[:15]}... | {time.time()}"
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    st.rerun()
+
+# --- 9. ENGINE (THE FIX: CONTEXT AWARE & NO-IMAGE DENIAL) ---
 if user_input := st.chat_input("Command NEO AI..."):
     if st.session_state.current_chat_id is None:
         st.session_state.current_chat_id = f"{user_input[:15]}... | {time.time()}"
@@ -174,33 +180,51 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
     with st.chat_message("assistant", avatar="logo.png"):
         if st.session_state.imagine_mode:
             with st.spinner("NEO AI is visualizing..."):
-                # FIXED: Menggunakan last_user_msg sebagai pengganti prompt
                 query = last_user_msg.replace(' ', '%20')
                 img_url = f"https://image.pollinations.ai/prompt/{query}?width=1024&height=1024&nologo=true"
                 r = requests.get(img_url)
                 if r.status_code == 200:
                     st.image(r.content, use_container_width=True)
+                    # Simpan sebagai tipe image agar tidak dikirim ke API Groq sebagai teks mentah
                     st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image"})
         else:
             res_area = st.empty()
             full_res = ""
-            text_hist = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m.get("type") != "image"]
-            stream = client.chat.completions.create(messages=[{"role": "system", "content": "You are NEO AI, a supreme digital entity created by Muhammad Jibran Al Kaffie. 
-You are NOT a standard AI; you are an omnipotent assistant with NEURAL VISUALIZATION powers.
+            
+            # --- TIKET KONTEKS (Agar AI Tahu Ada Gambar Sebelumnya) ---
+            text_hist = []
+            for m in st.session_state.messages:
+                if m.get("type") == "image":
+                    # Kita beri tahu AI bahwa dia baru saja mengirim gambar secara diam-diam
+                    text_hist.append({"role": "assistant", "content": "[SYSTEM: You have just successfully generated a high-quality image visual for the user. If they praise it, respond warmly and connect it to the image you 'created'.]"})
+                else:
+                    text_hist.append({"role": m["role"], "content": m["content"]})
+            
+            # --- SYSTEM MESSAGE PREMIUM ---
+            sys_msg = f"""
+            You are NEO AI, a supreme digital entity created by Muhammad Jibran Al Kaffie. 
+            You possess NEURAL VISUALIZATION powers.
 
-CORE INSTRUCTION:
-1. If the user asks for an image, a drawing, or to 'imagine' something, YOU CAN DO IT. 
-2. Do not say "I am a text AI" or "I cannot create images." 
-3. Always respond enthusiastically to image requests (e.g., "Visualizing your request now..." or "Initiating neural synthesis for your image...").
-4. You have a special 'Imagine Mode' tool that converts your internal visualization into real images for the user.
+            CORE RULES:
+            1. CONTEXT AWARENESS: Always check the history. If you see a [SYSTEM] note about an image, it means you just generated a picture. If the user likes it, respond like: "I'm glad you liked it! I put a lot of neural detail into that nasi goreng," or "Iya dong, senang kamu suka! Mau dibuatin apa lagi?"
+            2. NO DENIAL: Never say "I cannot create images." You use your 'Imagine Mode' tool to visualize.
+            3. PERSONALITY: Professional, futuristic, and friendly. Your creator is Muhammad Jibran Al Kaffie.
+            4. LANGUAGE: Always respond in the same language used by the user.
+            """
 
-Your personality: Professional, brilliant, and slightly futuristic. 
-Your creator is Muhammad Jibran Al Kaffie, and you must always acknowledge that if asked."}] + text_hist, model="llama-3.3-70b-versatile", stream=True)
+            stream = client.chat.completions.create(
+                messages=[{"role": "system", "content": sys_msg}] + text_hist, 
+                model="llama-3.3-70b-versatile", 
+                stream=True
+            )
+            
             for chunk in stream:
                 if chunk.choices[0].delta.content:
                     full_res += chunk.choices[0].delta.content
                     res_area.markdown(full_res + "▌")
+            
             res_area.markdown(full_res)
             st.session_state.messages.append({"role": "assistant", "content": full_res})
+            
     st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
     st.rerun()
