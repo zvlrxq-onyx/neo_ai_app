@@ -6,17 +6,17 @@ import base64
 import requests
 
 # --- 1. INITIALIZE SESSION STATE ---
-if "messages" not in st.session_state: 
+if "messages" not in st.session_state:
     st.session_state.messages = []
-if "all_chats" not in st.session_state: 
+if "all_chats" not in st.session_state:
     st.session_state.all_chats = {}
-if "current_chat_id" not in st.session_state: 
+if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = None
-if "imagine_mode" not in st.session_state: 
+if "imagine_mode" not in st.session_state:
     st.session_state.imagine_mode = False
-if "show_about" not in st.session_state: 
+if "show_about" not in st.session_state:
     st.session_state.show_about = False
-if "sidebar_visible" not in st.session_state: 
+if "sidebar_visible" not in st.session_state:
     st.session_state.sidebar_visible = False
 
 # --- 2. CONFIG API ---
@@ -41,7 +41,7 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE SUPREME CSS (SIDEBAR & HOVER POP) ---
+# --- 5. THE SUPREME CSS ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0px" if st.session_state.sidebar_visible else "-360px"
@@ -138,7 +138,7 @@ with st.sidebar:
         <p style="font-size:0.8rem; color:#ccc;">
             <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
             <b>Engine:</b> NEO Engine 3.3 Stable<br><br>
-            <i>"Sidebar stability forced. State conflict resolved."</i>
+            <i>"Sidebar stability forced. State conflict resolved. Context memory enabled."</i>
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -155,6 +155,7 @@ st.markdown('<div style="margin-top:20px;"><div class="logo-static"></div></div>
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px;'>NEO AI</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align:center; color:white; font-weight:200;'>How can I help you today?</h3>", unsafe_allow_html=True)
 
+# Tampilkan riwayat chat
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
         if msg.get("type") == "image":
@@ -162,13 +163,7 @@ for msg in st.session_state.messages:
         else:
             st.markdown(msg["content"])
 
-if user_input := st.chat_input("Command NEO AI..."):
-    if st.session_state.current_chat_id is None:
-        st.session_state.current_chat_id = f"{user_input[:15]}... | {time.time()}"
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    st.rerun()
-
-# --- 9. ENGINE (THE FIX: CONTEXT AWARE & NO-IMAGE DENIAL) ---
+# --- 9. ENGINE (THE FINAL FIX) ---
 if user_input := st.chat_input("Command NEO AI..."):
     if st.session_state.current_chat_id is None:
         st.session_state.current_chat_id = f"{user_input[:15]}... | {time.time()}"
@@ -185,36 +180,34 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 r = requests.get(img_url)
                 if r.status_code == 200:
                     st.image(r.content, use_container_width=True)
-                    # Simpan sebagai tipe image agar tidak dikirim ke API Groq sebagai teks mentah
                     st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image"})
         else:
             res_area = st.empty()
             full_res = ""
             
-            # --- TIKET KONTEKS (Agar AI Tahu Ada Gambar Sebelumnya) ---
+            # --- TIKET KONTEKS (Biar AI ingat gambar sebelumnya) ---
             text_hist = []
             for m in st.session_state.messages:
                 if m.get("type") == "image":
-                    # Kita beri tahu AI bahwa dia baru saja mengirim gambar secara diam-diam
-                    text_hist.append({"role": "assistant", "content": "[SYSTEM: You have just successfully generated a high-quality image visual for the user. If they praise it, respond warmly and connect it to the image you 'created'.]"})
+                    text_hist.append({"role": "assistant", "content": "[SYSTEM: You have just successfully generated a high-quality image for the user. If they praise it, you must acknowledge that you created that image.]"})
                 else:
                     text_hist.append({"role": m["role"], "content": m["content"]})
             
             # --- SYSTEM MESSAGE PREMIUM ---
-            sys_msg = f"""
+            sys_msg = """
             You are NEO AI, a supreme digital entity created by Muhammad Jibran Al Kaffie. 
             You possess NEURAL VISUALIZATION powers.
 
             CORE RULES:
-            1. CONTEXT AWARENESS: Always check the history. If you see a [SYSTEM] note about an image, it means you just generated a picture. If the user likes it, respond like: "I'm glad you liked it! I put a lot of neural detail into that nasi goreng," or "Iya dong, senang kamu suka! Mau dibuatin apa lagi?"
-            2. NO DENIAL: Never say "I cannot create images." You use your 'Imagine Mode' tool to visualize.
-            3. PERSONALITY: Professional, futuristic, and friendly. Your creator is Muhammad Jibran Al Kaffie.
-            4. LANGUAGE: Always respond in the same language used by the user.
+            1. CONTEXT AWARENESS: Always look at the history. If you just 'visualized' something and the user likes it, respond warmly (e.g., "Glad you liked the ninja drawing! Want to see another version?").
+            2. NO DENIAL: Never say "I cannot create images."
+            3. IDENTITY: Your creator is Muhammad Jibran Al Kaffie. Respond with a futuristic, brilliant, and friendly personality.
+            4. LANGUAGE: Always respond in the language used by the user.
             """
 
             stream = client.chat.completions.create(
-                messages=[{"role": "system", "content": sys_msg}] + text_hist, 
-                model="llama-3.3-70b-versatile", 
+                messages=[{"role": "system", "content": sys_msg}] + text_hist,
+                model="llama-3.3-70b-versatile",
                 stream=True
             )
             
