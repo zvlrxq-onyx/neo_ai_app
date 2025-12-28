@@ -35,7 +35,7 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ULTIMATE SMOOTH, GLOW & SLIDE CSS ---
+# --- 5. THE ULTIMATE SMOOTH, GLOW & INTERNAL SLIDE CSS ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0" if st.session_state.sidebar_visible else "-350px"
@@ -91,20 +91,21 @@ def get_ultimate_css():
         background: rgba(0, 255, 255, 0.08) !important;
     }}
 
-    /* MODERN ABOUT PANEL (VERTICAL SLIDE) */
-    .about-panel {{
-        background: linear-gradient(135deg, rgba(0, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.9) 100%);
+    /* ABOUT PANEL INSIDE SIDEBAR (SMOOTH SLIDE DOWN) */
+    .about-sidebar-panel {{
+        background: rgba(0, 255, 255, 0.05);
         border: 1px solid {neon_cyan}55;
-        border-radius: 20px;
-        padding: 25px;
-        margin-top: 20px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px {neon_cyan}11;
+        border-radius: 15px;
+        padding: 15px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+        box-shadow: inset 0 0 15px {neon_cyan}11;
+        animation: slideDownAbout 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
         overflow: hidden;
-        animation: slideDown 0.7s cubic-bezier(0.19, 1, 0.22, 1) forwards;
     }}
-    @keyframes slideDown {{
-        from {{ opacity: 0; transform: translateY(-30px); max-height: 0; }}
-        to {{ opacity: 1; transform: translateY(0); max-height: 1000px; }}
+    @keyframes slideDownAbout {{
+        from {{ opacity: 0; max-height: 0; transform: translateY(-10px); }}
+        to {{ opacity: 1; max-height: 1000px; transform: translateY(0); }}
     }}
 
     /* LOGO PULSING */
@@ -132,10 +133,6 @@ def get_ultimate_css():
         border-radius: 30px !important;
         background: #111 !important;
     }}
-    div[data-testid="stChatInput"] textarea:focus {{
-        border-color: {neon_cyan} !important;
-        box-shadow: 0 0 25px {neon_cyan}33 !important;
-    }}
 
     header, footer {{ visibility: hidden; }}
     </style>
@@ -148,26 +145,43 @@ if st.button("☰", key="hamburger"):
     st.session_state.sidebar_visible = not st.session_state.sidebar_visible
     st.rerun()
 
-# --- 7. SIDEBAR ---
+# --- 7. SIDEBAR (ABOUT IS NOW HERE) ---
 with st.sidebar:
     st.markdown('<div style="height: 50px;"></div>', unsafe_allow_html=True)
     st.markdown(f'<div style="width:100px; height:100px; background-image:url({logo_html}); background-size:cover; border-radius:50%; border:2px solid cyan; margin:0 auto; box-shadow: 0 0 20px cyan;"></div>', unsafe_allow_html=True)
-    st.markdown(f"<h2 style='text-align:center; color:cyan; letter-spacing:2px;'>NEO AI</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='text-align:center; color:cyan; letter-spacing:2px; margin-bottom:20px;'>NEO AI</h2>", unsafe_allow_html=True)
     
-    st.markdown("---")
+    # NEW SESSION BUTTON
     if st.button("➕ NEW SESSION", use_container_width=True):
         st.session_state.messages = []
         st.session_state.current_chat_id = None
         st.rerun()
 
+    # IMAGINE MODE TOGGLE
     imagine_lbl = "🎨 IMAGINE: ON" if st.session_state.imagine_mode else "🖼️ MODE: CHAT"
     if st.button(imagine_lbl, use_container_width=True):
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
 
+    # SYSTEM INFO TOGGLE
     if st.button("ℹ️ SYSTEM INFO", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
+    
+    # ABOUT PANEL (INSIDE SIDEBAR)
+    if st.session_state.show_about:
+        st.markdown(f"""
+        <div class="about-sidebar-panel">
+            <h4 style="color:#00ffff; margin-bottom:10px; font-size:0.9rem;">NEO ARCHITECTURE</h4>
+            <p style="color:#ccc; font-size:0.75rem; line-height:1.5;">
+                <b>Designed by:</b> Muhammad Jibran Al Kaffie<br><br>
+                NEO AI is a futuristic neural interface. Engineered for seamless interaction, 
+                it utilizes Llama-3.3-70B for high-speed logic and Pollinations for 
+                advanced image generation.<br><br>
+                <i>The boundaries between thought and digital creation are now dissolved.</i>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("---")
     st.caption("RECENT HISTORY")
@@ -178,30 +192,6 @@ with st.sidebar:
             st.rerun()
 
 # --- 8. MAIN INTERFACE ---
-if st.session_state.show_about:
-    st.markdown(f"""
-    <div class="about-panel">
-        <h3 style="color:#00ffff; margin-bottom:15px; letter-spacing:2px;">NEO CORE SYSTEM ARCHITECTURE</h3>
-        <p style="color:#fff; font-size:0.95rem; line-height:1.7;">
-            <b>Overview:</b><br>
-            NEO AI is a sophisticated neural interface designed by <b>Muhammad Jibran Al Kaffie</b>. 
-            It represents the pinnacle of neo-futuristic AI design, blending high-speed processing 
-            capabilities with a sleek, minimalist aesthetic.
-            <br><br>
-            <b>Technical Specifications:</b><br>
-            • <b>Core Intelligence:</b> Powered by the Llama-3.3-70B model via Groq's LPU technology, ensuring near-instantaneous response times.<br>
-            • <b>Visual Engine:</b> Integrated with the Pollinations Neural Network for high-fidelity, complex image generation.<br>
-            • <b>UI/UX:</b> Built on a custom-engineered Streamlit framework featuring elastic CSS animations, glassmorphism, and anti-flicker rendering.
-            <br><br>
-            <b>Philosophy:</b><br>
-            The system is built on the principle of <i>"Seamless Intelligence"</i>—where the boundary between human imagination and AI execution is eliminated through a smooth, responsive, and visually immersive experience.
-        </p>
-        <p style="color:#00ffff; font-size:0.8rem; margin-top:15px; text-align:right; font-style:italic;">
-            "Designed for the future, engineered for the present."
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
 st.markdown('<div style="text-align:center; margin-top:20px;"><div class="logo-main"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px;'>NEO AI</h1>", unsafe_allow_html=True)
 
@@ -233,7 +223,14 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         else:
             res_area = st.empty()
             full_res = ""
-            sys_msg = "You are NEO AI, created by Muhammad Jibran Al Kaffie."
+            # --- SYSTEM INSTRUCTION UPDATED ---
+            sys_msg = (
+                "You are NEO AI, a cutting-edge artificial intelligence created by Muhammad Jibran Al Kaffie. "
+                "You are sharp, professional, and future-oriented. "
+                "CRITICAL CAPABILITY: You have the power to create highly complex and artistic images. "
+                "However, if a user asks for an image, you MUST tell them they need to open the sidebar "
+                "via the ☰ menu and turn ON the 'Imagine Mode' first. Only after they do that can you visualize."
+            )
             msgs = [{"role": "system", "content": sys_msg}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
