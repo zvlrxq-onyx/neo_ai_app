@@ -11,17 +11,16 @@ from PIL import Image
 if "messages" not in st.session_state: st.session_state.messages = []
 if "all_chats" not in st.session_state: st.session_state.all_chats = {}
 if "current_chat_id" not in st.session_state: st.session_state.current_chat_id = None
-if "show_about" not in st.session_state: st.session_state.show_about = False
-if "editing_chat_id" not in st.session_state: st.session_state.editing_chat_id = None
 if "imagine_mode" not in st.session_state: st.session_state.imagine_mode = False
 
 # --- 2. CONFIG API ---
 try:
     GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
-    HF_TOKEN = st.secrets["HF_TOKEN"]
+    # HF_TOKEN opsional jika pakai Pollinations, tapi tetap simpan jika pakai HF
+    HF_TOKEN = st.secrets.get("HF_TOKEN", "") 
     client = Groq(api_key=GROQ_API_KEY)
 except:
-    st.error("MISSING API KEYS: Check HF_TOKEN & GROQ_API_KEY in Secrets")
+    st.error("GROQ_API_KEY Missing!")
     st.stop()
 
 # --- 3. PAGE CONFIG ---
@@ -36,108 +35,94 @@ def get_base64_logo():
     return ""
 encoded_logo = get_base64_logo()
 
-# --- 5. PREMIUM CSS (DYNAMIC BORDER & CLEAN UI) ---
+# --- 5. CLEAN & DYNAMIC CSS ---
 def get_pro_css():
     neon_cyan = "#00ffff"
-    # Logic: Jika imagine_mode aktif, border input jadi cyan terang
-    border_color = neon_cyan if st.session_state.imagine_mode else "rgba(0, 255, 255, 0.2)"
-    glow = f"0 0 15px {neon_cyan}" if st.session_state.imagine_mode else "none"
+    # Border berubah warna jika Imagine Mode Aktif
+    input_border = neon_cyan if st.session_state.imagine_mode else "rgba(0, 255, 255, 0.2)"
+    input_glow = f"0 0 15px {neon_cyan}66" if st.session_state.imagine_mode else "none"
     
     return f"""
     <style>
     html {{ scroll-behavior: smooth; }}
-    html, body, [data-testid="stAppViewContainer"], .stApp {{ background-color: #080808 !important; color: #e0e0e0 !important; }}
-    [data-testid="stStatusWidget"] {{ display: none; }}
-    * {{ transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }}
-
-    .center-container {{ display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 20px; }}
-    .logo-circle {{
-        width: 110px; height: 110px;
-        background-image: url("data:image/png;base64,{encoded_logo}");
-        background-size: cover; border-radius: 50%; border: 2px solid {neon_cyan};
-        box-shadow: 0 0 25px {neon_cyan}33;
-    }}
-    .neon-title {{
-        text-align: center; color: {neon_cyan}; font-size: 3rem; 
-        font-weight: 900; letter-spacing: 10px; text-transform: uppercase;
-    }}
-
-    /* INPUT STYLING - DYNAMIC BORDER */
+    body, .stApp {{ background-color: #080808 !important; color: #e0e0e0 !important; }}
+    * {{ transition: all 0.4s ease-in-out; }}
+    
+    /* INPUT BOX DYNAMIC */
     div[data-testid="stChatInput"] textarea {{
-        border: 1.5px solid {border_color} !important;
-        box-shadow: {glow} !important;
-        border-radius: 30px !important;
+        border: 2px solid {input_border} !important;
+        box-shadow: {input_glow} !important;
+        border-radius: 25px !important;
         background: #111 !important;
     }}
 
-    /* SIDEBAR */
-    section[data-testid="stSidebar"] {{ background-color: #050505 !important; border-right: 1px solid {neon_cyan}22; }}
-    .stButton > button {{ border-radius: 30px !important; background: transparent !important; color: white !important; border: 1px solid {neon_cyan}33 !important; }}
-    .stButton > button:hover {{ transform: scale(1.05); border-color: {neon_cyan}; box-shadow: 0 0 15px {neon_cyan}44; }}
-
-    header, footer {{ visibility: hidden; }}
+    .logo-circle {{
+        width: 100px; height: 100px; margin: 0 auto;
+        background-image: url("data:image/png;base64,{encoded_logo}");
+        background-size: cover; border-radius: 50%; border: 2px solid {neon_cyan};
+        box-shadow: 0 0 20px {neon_cyan}33;
+    }}
+    
+    /* Hide boring elements */
+    header, footer, [data-testid="stStatusWidget"] {{ visibility: hidden; }}
+    
+    /* Sidebar styling */
+    section[data-testid="stSidebar"] {{ background-color: #050505 !important; }}
     </style>
     """
 
 st.markdown(get_pro_css(), unsafe_allow_html=True)
 
-# --- 6. HUGGING FACE STABLE ENGINE ---
-def generate_image(prompt):
-    # Menggunakan SDXL (lebih stabil & cepat untuk free tier)
-    API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-    response = requests.post(API_URL, headers=headers, json={"inputs": prompt})
+# --- 6. SUPER STABLE IMAGE GENERATOR (Pollinations Bypass) ---
+def get_image_ai(prompt):
+    # Pakai Pollinations karena lebih jarang 'busy' dibanding HF Free Tier
+    # Ini akan beneran menghasilkan file gambar, bukan tulisan/ASCII
+    prompt_encoded = prompt.replace(" ", "%20")
+    image_url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1024&height=1024&nologo=true"
+    response = requests.get(image_url)
     if response.status_code == 200:
         return response.content
-    else:
-        return None
+    return None
 
 # --- 7. SIDEBAR ---
 with st.sidebar:
-    st.markdown(f'<div class="center-container"><div class="logo-circle"></div><h2 style="color:cyan;">NEO AI</h2></div>', unsafe_allow_html=True)
+    st.markdown('<div class="logo-circle"></div>', unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:cyan;'>NEO AI</h2>", unsafe_allow_html=True)
+    
     if st.button("NEW SESSION", use_container_width=True):
         st.session_state.messages = []
         st.session_state.current_chat_id = None
         st.rerun()
 
     st.markdown("---")
-    # TOMBOL IMAGINE DI SINI (Dekat area input sidebar tapi fungsional)
-    st.markdown("<p style='font-size:0.8rem; color:grey;'>INTERFACE MODES</p>", unsafe_allow_html=True)
-    if st.button(f"{'🎨 IMAGINE ACTIVE' if st.session_state.imagine_mode else '🖼️ SWITCH TO IMAGINE'}", use_container_width=True):
+    # TOMBOL SWITCH MODE
+    mode_label = "🎨 IMAGINE MODE: ON" if st.session_state.imagine_mode else "🖼️ SWITCH TO IMAGINE"
+    if st.button(mode_label, use_container_width=True):
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
-
+    
     st.markdown("---")
+    # History
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
-        name = chat_id.split(" | ")[0]
-        c1, c2 = st.columns([0.8, 0.2])
-        with c1:
-            if st.button(name, key=f"h_{chat_id}", use_container_width=True):
-                st.session_state.messages = st.session_state.all_chats[chat_id]
-                st.session_state.current_chat_id = chat_id
-                st.rerun()
-        with c2:
-            if st.button("✏️", key=f"e_{chat_id}"):
-                st.session_state.editing_chat_id = chat_id
-                st.rerun()
-
-    if st.button("ABOUT NEO", use_container_width=True):
-        st.session_state.show_about = not st.session_state.show_about
-        st.rerun()
+        if st.button(chat_id.split(" | ")[0], key=f"h_{chat_id}", use_container_width=True):
+            st.session_state.messages = st.session_state.all_chats[chat_id]
+            st.session_state.current_chat_id = chat_id
+            st.rerun()
 
 # --- 8. MAIN INTERFACE ---
-st.markdown(f'<div class="center-container"><div class="logo-circle"></div><h1 class="neon-title">NEO AI</h1></div>', unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:10px;'>NEO AI</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; opacity:0.6;'>{'Mode: Imagine (High Quality Image)' if st.session_state.imagine_mode else 'Mode: Chat (Llama-3.3)'}</p>", unsafe_allow_html=True)
 
-# Container Chat
+# Render Chat
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         if msg.get("type") == "image":
-            st.image(msg["content"], use_container_width=True)
+            st.image(msg["content"])
         else:
             st.markdown(msg["content"])
 
-# --- 9. LOGIC CHAT & AUTO-SCROLL ---
-if prompt := st.chat_input("TYPE SOMETHING..."):
+# --- 9. CHAT LOGIC ---
+if prompt := st.chat_input("Enter command..."):
     if st.session_state.current_chat_id is None:
         st.session_state.current_chat_id = f"{prompt[:15]}... | {time.time()}"
     
@@ -147,18 +132,19 @@ if prompt := st.chat_input("TYPE SOMETHING..."):
 
     with st.chat_message("assistant"):
         if st.session_state.imagine_mode:
-            with st.spinner("Generating Vision..."):
-                img_data = generate_image(prompt)
-                if img_data:
-                    img = Image.open(io.BytesIO(img_data))
-                    st.image(img, caption="Generated by NEO AI", use_container_width=True)
-                    st.session_state.messages.append({"role": "assistant", "content": img, "type": "image"})
+            # JALUR KHUSUS GAMBAR (Tidak lewat Groq)
+            with st.spinner("🎨 Creating Masterpiece..."):
+                img_bytes = get_image_ai(prompt)
+                if img_bytes:
+                    st.image(img_bytes, caption=f"NEO Imagination: {prompt}")
+                    st.session_state.messages.append({"role": "assistant", "content": img_bytes, "type": "image"})
                 else:
-                    st.error("HuggingFace is busy. Try again in a few seconds.")
+                    st.error("Failed to render image.")
         else:
+            # JALUR KHUSUS CHAT (Groq)
             res_area = st.empty()
             full_res = ""
-            msgs = [{"role": "system", "content": "You are NEO AI by Jibran. Be sleek and helpful."}] + st.session_state.messages
+            msgs = [{"role": "system", "content": "You are NEO AI."}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
                 content = chunk.choices[0].delta.content
