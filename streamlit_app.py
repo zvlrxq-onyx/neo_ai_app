@@ -53,32 +53,32 @@ def get_ultimate_css():
     }}
     [data-testid="stStatusWidget"], header, footer {{ visibility: hidden; }}
 
-    /* SIDEBAR + SCROLLBAR CUSTOMIZATION WITH ENHANCED SCROLL LINE */
+    /* SIDEBAR + SCROLLBAR CUSTOMIZATION WITH THIN SCROLL LINE */
     [data-testid="stSidebar"] {{
         position: fixed !important; 
         left: {sidebar_pos} !important; 
         width: 350px !important;
         background-color: #0a0a0a !important; 
-        border-right: 3px solid {neon_cyan} !important; /* Thicker border for separation */
+        border-right: 1px solid {neon_cyan}33 !important; /* Thin border back to original */
         transition: left 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
         z-index: 1000000 !important;
         overflow-y: auto !important;
     }}
 
     [data-testid="stSidebarContent"]::-webkit-scrollbar {{
-        width: 8px; /* Wider scrollbar for better visibility */
+        width: 6px; /* Thin scrollbar line */
     }}
     [data-testid="stSidebarContent"]::-webkit-scrollbar-track {{
-        background: rgba(0, 255, 255, 0.1); /* Subtle track background */
-        border-radius: 10px;
+        background: rgba(0, 255, 255, 0.05); /* Very subtle track */
+        border-radius: 5px;
     }}
     [data-testid="stSidebarContent"]::-webkit-scrollbar-thumb {{
-        background: {neon_cyan}66; /* More visible thumb */
-        border-radius: 10px;
-        border: 1px solid {neon_cyan}33;
+        background: {neon_cyan}88; /* Visible thin thumb */
+        border-radius: 5px;
+        border: 1px solid {neon_cyan}44;
     }}
     [data-testid="stSidebarContent"]::-webkit-scrollbar-thumb:hover {{
-        background: {neon_cyan}99; /* Glow on hover */
+        background: {neon_cyan}aa; /* Slight glow on hover */
     }}
 
     /* BUTTONS HOVER & GLOW */
@@ -158,7 +158,7 @@ if st.button("☰", key="hamburger_fixed"):
 with st.sidebar:
     st.markdown('<div style="height: 60px;"></div>', unsafe_allow_html=True)
     st.markdown('<div class="logo-static"></div>', unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:cyan;'>NEO AI</h2>", unsafe_allow_html=True)  # Changed from NEO CONTROL to NEO AI
+    st.markdown("<h2 style='text-align:center; color:cyan;'>NEO AI</h2>", unsafe_allow_html=True)
     st.markdown("---")
     
     # --- FITUR BACA FILE (DATA SOURCE) ---
