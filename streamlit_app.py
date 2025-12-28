@@ -51,8 +51,8 @@ def get_ultimate_css():
         scroll-behavior: smooth !important;
     }}
     
-    /* ELASTIC ANIMATIONS */
-    div[data-testid="stChatInput"], .stButton > button, .about-box, [data-testid="stChatMessage"] {{
+    /* ELASTIC ANIMATIONS FOR ALL ELEMENTS */
+    div[data-testid="stChatInput"], .stButton > button, .about-box, [data-testid="stChatMessage"], .logo-main, .logo-sidebar {{
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
 
@@ -62,7 +62,7 @@ def get_ultimate_css():
         border: 1px solid {neon_cyan}44 !important;
     }}
 
-    /* LOGO (STATIC) */
+    /* LOGO (STATIC BUT SMOOTH IF NEEDED) */
     .logo-main {{
         width: 140px; height: 140px; margin: 0 auto;
         background-image: url("{logo_html}");
@@ -91,6 +91,39 @@ def get_ultimate_css():
         border-radius: 30px !important;
         background: #111 !important;
         padding: 15px 25px !important;
+    }}
+
+    /* ENHANCED BUTTON ANIMATIONS: HOVER & ACTIVE */
+    .stButton > button {{
+        border-radius: 20px !important;
+        border: 1px solid rgba(0, 255, 255, 0.1) !important;
+        background: rgba(255, 255, 255, 0.02) !important;
+        color: white !important;
+        padding: 10px !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }}
+    .stButton > button::before {{
+        content: '';
+        position: absolute;
+        top: 0; left: -100%;
+        width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, {neon_cyan}44, transparent);
+        transition: left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    }}
+    .stButton > button:hover {{
+        transform: scale(1.08) !important;
+        border-color: {neon_cyan} !important;
+        box-shadow: 0 0 20px {neon_cyan}44 !important;
+    }}
+    .stButton > button:hover::before {{
+        left: 100% !important;
+    }}
+    .stButton > button:active {{
+        transform: scale(0.95) !important;
+        border-color: {neon_cyan} !important;
+        box-shadow: 0 0 30px {neon_cyan}77 !important;
+        background: rgba(0, 255, 255, 0.1) !important;
     }}
 
     /* CHAT BUBBLES */
@@ -147,9 +180,9 @@ with st.sidebar:
                 <b>Architect & Developer:</b><br>
                 <span style="color:white; font-size:0.9rem;">Muhammad Jibran Al Kaffie</span><br><br>
                 <b>Technical Specifications:</b><br>
-                • <b>Intelligence:</b> Powered by Llama-3.3-70B via Groq LPU (Language Processing Unit) for near-instant response latency.<br>
-                • <b>Imaging Engine:</b> Integrated with Pollinations Neural Network for real-time high-quality image synthesis.<br>
-                • <b>UI/UX Architecture:</b> Custom-built Streamlit framework with Neo-Dark aesthetics and elastic animations.<br><br>
+                - <b>Intelligence:</b> Powered by Llama-3.3-70B via Groq LPU (Language Processing Unit) for near-instant response latency.<br>
+                - <b>Imaging Engine:</b> Integrated with Pollinations Neural Network for real-time high-quality image synthesis.<br>
+                - <b>UI/UX Architecture:</b> Custom-built Streamlit framework with Neo-Dark aesthetics and elastic animations.<br><br>
                 <i>"NEO AI dirancang untuk menjadi asisten masa depan yang elegan, cepat, dan tanpa kompromi."</i>
             </p>
         </div>
