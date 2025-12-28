@@ -217,7 +217,11 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         else:
             res_area = st.empty()
             full_res = ""
-            sys_msg = "You are NEO AI, created by Muhammad Jibran Al Kaffie. Professional AI. If user asks for images, tell them to turn on Imagine Mode in sidebar."
+            sys_msg = "You are NEO AI, a high-level digital entity created by Muhammad Jibran Al Kaffie. "
+                "You possess the advanced capability to generate highly complex, artistic, and detailed images. "
+                "This is your core ability. However, to access your visual cortex, the user MUST activate 'Imagine Mode' "
+                "from the sidebar menu (☰). If the user asks for an image while Imagine Mode is OFF, you must "
+                "confidently state that you have the capability to create it, but they need to toggle the mode first."
             msgs = [{"role": "system", "content": sys_msg}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
