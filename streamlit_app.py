@@ -20,14 +20,14 @@ if "sidebar_visible" not in st.session_state: st.session_state.sidebar_visible =
 # --- 2. CONFIG API ---
 try:
     groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-    # Inisialisasi Gemini 3 Client
+    # Client untuk Gemini 3 Pro
     gemini_client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 except Exception as e:
-    st.error(f"⚠️ API Key Error: {e}")
+    st.error(f"⚠️ API Configuration Failure: {e}")
     st.stop()
 
 # --- 3. PAGE CONFIG ---
-st.set_page_config(page_title="NEO AI", page_icon="⚡", layout="centered")
+st.set_page_config(page_title="NEO AI SUPREME", page_icon="⚡", layout="centered")
 
 # --- 4. AUTO-SCROLL JS ---
 def auto_scroll():
@@ -42,28 +42,31 @@ def get_base64_logo():
     return ""
 logo_html = f'data:image/png;base64,{get_base64_logo()}'
 
-# --- 6. SUPREME CSS ---
+# --- 6. THE SUPREME CSS (SMOOTH & FUTURISTIC) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0px" if st.session_state.sidebar_visible else "-360px"
     return f"""
     <style>
-    html, body, [data-testid="stAppViewContainer"] {{ background-color: #050505 !important; color: #f0f0f0 !important; }}
+    html, body, [data-testid="stAppViewContainer"] {{ background-color: #050505 !important; color: #f0f0f0 !important; font-family: 'Inter', sans-serif; }}
     [data-testid="stStatusWidget"], header, footer {{ visibility: hidden; }}
 
+    /* Sidebar Animation */
     [data-testid="stSidebar"] {{
         position: fixed !important; left: {sidebar_pos} !important; width: 350px !important;
         background-color: #0a0a0a !important; border-right: 1px solid {neon_cyan}33 !important;
         transition: left 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important; z-index: 1000000 !important;
     }}
     
+    /* Hamburger Style */
     .stButton > button[key="hamburger_fixed"] {{
         position: fixed; top: 20px; left: 20px; z-index: 2000001 !important;
-        background: rgba(0,0,0,0.8) !important; border: 1px solid {neon_cyan}44 !important; border-radius: 50% !important;
+        background: rgba(0,0,0,0.8) !important; border: 1px solid {neon_cyan}44 !important;
+        border-radius: 50% !important; width: 50px !important; height: 50px !important; color: {neon_cyan} !important;
     }}
 
     .stButton > button {{ transition: all 0.5s ease !important; }}
-    .stButton > button:hover {{ transform: scale(1.08) !important; box-shadow: 0 0 20px {neon_cyan}66 !important; }}
+    .stButton > button:hover {{ transform: scale(1.08) !important; box-shadow: 0 0 20px {neon_cyan}66 !important; border-color: {neon_cyan} !important; }}
 
     [data-testid="stChatInput"] {{ transition: all 0.6s ease !important; }}
     [data-testid="stChatInput"]:focus-within {{ transform: scaleX(1.03) !important; }}
@@ -89,20 +92,32 @@ if st.button("☰", key="hamburger_fixed"):
 
 with st.sidebar:
     st.markdown('<div style="height: 60px;"></div><div class="logo-static"></div>', unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:cyan;'>NEO AI</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:cyan; letter-spacing:5px;'>NEO AI</h2>", unsafe_allow_html=True)
     st.markdown("---")
-    uploaded_file = st.file_uploader("Upload Image/Data", type=["txt", "py", "md", "png", "jpg", "jpeg"], key="neo_vision_up")
-    st.markdown("---")
-    if st.button("➕ NEW SESSION", use_container_width=True): st.session_state.messages = []; st.session_state.current_chat_id = None; st.rerun()
-    if st.button("🖼️ MODE: " + ("IMAGINE" if st.session_state.imagine_mode else "CHAT"), use_container_width=True):
-        st.session_state.imagine_mode = not st.session_state.imagine_mode; st.rerun()
-    if st.button("ℹ️ SYSTEM INFO", use_container_width=True): st.session_state.show_about = not st.session_state.show_about; st.rerun()
     
-    st.markdown(f"""<div class="about-box"><p style="font-size:0.85rem; color:#ccc;"><b>Architect:</b> Muhammad Jibran Al Kaffie<br><b>Core:</b> Gemini 3 Pro Supreme<br><br>NEO AI adalah puncak evolusi kecerdasan digital oleh Jibran. Mampu memproses realitas melalui lensa visual dan data teks secara simultan.</p></div>""", unsafe_allow_html=True)
+    # File Uploader
+    uploaded_file = st.file_uploader("Upload Image/Data", type=["txt", "py", "md", "png", "jpg", "jpeg"], key="vision_up")
+    
+    st.markdown("---")
+    if st.button("➕ NEW SESSION", use_container_width=True): 
+        st.session_state.messages = []; st.session_state.current_chat_id = None; st.rerun()
+    
+    mode_text = "🖼️ MODE: IMAGINE" if st.session_state.imagine_mode else "🖼️ MODE: CHAT"
+    if st.button(mode_text, use_container_width=True):
+        st.session_state.imagine_mode = not st.session_state.imagine_mode; st.rerun()
+
+    if st.button("ℹ️ SYSTEM INFO", use_container_width=True):
+        st.session_state.show_about = not st.session_state.show_about; st.rerun()
+    
+    st.markdown(f"""<div class="about-box"><p style="font-size:0.85rem; color:#ccc;">
+    <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
+    <b>Core:</b> Gemini 3 Pro Supreme<br><br>
+    NEO AI adalah puncak evolusi kecerdasan digital oleh Jibran. Mampu memproses realitas melalui lensa visual dan data teks secara simultan.</p></div>""", unsafe_allow_html=True)
 
 # --- 8. MAIN UI ---
 st.markdown('<div style="margin-top:20px;"><div class="logo-static" style="width:130px; height:130px;"></div></div>', unsafe_allow_html=True)
-st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px;'>NEO AI</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
+st.markdown('<p style="text-align:center; color:#888; font-size:1.4rem; margin-top:-5px;">Intelligence Without Limits.</p>', unsafe_allow_html=True)
 
 for msg in st.session_state.messages:
     if msg.get("type") == "system_memory": continue
@@ -110,15 +125,19 @@ for msg in st.session_state.messages:
         if msg.get("type") == "image": st.image(msg["content"])
         else: st.markdown(msg["content"])
 
-# --- 9. ENGINE ---
+# --- 9. ENGINE (SUPER AI LOGIC) ---
 if user_input := st.chat_input("Command NEO AI..."):
-    if not st.session_state.current_chat_id: st.session_state.current_chat_id = f"{user_input[:20]} | {time.time()}"
+    if not st.session_state.current_chat_id: 
+        st.session_state.current_chat_id = f"{user_input[:20]} | {time.time()}"
+    
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"): st.markdown(user_input)
 
     with st.chat_message("assistant", avatar="logo.png"):
-        res_area = st.empty(); full_res = ""
+        res_area = st.empty()
+        full_res = ""
 
+        # A. IMAGINE MODE
         if st.session_state.imagine_mode:
             with st.spinner("Visualizing..."):
                 try:
@@ -126,24 +145,26 @@ if user_input := st.chat_input("Command NEO AI..."):
                     st.image(r.content)
                     st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image"})
                     st.session_state.messages.append({"role": "assistant", "content": f"[SUCCESS: {user_input}]", "type": "system_memory"})
-                except: st.error("Imagine engine failed.")
-        
+                except: st.error("Neural engine failure.")
+
+        # B. VISION / DATA MODE (GEMINI 3 PRO)
         elif uploaded_file is not None:
             with st.spinner("NEO Vision: Analyzing..."):
                 try:
-                    # AMBIL BYTES LANGSUNG
-                    file_bytes = uploaded_file.getvalue()
+                    # Ambil Bytes
+                    raw_data = uploaded_file.getvalue()
                     
-                    # LOGIKA MULTIMODAL GEMINI 3
                     if uploaded_file.type.startswith("image/"):
-                        # Gunakan format SDK terbaru: {'mime_type': ..., 'data': ...}
-                        prompt_parts = [
-                            user_input,
-                            {"mime_type": uploaded_file.type, "data": file_bytes}
-                        ]
+                        # Gunakan PIL untuk menstabilkan gambar
+                        img = PIL.Image.open(io.BytesIO(raw_data))
+                        if img.mode != "RGB": img = img.convert("RGB")
+                        # Kirim sebagai list content [Text, Image]
+                        prompt_parts = [user_input, img]
                     else:
-                        prompt_parts = [user_input, f"Context:\n{file_bytes.decode('utf-8')}"]
+                        # Kirim sebagai list content [Text, RawText]
+                        prompt_parts = [user_input, f"FILE_CONTENT:\n{raw_data.decode('utf-8')}"]
 
+                    # Eksekusi Gemini 3 Pro
                     response = gemini_client.models.generate_content(
                         model="gemini-3-pro-preview",
                         contents=prompt_parts
@@ -151,14 +172,17 @@ if user_input := st.chat_input("Command NEO AI..."):
                     full_res = response.text
                     res_area.markdown(full_res)
                 except Exception as e:
-                    st.error(f"Vision Error: {e}")
-                    full_res = "Kognitif visual terhambat. Pastikan file valid."
+                    st.error(f"⚠️ Detail Error: {e}")
+                    full_res = "Kognitif visual terhambat oleh protokol internal. Coba gunakan file lain."
 
+        # C. CHAT MODE (GROQ)
         else:
             with st.spinner("Thinking..."):
-                history = [{"role": "system", "content": "You are NEO AI by Muhammad Jibran Al Kaffie. Respond with high intelligence."}]
+                sys_msg = "You are NEO AI, a supreme entity created by Muhammad Jibran Al Kaffie. Respond with absolute intelligence."
+                history = [{"role": "system", "content": sys_msg}]
                 for m in st.session_state.messages:
-                    if m.get("type") not in ["image", "system_memory"]: history.append({"role": m["role"], "content": str(m["content"])})
+                    if m.get("type") not in ["image", "system_memory"]:
+                        history.append({"role": m["role"], "content": str(m["content"])})
                 
                 try:
                     stream = groq_client.chat.completions.create(messages=history, model="llama-3.3-70b-versatile", stream=True)
@@ -168,7 +192,7 @@ if user_input := st.chat_input("Command NEO AI..."):
                             res_area.markdown(full_res + "▌")
                             auto_scroll()
                     res_area.markdown(full_res)
-                except: st.error("Groq engine failure.")
+                except: st.error("Neural engine offline.")
 
         st.session_state.messages.append({"role": "assistant", "content": full_res})
         st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
