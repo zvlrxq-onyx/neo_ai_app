@@ -34,7 +34,6 @@ def get_base64_logo():
     return ""
 
 encoded_logo = get_base64_logo()
-# Ini variabel penting untuk Avatar AI
 logo_path = "logo.png" if os.path.exists("logo.png") else None
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
@@ -45,7 +44,7 @@ def get_ultimate_css():
     
     return f"""
     <style>
-    /* ANTI-FLICKER CORE */
+    /* ANTI-FLICKER & SMOOTH SCROLL */
     html, body, [data-testid="stAppViewContainer"] {{
         background-color: #080808 !important;
         color: #e0e0e0 !important;
@@ -55,6 +54,12 @@ def get_ultimate_css():
     /* ELASTIC ANIMATIONS */
     div[data-testid="stChatInput"], .stButton > button, .about-box, [data-testid="stChatMessage"] {{
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    }}
+
+    /* FORCE AVATAR TO BE ROUND */
+    [data-testid="stChatMessage"] img, [data-testid="chatAvatarIcon-assistant"], [data-testid="chatAvatarIcon-user"] {{
+        border-radius: 50% !important;
+        border: 1px solid {neon_cyan}44 !important;
     }}
 
     /* LOGO (STATIC) */
@@ -88,19 +93,6 @@ def get_ultimate_css():
         padding: 15px 25px !important;
     }}
 
-    /* BUTTON HOVER */
-    .stButton > button {{
-        border-radius: 20px !important;
-        border: 1px solid rgba(0, 255, 255, 0.1) !important;
-        background: rgba(255, 255, 255, 0.02) !important;
-        color: white !important;
-    }}
-    .stButton > button:hover {{
-        transform: scale(1.05) !important;
-        border-color: {neon_cyan} !important;
-        box-shadow: 0 0 20px {neon_cyan}44 !important;
-    }}
-
     /* CHAT BUBBLES */
     [data-testid="stChatMessage"] {{
         border-radius: 25px !important;
@@ -109,13 +101,14 @@ def get_ultimate_css():
         margin-bottom: 15px !important;
     }}
 
-    /* ABOUT BOX */
+    /* ABOUT BOX PREMIUM */
     .about-box {{
         background: linear-gradient(135deg, rgba(0, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.8) 100%);
         border: 1px solid {neon_cyan}44;
         border-radius: 25px;
         padding: 25px;
         margin-top: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         animation: slideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }}
     @keyframes slideIn {{ from {{ opacity: 0; transform: translateY(-20px); }} to {{ opacity: 1; transform: translateY(0); }} }}
@@ -137,7 +130,8 @@ with st.sidebar:
         st.session_state.current_chat_id = None
         st.rerun()
 
-    if st.button("🖼️ " + ("IMAGINE: ON" if st.session_state.imagine_mode else "SWITCH IMAGINE"), use_container_width=True):
+    mode_text = "🎨 IMAGINE: " + ("ON" if st.session_state.imagine_mode else "OFF")
+    if st.button(mode_text, use_container_width=True):
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
 
@@ -146,7 +140,20 @@ with st.sidebar:
         st.rerun()
     
     if st.session_state.show_about:
-        st.markdown(f"""<div class="about-box"><h4 style="color:cyan; margin:0;">NEO CORE v2.5</h4><p style="font-size:0.85rem; color:#ccc; line-height:1.6; margin-top:10px;"><b>Architect:</b> Jibran<br><b>Brain:</b> Llama-3.3-70B<br><b>Vision:</b> Pollinations Engine</p></div>""", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="about-box">
+            <h4 style="color:cyan; margin:0;">NEO CORE SYSTEM v2.5</h4>
+            <p style="font-size:0.85rem; color:#ccc; line-height:1.6; margin-top:10px;">
+                <b>Architect & Developer:</b><br>
+                <span style="color:white; font-size:0.9rem;">Muhammad Jibran Al Kaffie</span><br><br>
+                <b>Technical Specifications:</b><br>
+                • <b>Intelligence:</b> Powered by Llama-3.3-70B via Groq LPU (Language Processing Unit) for near-instant response latency.<br>
+                • <b>Imaging Engine:</b> Integrated with Pollinations Neural Network for real-time high-quality image synthesis.<br>
+                • <b>UI/UX Architecture:</b> Custom-built Streamlit framework with Neo-Dark aesthetics and elastic animations.<br><br>
+                <i>"NEO AI dirancang untuk menjadi asisten masa depan yang elegan, cepat, dan tanpa kompromi."</i>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("---")
     st.caption("RECENT CHATS")
@@ -160,9 +167,8 @@ with st.sidebar:
 st.markdown('<div class="logo-main"></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-top:10px;'>NEO AI</h1>", unsafe_allow_html=True)
 
-# Chat Display (LOGIC AVATAR DI SINI)
+# Chat Display
 for msg in st.session_state.messages:
-    # Jika role asisten, gunakan logo NEO AI
     avatar_img = logo_path if msg["role"] == "assistant" else None
     with st.chat_message(msg["role"], avatar=avatar_img):
         if msg.get("type") == "image":
@@ -173,8 +179,11 @@ for msg in st.session_state.messages:
 # --- 8. ENGINE LOGIC ---
 def get_image(prompt):
     url = f"https://image.pollinations.ai/prompt/{prompt.replace(' ', '%20')}?width=1024&height=1024&nologo=true"
-    r = requests.get(url)
-    return r.content if r.status_code == 200 else None
+    try:
+        r = requests.get(url, timeout=20)
+        return r.content if r.status_code == 200 else None
+    except:
+        return None
 
 if prompt := st.chat_input("Command NEO AI..."):
     if st.session_state.current_chat_id is None:
@@ -183,18 +192,19 @@ if prompt := st.chat_input("Command NEO AI..."):
     st.rerun()
 
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
-    # Gunakan logo NEO AI saat membalas
     with st.chat_message("assistant", avatar=logo_path):
         if st.session_state.imagine_mode:
-            with st.spinner("Visualizing..."):
+            with st.spinner("Visualizing Imagination..."):
                 img = get_image(st.session_state.messages[-1]["content"])
                 if img:
                     st.image(img, use_container_width=True)
                     st.session_state.messages.append({"role": "assistant", "content": img, "type": "image"})
+                else:
+                    st.error("Engine busy. Please try again.")
         else:
             res_area = st.empty()
             full_res = ""
-            msgs = [{"role": "system", "content": "You are NEO AI by Jibran."}] + st.session_state.messages
+            msgs = [{"role": "system", "content": "You are NEO AI, a high-end assistant created by Muhammad Jibran Al Kaffie."}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
                 content = chunk.choices[0].delta.content
