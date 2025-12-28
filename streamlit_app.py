@@ -3,6 +3,9 @@ from groq import Groq
 import time
 import os
 import base64
+import requests
+import io
+from PIL import Image
 
 # --- 1. INITIALIZE SESSION STATE ---
 if "messages" not in st.session_state: st.session_state.messages = []
@@ -10,13 +13,15 @@ if "all_chats" not in st.session_state: st.session_state.all_chats = {}
 if "current_chat_id" not in st.session_state: st.session_state.current_chat_id = None
 if "show_about" not in st.session_state: st.session_state.show_about = False
 if "editing_chat_id" not in st.session_state: st.session_state.editing_chat_id = None
+if "imagine_mode" not in st.session_state: st.session_state.imagine_mode = False
 
 # --- 2. CONFIG API ---
 try:
     GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+    HF_TOKEN = st.secrets["HF_TOKEN"] # Tambahkan ini di secrets.toml kamu!
     client = Groq(api_key=GROQ_API_KEY)
 except:
-    st.error("SYSTEM ERROR: API KEY NOT FOUND")
+    st.error("SYSTEM ERROR: API KEYS MISSING (GROQ_API_KEY or HF_TOKEN)")
     st.stop()
 
 # --- 3. PAGE CONFIG ---
@@ -32,186 +37,145 @@ def get_base64_logo():
 
 encoded_logo = get_base64_logo()
 
-# --- 5. ULTRA PREMIUM CSS (ZERO-FLICKER & ELASTIC EDITION) ---
+# --- 5. ULTRA PREMIUM CSS (SMOOTH & ANTI-FLASH) ---
 def get_pro_css():
     neon_cyan = "#00ffff"
     return f"""
     <style>
-    /* KUNCI ANTI-KEDIP */
+    html {{ scroll-behavior: smooth; }}
     html, body, [data-testid="stAppViewContainer"], .stApp {{
-        background-color: #080808 !important;
-        color: #e0e0e0 !important;
+        background-color: #080808 !important; color: #e0e0e0 !important;
     }}
     [data-testid="stStatusWidget"] {{ display: none; }}
+    * {{ transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }}
 
-    /* GLOBAL ELASTIC TRANSITION */
-    * {{ transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }}
-
-    /* Logo & Title */
     .center-container {{ display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 20px; }}
     .logo-circle {{
-        width: 125px; height: 125px;
+        width: 110px; height: 110px;
         background-image: url("data:image/png;base64,{encoded_logo}");
         background-size: cover; background-position: center;
         border-radius: 50%; border: 2px solid {neon_cyan};
-        box-shadow: 0 0 30px {neon_cyan}33;
+        box-shadow: 0 0 25px {neon_cyan}33;
     }}
     .neon-title {{
-        text-align: center; color: {neon_cyan}; font-size: 3.5rem; 
-        font-weight: 900; letter-spacing: 12px; margin-bottom: 5px;
-        text-transform: uppercase; text-shadow: 0 0 20px {neon_cyan}44;
+        text-align: center; color: {neon_cyan}; font-size: 3rem; 
+        font-weight: 900; letter-spacing: 10px; margin-bottom: 5px;
+        text-transform: uppercase; text-shadow: 0 0 15px {neon_cyan}44;
     }}
+    
+    .mode-indicator {{
+        position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+        background: rgba(0, 255, 255, 0.15); border: 1px solid {neon_cyan};
+        padding: 5px 20px; border-radius: 20px; font-size: 0.8rem;
+        color: {neon_cyan}; font-weight: bold; z-index: 99; animation: pulse 2s infinite;
+    }}
+    @keyframes pulse {{ 0% {{opacity: 0.4;}} 50% {{opacity: 1;}} 100% {{opacity: 0.4;}} }}
 
-    /* SIDEBAR & BUTTON HOVER */
-    section[data-testid="stSidebar"] {{ 
-        background-color: #050505 !important; 
-        border-right: 1px solid {neon_cyan}22; 
-    }}
-    .stButton > button {{
-        background: transparent !important; color: #ffffff !important;
-        border: 1px solid {neon_cyan}44 !important; border-radius: 30px !important;
-        width: 100% !important; padding: 10px !important;
-    }}
-    .stButton > button:hover {{
-        transform: scale(1.08) !important; border-color: {neon_cyan} !important;
-        background: rgba(0, 255, 255, 0.1) !important; box-shadow: 0 0 20px {neon_cyan}55 !important;
-    }}
-
-    /* CHAT INPUT SMOOTH EXPAND */
-    div[data-testid="stChatInput"] {{
-        width: 75% !important; margin: 0 auto !important;
-        transition: width 0.8s cubic-bezier(0.23, 1, 0.32, 1) !important;
-    }}
-    div[data-testid="stChatInput"]:focus-within {{ width: 100% !important; }}
-    .stChatInput textarea {{ border-radius: 30px !important; background: #111 !important; border: 1px solid {neon_cyan}22 !important; }}
-
-    /* ABOUT & RENAME BOX - SLIDE ANIMATION */
     .fluid-box {{
-        background: linear-gradient(145deg, rgba(0, 255, 255, 0.05), rgba(0, 0, 0, 0.3));
-        border: 1px solid {neon_cyan}33; border-left: 4px solid {neon_cyan};
-        border-radius: 20px; padding: 22px; margin-top: 15px;
-        animation: slideUp 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-        backdrop-filter: blur(12px);
+        background: rgba(0, 255, 255, 0.05); border-left: 4px solid {neon_cyan};
+        border-radius: 15px; padding: 15px; margin-top: 10px;
+        animation: slideUp 0.5s ease-out;
     }}
-    @keyframes slideUp {{ from {{ opacity: 0; transform: translateY(25px); }} to {{ opacity: 1; transform: translateY(0); }} }}
+    @keyframes slideUp {{ from {{ opacity: 0; transform: translateY(10px); }} to {{ opacity: 1; transform: translateY(0); }} }}
 
-    .tech-label {{ color: {neon_cyan}; font-weight: 800; font-size: 1rem; letter-spacing: 1px; margin-bottom: 10px; border-bottom: 1px solid {neon_cyan}22; padding-bottom: 5px; }}
-    .tech-text {{ color: #bbb; font-size: 0.85rem; line-height: 1.6; }}
-    .badge {{ background: {neon_cyan}15; color: {neon_cyan}; padding: 3px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid {neon_cyan}33; margin-top: 10px; display: inline-block; }}
-
+    section[data-testid="stSidebar"] {{ background-color: #050505 !important; border-right: 1px solid {neon_cyan}22; }}
     header, footer {{ visibility: hidden; }}
     </style>
     """
 
 st.markdown(get_pro_css(), unsafe_allow_html=True)
 
-# --- 6. SIDEBAR ---
+# --- 6. HUGGING FACE IMAGE GEN FUNCTION ---
+def query_image(prompt):
+    API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev"
+    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    response = requests.post(API_URL, headers=headers, json={"inputs": prompt})
+    return response.content
+
+# --- 7. SIDEBAR ---
 with st.sidebar:
     st.markdown(f'<div class="center-container"><div class="logo-circle"></div></div>', unsafe_allow_html=True)
-    st.markdown(f"<h1 style='text-align:center; color:#00ffff; letter-spacing:5px; font-size:2.2rem; text-shadow: 0 0 10px #00ffff;'>NEO AI</h1>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='text-align:center; color:cyan;'>NEO AI</h2>", unsafe_allow_html=True)
     
-    if st.button("NEW SESSION", key="new_s", use_container_width=True):
+    if st.button("NEW SESSION", use_container_width=True):
         st.session_state.messages = []
         st.session_state.current_chat_id = None
         st.rerun()
 
     st.markdown("---")
-    
-    # History & Rename Logic
+    # Toggle Imagine Mode
+    st.session_state.imagine_mode = st.toggle("🎨 IMAGINE MODE", value=st.session_state.imagine_mode)
+    st.caption("When active, NEO will generate images via HuggingFace.")
+
+    st.markdown("---")
+    # History & Rename
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
-        display_name = chat_id.split(" | ")[0]
-        c_main, c_edit = st.columns([0.8, 0.2])
-        with c_main:
-            if st.button(display_name, key=f"h_{chat_id}", use_container_width=True):
+        name = chat_id.split(" | ")[0]
+        c1, c2 = st.columns([0.8, 0.2])
+        with c1:
+            if st.button(name, key=f"h_{chat_id}", use_container_width=True):
                 st.session_state.messages = st.session_state.all_chats[chat_id]
                 st.session_state.current_chat_id = chat_id
                 st.rerun()
-        with c_edit:
+        with c2:
             if st.button("✏️", key=f"e_{chat_id}"):
                 st.session_state.editing_chat_id = chat_id
                 st.rerun()
 
-    if st.session_state.editing_chat_id:
-        st.markdown('<div class="fluid-box">', unsafe_allow_html=True)
-        new_name = st.text_input("RENAME SESSION:", value=st.session_state.editing_chat_id.split(" | ")[0])
-        b1, b2 = st.columns(2)
-        with b1:
-            if st.button("SAVE"):
-                suffix = st.session_state.editing_chat_id.split(" | ")[1]
-                new_full_id = f"{new_name} | {suffix}"
-                st.session_state.all_chats[new_full_id] = st.session_state.all_chats.pop(st.session_state.editing_chat_id)
-                st.session_state.editing_chat_id = None
-                st.rerun()
-        with b2:
-            if st.button("CANCEL"):
-                st.session_state.editing_chat_id = None
-                st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown("<div style='height:10vh;'></div>", unsafe_allow_html=True)
-    if st.button("ABOUT NEO", key="abt_btn", use_container_width=True):
+    if st.button("ABOUT NEO", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
 
-    # DETAILED ENGLISH ABOUT SECTION
-    if st.session_state.show_about:
-        st.markdown(f"""
-        <div class="fluid-box">
-            <div class="tech-label">CORE SPECIFICATIONS</div>
-            <div class="tech-text">
-                <b style="color:white;">Lead Architect:</b> Muhammad Jibran Al Kaffie<br>
-                <b style="color:white;">Model:</b> Llama-3.3-70B (State-of-the-Art)<br>
-                <b style="color:white;">Interface:</b> Fluid UI v2.5 Stable<br><br>
-                NEO AI is an advanced neural interface engineered for high-precision 
-                logical reasoning and real-time data processing. 
-                Focusing on visual fluidity and user immersion.
-                <br><br>
-                <i>"Bridging the gap between human intuition and machine intelligence."</i>
-            </div>
-            <div class="badge">STABLE RELEASE</div>
-            <div class="badge">NEURAL LINK: ON</div>
-        </div>
-        """, unsafe_allow_html=True)
+# --- 8. MAIN INTERFACE ---
+st.markdown(f'<div class="center-container"><div class="logo-circle"></div><h1 class="neon-title">NEO AI</h1></div>', unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; opacity:0.7;'>Hi, is there anything I can help you with?</p>", unsafe_allow_html=True)
 
-# --- 7. MAIN INTERFACE ---
-st.markdown(f"""
-    <div class="center-container">
-        <div class="logo-circle"></div>
-        <h1 class="neon-title">NEO AI</h1>
-        <p style="text-align:center; opacity:0.8; font-size:1.3rem; margin-top: 10px; font-weight:500;">
-            Hi, is there anything I can help you with?
-        </p>
-    </div>
-""", unsafe_allow_html=True)
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        if msg.get("type") == "image":
+            st.image(msg["content"], caption="Generated by NEO AI")
+        else:
+            st.markdown(msg["content"])
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+if st.session_state.imagine_mode:
+    st.markdown('<div class="mode-indicator">🎨 IMAGINE MODE ACTIVE</div>', unsafe_allow_html=True)
 
-# --- 8. CHAT LOGIC ---
+# --- 9. CHAT & IMAGE LOGIC ---
 if prompt := st.chat_input("ENTER COMMAND..."):
     if st.session_state.current_chat_id is None:
-        st.session_state.current_chat_id = f"{prompt[:20]}... | {time.time()}"
+        st.session_state.current_chat_id = f"{prompt[:15]}... | {time.time()}"
     
+    # User Message
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        res_area = st.empty()
-        full_res = ""
-        msgs = [{"role": "system", "content": "You are NEO AI, a high-level assistant created by Muhammad Jibran Al Kaffie."}] + st.session_state.messages
+        if st.session_state.imagine_mode:
+            with st.spinner("Visualizing your imagination..."):
+                try:
+                    img_bytes = query_image(prompt)
+                    image = Image.open(io.BytesIO(img_bytes))
+                    st.image(image, caption=f"Result for: {prompt}")
+                    st.session_state.messages.append({"role": "assistant", "content": image, "type": "image"})
+                except:
+                    st.error("Failed to generate image. HuggingFace might be busy.")
+        else:
+            res_area = st.empty()
+            full_res = ""
+            msgs = [{"role": "system", "content": "You are NEO AI by Jibran."}] + st.session_state.messages
+            try:
+                stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
+                for chunk in stream:
+                    content = chunk.choices[0].delta.content
+                    if content:
+                        full_res += content
+                        res_area.markdown(full_res + "▌")
+                res_area.markdown(full_res)
+                st.session_state.messages.append({"role": "assistant", "content": full_res})
+            except:
+                st.error("GROQ CONNECTION ERROR")
         
-        try:
-            stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
-            for chunk in stream:
-                content = chunk.choices[0].delta.content
-                if content:
-                    full_res += content
-                    res_area.markdown(full_res + "▌")
-            res_area.markdown(full_res)
-            st.session_state.messages.append({"role": "assistant", "content": full_res})
-            st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
-        except:
-            st.error("STREAM ERROR")
-    st.rerun()
+        st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
+
+    st.rerun() # Auto-scroll trigger
