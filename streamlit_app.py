@@ -42,6 +42,7 @@ logo_html = f'data:image/png;base64,{encoded_logo}'
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     input_border = neon_cyan if st.session_state.imagine_mode else "rgba(0, 255, 255, 0.2)"
+    sidebar_transform = "translateX(0)" if st.session_state.sidebar_visible else "translateX(-100%)"
     
     return f"""
     <style>
@@ -57,27 +58,19 @@ def get_ultimate_css():
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
 
-    /* CUSTOM SIDEBAR */
-    #custom-sidebar {{
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 300px;
-        height: 100vh;
-        background-color: #050505;
-        border-right: 1px solid {neon_cyan}22;
-        transform: translateX(-100%);
-        transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        z-index: 1000;
-        padding: 20px;
-        overflow-y: auto;
-    }}
-    #custom-sidebar.visible {{
-        transform: translateX(0);
+    /* SIDEBAR SLIDE ANIMATION */
+    section[data-testid="stSidebar"] {{
+        transform: {sidebar_transform} !important;
+        transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        height: 100vh !important;
+        z-index: 1000 !important;
     }}
 
     /* HAMBURGER BUTTON */
-    #hamburger {{
+    .hamburger {{
         position: fixed;
         top: 20px;
         left: 20px;
@@ -94,12 +87,12 @@ def get_ultimate_css():
         width: 40px;
         height: 40px;
     }}
-    #hamburger:hover {{
+    .hamburger:hover {{
         transform: scale(1.1);
         border-color: {neon_cyan};
         box-shadow: 0 0 20px {neon_cyan}44;
     }}
-    #hamburger span {{
+    .hamburger span {{
         display: block;
         width: 25px;
         height: 3px;
@@ -151,17 +144,19 @@ def get_ultimate_css():
         background: #111 !important;
     }}
 
-    /* ENHANCED BUTTON ANIMATIONS: HOVER & ACTIVE */
-    .stButton > button {{
-        border-radius: 20px !important;
+    /* SIDEBAR BUTTONS (TIDAK BULAT, SEJAJAR) */
+    section[data-testid="stSidebar"] .stButton > button {{
+        border-radius: 10px !important; /* Kurangi agar tidak terlalu bulet */
         border: 1px solid rgba(0, 255, 255, 0.1) !important;
         background: rgba(255, 255, 255, 0.02) !important;
         color: white !important;
         padding: 10px !important;
+        width: 100% !important; /* Full width untuk sejajar */
+        margin-bottom: 10px !important;
         position: relative !important;
         overflow: hidden !important;
     }}
-    .stButton > button::before {{
+    section[data-testid="stSidebar"] .stButton > button::before {{
         content: '';
         position: absolute;
         top: 0; left: -100%;
@@ -169,18 +164,18 @@ def get_ultimate_css():
         background: linear-gradient(90deg, transparent, {neon_cyan}44, transparent);
         transition: left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
-    .stButton > button:hover {{
-        transform: scale(1.08) !important;
+    section[data-testid="stSidebar"] .stButton > button:hover {{
+        transform: scale(1.05) !important; /* Lebih halus untuk sidebar */
         border-color: {neon_cyan} !important;
-        box-shadow: 0 0 20px {neon_cyan}44 !important;
+        box-shadow: 0 0 15px {neon_cyan}44 !important;
     }}
-    .stButton > button:hover::before {{
+    section[data-testid="stSidebar"] .stButton > button:hover::before {{
         left: 100% !important;
     }}
-    .stButton > button:active {{
-        transform: scale(0.95) !important;
+    section[data-testid="stSidebar"] .stButton > button:active {{
+        transform: scale(0.98) !important;
         border-color: {neon_cyan} !important;
-        box-shadow: 0 0 30px {neon_cyan}77 !important;
+        box-shadow: 0 0 25px {neon_cyan}77 !important;
         background: rgba(0, 255, 255, 0.1) !important;
     }}
 
@@ -199,67 +194,54 @@ def get_ultimate_css():
 
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
 
-# --- HAMBURGER & SIDEBAR HTML ---
-hamburger_html = """
-<div id="hamburger" onclick="toggleSidebar()">
-    <span></span>
-    <span></span>
-    <span></span>
-</div>
-"""
+# --- HAMBURGER BUTTON ---
+if st.button("", key="hamburger", help="Toggle Sidebar"):
+    st.session_state.sidebar_visible = not st.session_state.sidebar_visible
+    st.rerun()
 
-sidebar_html = f"""
-<div id="custom-sidebar" class="{'visible' if st.session_state.sidebar_visible else ''}">
-    <div class="logo-sidebar"></div>
-    <h2 style='text-align:center; color:cyan; letter-spacing:2px; margin-top:10px;'>NEO AI</h2>
-    <hr style='border-color: rgba(0,255,255,0.2);'>
-    <button class="sidebar-btn" onclick="newSession()">➕ NEW SESSION</button>
-    <button class="sidebar-btn" onclick="toggleImagine()">🎨 IMAGINE: {'ON' if st.session_state.imagine_mode else 'OFF'}</button>
-    <button class="sidebar-btn" onclick="toggleAbout()">ℹ️ SYSTEM INFO</button>
-    <div class="about-box" id="about-content" style="display: {'block' if st.session_state.show_about else 'none'};">
-        <h4 style="color:cyan; margin:0;">NEO CORE SYSTEM v2.5</h4>
-        <p style="font-size:0.85rem; color:#ccc; line-height:1.6; margin-top:10px;">
-            <b>Architect & Developer:</b><br>
-            <span style="color:white; font-size:0.9rem;">Muhammad Jibran Al Kaffie</span><br><br>
-            <b>Technical Specifications:</b><br>
-            - <b>Intelligence:</b> Llama-3.3-70B via Groq LPU.<br>
-            - <b>Imaging Engine:</b> Pollinations Neural Network.<br>
-            - <b>UI/UX Architecture:</b> Neo-Dark Aesthetics.<br><br>
-            <i>"NEO AI is designed to be a future assistant that is elegant, fast, and uncompromising."</i>
-        </p>
-    </div>
-    <hr style='border-color: rgba(0,255,255,0.2);'>
-    <p style='color:#ccc;'>RECENT CHATS</p>
-    <!-- Add chat buttons here if needed -->
-</div>
-"""
+# --- 6. SIDEBAR ---
+with st.sidebar:
+    st.markdown('<div class="logo-sidebar"></div>', unsafe_allow_html=True)
+    st.markdown(f"<h2 style='text-align:center; color:cyan; letter-spacing:2px; margin-top:10px;'>NEO AI</h2>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    if st.button("➕ NEW SESSION", use_container_width=True):
+        st.session_state.messages = []
+        st.session_state.current_chat_id = None
+        st.rerun()
 
-js_script = """
-<script>
-function toggleSidebar() {
-    const sidebar = document.getElementById('custom-sidebar');
-    sidebar.classList.toggle('visible');
-}
+    mode_text = "🎨 IMAGINE: " + ("ON" if st.session_state.imagine_mode else "OFF")
+    if st.button(mode_text, use_container_width=True):
+        st.session_state.imagine_mode = not st.session_state.imagine_mode
+        st.rerun()
 
-function newSession() {
-    window.location.reload();
-}
+    if st.button("ℹ️ SYSTEM INFO", use_container_width=True):
+        st.session_state.show_about = not st.session_state.show_about
+        st.rerun()
+    
+    if st.session_state.show_about:
+        st.markdown(f"""
+        <div class="about-box">
+            <h4 style="color:cyan; margin:0;">NEO CORE SYSTEM v2.5</h4>
+            <p style="font-size:0.85rem; color:#ccc; line-height:1.6; margin-top:10px;">
+                <b>Architect & Developer:</b><br>
+                <span style="color:white; font-size:0.9rem;">Muhammad Jibran Al Kaffie</span><br><br>
+                <b>Technical Specifications:</b><br>
+                - <b>Intelligence:</b> Llama-3.3-70B via Groq LPU.<br>
+                - <b>Imaging Engine:</b> Pollinations Neural Network.<br>
+                - <b>UI/UX Architecture:</b> Neo-Dark Aesthetics.<br><br>
+                <i>"NEO AI is designed to be a future assistant that is elegant, fast, and uncompromising."</i>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
-function toggleImagine() {
-    // Simulate toggle by reloading or use session state if possible
-    window.location.reload();
-}
-
-function toggleAbout() {
-    const about = document.getElementById('about-content');
-    about.style.display = about.style.display === 'none' ? 'block' : 'none';
-}
-</script>
-"""
-
-st.markdown(hamburger_html, unsafe_allow_html=True)
-st.markdown(sidebar_html, unsafe_allow_html=True)
-st.markdown(js_script, unsafe_allow_html=True)
+    st.markdown("---")
+    st.caption("RECENT CHATS")
+    for chat_id in reversed(list(st.session_state.all_chats.keys())):
+        if st.button(chat_id.split(" | ")[0], key=f"h_{chat_id}", use_container_width=True):
+            st.session_state.messages = st.session_state.all_chats[chat_id]
+            st.session_state.current_chat_id = chat_id
+            st.rerun()
 
 # --- 7. MAIN INTERFACE ---
 st.markdown('<div class="logo-main"></div>', unsafe_allow_html=True)
