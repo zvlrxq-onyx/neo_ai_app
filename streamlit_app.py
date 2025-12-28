@@ -35,85 +35,122 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE SUPREME CSS (SMOOTH & SYMMETRIC) ---
+# --- 5. THE SUPREME DYNAMIC CSS ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0" if st.session_state.sidebar_visible else "-350px"
     
     return f"""
     <style>
-    /* GLOBAL FIX */
+    /* GLOBAL SMOOTHING */
     html, body, [data-testid="stAppViewContainer"] {{
-        background-color: #080808 !important;
-        color: #e0e0e0 !important;
+        background-color: #050505 !important;
+        color: #ffffff !important;
         scroll-behavior: smooth !important;
     }}
     [data-testid="stStatusWidget"] {{ visibility: hidden; }}
     header, footer {{ visibility: hidden; }}
 
-    /* SIDEBAR SLIDE SMOOTH */
+    /* UNIVERSAL TRANSITION LOCK */
+    * {{ transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1); }}
+
+    /* SIDEBAR SLIDE */
     [data-testid="stSidebar"] {{
         left: {sidebar_pos} !important;
         background-color: #0a0a0a !important;
-        border-right: 1px solid {neon_cyan}22 !important;
-        transition: left 0.7s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        border-right: 1px solid {neon_cyan}33 !important;
         z-index: 9999998 !important;
     }}
 
-    /* HISTORY HOVER POP */
-    section[data-testid="stSidebar"] .stButton > button {{
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    /* HAMBURGER BUTTON */
+    .stButton > button[key="hamburger"] {{
+        position: fixed; top: 20px; left: 20px; z-index: 9999999 !important;
+        background: rgba(0,0,0,0.9) !important;
+        border: 2px solid {neon_cyan}44 !important;
+        border-radius: 50% !important;
+        width: 55px !important; height: 55px !important;
     }}
-    section[data-testid="stSidebar"] .stButton > button:hover {{
-        transform: scale(1.05) !important;
+    .stButton > button[key="hamburger"]:hover {{
+        transform: rotate(180deg) scale(1.1);
+        box-shadow: 0 0 30px {neon_cyan}88;
         border-color: {neon_cyan} !important;
-        box-shadow: 0 0 15px {neon_cyan}44 !important;
     }}
 
-    /* ABOUT PANEL (SMOOTH & GLOW) */
-    .about-panel {{
-        background: linear-gradient(145deg, rgba(0,255,255,0.05), rgba(0,0,0,0.9));
-        border: 1px solid {neon_cyan}22;
-        border-radius: 15px; padding: 20px; margin-top: 15px;
-        transition: 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    /* SYSTEM INFO / ABOUT (SMOOTH EXPAND) */
+    .about-container {{
+        max-height: {"1000px" if st.session_state.show_about else "0px"};
+        opacity: {"1" if st.session_state.show_about else "0"};
         overflow: hidden;
+        transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+        background: linear-gradient(165deg, rgba(0, 255, 255, 0.1), rgba(0, 0, 0, 0.5));
+        border: 1px solid {neon_cyan}22;
+        border-radius: 15px;
+        margin-top: 10px;
+        padding: { "20px" if st.session_state.show_about else "0px" };
     }}
-    .about-panel:hover {{
+    .about-container:hover {{
+        box-shadow: 0 0 25px {neon_cyan}44;
         border-color: {neon_cyan};
-        box-shadow: 0 0 30px {neon_cyan}33;
-        transform: translateY(-5px);
     }}
 
-    /* CHAT SYMMETRY */
+    /* CHAT BUBBLES SMOOTH ENTRANCE */
+    [data-testid="stChatMessage"] {{
+        animation: chatEntrance 0.7s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+        background: transparent !important;
+    }}
+    @keyframes chatEntrance {{
+        from {{ opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(10px); }}
+        to {{ opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }}
+    }}
+
+    /* SYMMETRIC BUBBLES */
     [data-testid="stChatMessageAssistant"] {{
-        background: rgba(255, 255, 255, 0.03) !important;
-        border-radius: 0 20px 20px 20px !important;
-        margin-right: 15% !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-radius: 0 22px 22px 22px !important;
         border: 1px solid {neon_cyan}11 !important;
+        margin-right: 15% !important;
     }}
     [data-testid="stChatMessageUser"] {{
         flex-direction: row-reverse !important;
-        background: linear-gradient(135deg, {neon_cyan}15, rgba(255,255,255,0.01)) !important;
-        border-radius: 20px 0 20px 20px !important;
+        background: linear-gradient(135deg, {neon_cyan}15, rgba(0,0,0,0.4)) !important;
+        border-radius: 22px 0 22px 22px !important;
+        border: 1px solid {neon_cyan}44 !important;
         margin-left: 15% !important;
-        border: 1px solid {neon_cyan}33 !important;
     }}
 
-    /* ENTRANCE ANIMATION */
-    .main-content {{
-        animation: fadeIn 1.2s ease-out;
+    /* NEON CHAT INPUT (ELASTIC) */
+    div[data-testid="stChatInput"] {{
+        width: 80% !important; margin: 0 auto !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border-radius: 30px !important;
+        border: 1px solid {neon_cyan}22 !important;
+        padding: 5px !important;
+        transition: width 0.7s cubic-bezier(0.19, 1, 0.22, 1), box-shadow 0.4s !important;
     }}
-    @keyframes fadeIn {{ from {{ opacity: 0; transform: translateY(20px); }} to {{ opacity: 1; transform: translateY(0); }} }}
+    div[data-testid="stChatInput"]:focus-within {{
+        width: 100% !important;
+        box-shadow: 0 0 25px {neon_cyan}44 !important;
+        border-color: {neon_cyan} !important;
+    }}
 
-    /* LOGO PULSE */
-    .logo-pulse {{
-        width: 120px; height: 120px; margin: 0 auto;
+    /* LOGO FLOATING */
+    .logo-box {{
+        width: 130px; height: 130px; margin: 0 auto;
         background-image: url("{logo_html}");
         background-size: cover; border-radius: 50%;
         border: 3px solid {neon_cyan};
-        animation: pulse 3s infinite alternate ease-in-out;
+        animation: float 4s infinite ease-in-out;
     }}
-    @keyframes pulse {{ to {{ transform: scale(1.05); box-shadow: 0 0 40px {neon_cyan}55; }} }}
+    @keyframes float {{
+        0% {{ transform: translateY(0px) rotate(0deg); box-shadow: 0 0 20px {neon_cyan}22; }}
+        50% {{ transform: translateY(-15px) rotate(2deg); box-shadow: 0 0 50px {neon_cyan}55; }}
+        100% {{ transform: translateY(0px) rotate(0deg); box-shadow: 0 0 20px {neon_cyan}22; }}
+    }}
+
+    /* HISTORY LIST ANIMATION */
+    .stButton > button {{
+        border-radius: 12px !important;
+    }}
     </style>
     """
 
@@ -128,7 +165,7 @@ if st.button("☰", key="hamburger"):
 with st.sidebar:
     st.markdown('<div style="height: 60px;"></div>', unsafe_allow_html=True)
     st.markdown(f'<div style="width:100px; height:100px; background-image:url({logo_html}); background-size:cover; border-radius:50%; border:2px solid cyan; margin:0 auto;"></div>', unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:cyan;'>NEO AI</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:cyan; letter-spacing:2px;'>NEO AI</h2>", unsafe_allow_html=True)
     
     st.markdown("---")
     if st.button("➕ NEW SESSION", use_container_width=True):
@@ -145,23 +182,22 @@ with st.sidebar:
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
 
-    if st.session_state.show_about:
-        st.markdown(f"""
-        <div class="about-panel">
-            <div style="color:cyan; font-family:monospace; font-weight:bold; margin-bottom:10px;">> CORE_MANIFEST.sys</div>
-            <p style="font-size:0.75rem; color:#ccc; line-height:1.5;">
-                <b>Designation:</b> NEO AI (Neural Electronic Organism)<br>
-                <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
-                <b>Core:</b> Llama-3.3-70B Quantum Neural Engine<br><br>
-                <b>Capabilities:</b><br>
-                - High-Fidelity Image Synthesis<br>
-                - Advanced Linguistic Processing<br>
-                - Complex Problem Solving<br>
-                - Multi-Modal Task Execution<br><br>
-                <i>"NEO AI represents the pinnacle of digital interaction, designed to bridge the gap between human thought and machine execution."</i>
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+    # ABOUT PANEL DENGAN ANIMASI SMOOTH
+    st.markdown(f"""
+    <div class="about-container">
+        <div style="color:cyan; font-family:monospace; font-weight:bold; margin-bottom:10px;">> ACCESSING ARCHIVES...</div>
+        <p style="font-size:0.75rem; color:#bbb; line-height:1.6;">
+            <b>Identity:</b> NEO AI (Supreme Entity)<br>
+            <b>Creator:</b> Muhammad Jibran Al Kaffie<br>
+            <b>Model:</b> Llama-3.3-70B Quantum<br><br>
+            <b>System Capabilities:</b><br>
+            - Neural Image Synthesis (Complex)<br>
+            - Deep Language Architecture<br>
+            - Logical Data Processing<br><br>
+            <i>Designed to be the ultimate companion in your digital journey.</i>
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("---")
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
@@ -171,12 +207,9 @@ with st.sidebar:
             st.rerun()
 
 # --- 8. MAIN INTERFACE ---
-st.markdown('<div class="main-content">', unsafe_allow_html=True)
-st.markdown('<div style="margin-top:20px;"><div class="logo-pulse"></div></div>', unsafe_allow_html=True)
-
-# THE NEO AI TITLE + OPENING TEXT
-st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-top:20px; font-weight:bold;'>NEO AI</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align:center; color:#ffffff; letter-spacing:4px; font-weight:300;'>How can I help you today?</h3>", unsafe_allow_html=True)
+st.markdown('<div class="logo-box"></div>', unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-top:20px;'>NEO AI</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align:center; color:#ffffff; font-weight:300; letter-spacing:3px;'>How can I help you today?</h3>", unsafe_allow_html=True)
 
 # Chat History
 for msg in st.session_state.messages:
@@ -186,7 +219,6 @@ for msg in st.session_state.messages:
             st.image(msg["content"], use_container_width=True)
         else:
             st.markdown(msg["content"])
-st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 9. ENGINE ---
 if prompt := st.chat_input("Command NEO AI..."):
@@ -198,7 +230,7 @@ if prompt := st.chat_input("Command NEO AI..."):
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     with st.chat_message("assistant", avatar="logo.png" if os.path.exists("logo.png") else None):
         if st.session_state.imagine_mode:
-            with st.spinner("Processing complex imagery..."):
+            with st.spinner("Visualizing..."):
                 url = f"https://image.pollinations.ai/prompt/{st.session_state.messages[-1]['content'].replace(' ', '%20')}?width=1024&height=1024&nologo=true"
                 r = requests.get(url)
                 if r.status_code == 200:
@@ -207,17 +239,14 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         else:
             res_area = st.empty()
             full_res = ""
-            sys_msg = f"""You are NEO AI, a supreme digital entity created by Muhammad Jibran Al Kaffie. 
-            You have the power to create highly complex and artistic images when 'Imagine Mode' is on. 
-            You are professional, brilliant, and your capabilities are limitless. 
-            Respond to the user as NEO AI."""
+            sys_msg = "You are NEO AI, a supreme entity created by Muhammad Jibran Al Kaffie. You possess the ability to generate complex images. Be professional and brilliant."
             msgs = [{"role": "system", "content": sys_msg}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
                 if chunk.choices[0].delta.content:
                     full_res += chunk.choices[0].delta.content
                     res_area.markdown(full_res + "▌")
-                    time.sleep(0.01)
+                    time.sleep(0.01) # MENGUNCI KEHALUSAN TEKS
             res_area.markdown(full_res)
             st.session_state.messages.append({"role": "assistant", "content": full_res})
     st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
