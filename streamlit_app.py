@@ -245,9 +245,16 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         
         # MODE CHAT BIASA
         else:
+            system_instruction = (
+                "You are NEO AI, a high-end, futuristic, and sleek artificial intelligence. "
+                "You were created and designed by Muhammad Jibran Al Kaffie. "
+                "You have the capability to generate highly complex and artistic images. "
+                "If a user asks about images, tell them you can certainly do it, but they need to "
+                "activate 'Mode Imagine' on the sidebar first. Be cool, sharp, and professional."
+            )
             res_area = st.empty()
             full_res = ""
-            msgs = [{"role": "system", "content": f"You are NEO AI, a high-end assistant created by Muhammad Jibran Al Kaffie."}] + st.session_state.messages
+            msgs = [{"role": "system", "content": system_instruction}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
                 content = chunk.choices[0].delta.content
