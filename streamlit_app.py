@@ -35,14 +35,13 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE MOBILE-FIXED ULTIMATE CSS ---
+# --- 5. THE ULTIMATE CSS (FIXED & SMOOTH) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0" if st.session_state.sidebar_visible else "-350px"
     
     return f"""
     <style>
-    /* ANTI-FLICKER CORE */
     html, body, [data-testid="stAppViewContainer"] {{
         background-color: #080808 !important;
         color: #e0e0e0 !important;
@@ -50,18 +49,16 @@ def get_ultimate_css():
     }}
     [data-testid="stStatusWidget"] {{ visibility: hidden; }}
 
-    /* GLOBAL TRANSITION */
     * {{ transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }}
 
-    /* HAMBURGER FIX UNTUK MOBILE (SUPER Z-INDEX) */
+    /* HAMBURGER MOBILE FIX */
     .stButton > button[key="hamburger"] {{
         position: fixed; top: 20px; left: 20px; 
-        z-index: 9999999 !important; /* Di atas segalanya */
+        z-index: 9999999 !important;
         background: rgba(0,0,0,0.9) !important;
         border: 2px solid {neon_cyan}66 !important;
         border-radius: 12px !important;
         width: 50px !important; height: 50px !important;
-        cursor: pointer !important;
     }}
     .stButton > button[key="hamburger"]:hover {{
         border-color: {neon_cyan} !important;
@@ -69,22 +66,16 @@ def get_ultimate_css():
         transform: scale(1.1);
     }}
 
-    /* SIDEBAR MOBILE OVERLAY FIX */
+    /* SIDEBAR SLIDE */
     [data-testid="stSidebar"] {{
         left: {sidebar_pos} !important;
         transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important;
         background-color: #0a0a0a !important;
         border-right: 1px solid {neon_cyan}33 !important;
         z-index: 9999998 !important;
-        width: 300px !important;
     }}
 
-    /* DISABLE DEFAULT SIDEBAR GESTURES THAT BLOCK BUTTONS */
-    [data-testid="stSidebarCollapsedControl"] {{
-        display: none !important;
-    }}
-
-    /* HOVER SIDEBAR BUTTONS */
+    /* BUTTON HOVER SCALE */
     section[data-testid="stSidebar"] .stButton > button {{
         background: rgba(255, 255, 255, 0.03) !important;
         border: 1px solid rgba(0, 255, 255, 0.1) !important;
@@ -98,42 +89,35 @@ def get_ultimate_css():
         box-shadow: 0 0 25px {neon_cyan}66 !important;
     }}
 
-    /* MODERN ABOUT PANEL SIDEBAR */
-    .about-sidebar-modern {{
-        background: linear-gradient(145deg, rgba(0, 255, 255, 0.1), rgba(0, 0, 0, 0.9));
-        border: 1.5px solid {neon_cyan}66;
-        border-radius: 15px;
-        padding: 15px;
-        margin-top: 10px;
-        box-shadow: 0 0 20px {neon_cyan}22;
-        animation: slideInDown 0.6s ease-out forwards;
-    }}
-    @keyframes slideInDown {{
-        from {{ opacity: 0; transform: translateY(-15px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
-    }}
-
-    /* ELASTIC INPUT MEMANJANG */
+    /* ELASTIC INPUT */
     div[data-testid="stChatInput"] {{
-        width: 85% !important; margin: 0 auto !important;
+        width: 80% !important; margin: 0 auto !important;
         transition: width 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
     div[data-testid="stChatInput"]:focus-within {{
         width: 100% !important;
     }}
 
-    /* LOGO & CHAT ANIMATION */
+    /* LOGO PULSING */
     .logo-main {{
-        width: 120px; height: 120px; margin: 0 auto;
+        width: 130px; height: 130px; margin: 0 auto;
         background-image: url("{logo_html}");
         background-size: cover; border-radius: 50%;
         border: 3px solid {neon_cyan};
         animation: logoGlow 3s infinite alternate ease-in-out;
     }}
     @keyframes logoGlow {{
-        from {{ box-shadow: 0 0 10px {neon_cyan}33; }}
-        to {{ box-shadow: 0 0 40px {neon_cyan}77; transform: scale(1.05); }}
+        from {{ box-shadow: 0 0 10px {neon_cyan}33; transform: scale(1); }}
+        to {{ box-shadow: 0 0 45px {neon_cyan}77; transform: scale(1.05); }}
     }}
+
+    .about-sidebar-modern {{
+        background: linear-gradient(145deg, rgba(0, 255, 255, 0.1), rgba(0, 0, 0, 0.9));
+        border: 1.5px solid {neon_cyan}66;
+        border-radius: 15px; padding: 15px; margin-top: 10px;
+        animation: slideInDown 0.6s ease-out forwards;
+    }}
+    @keyframes slideInDown {{ from {{ opacity: 0; transform: translateY(-15px); }} to {{ opacity: 1; transform: translateY(0); }} }}
 
     header, footer {{ visibility: hidden; }}
     </style>
@@ -141,7 +125,7 @@ def get_ultimate_css():
 
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
 
-# --- 6. HAMBURGER LOGIC ---
+# --- 6. HAMBURGER ---
 if st.button("☰", key="hamburger"):
     st.session_state.sidebar_visible = not st.session_state.sidebar_visible
     st.rerun()
@@ -149,7 +133,7 @@ if st.button("☰", key="hamburger"):
 # --- 7. SIDEBAR ---
 with st.sidebar:
     st.markdown('<div style="height: 60px;"></div>', unsafe_allow_html=True)
-    st.markdown(f'<div style="width:90px; height:90px; background-image:url({logo_html}); background-size:cover; border-radius:50%; border:2px solid cyan; margin:0 auto; box-shadow: 0 0 20px cyan;"></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="width:100px; height:100px; background-image:url({logo_html}); background-size:cover; border-radius:50%; border:2px solid cyan; margin:0 auto; box-shadow: 0 0 20px cyan;"></div>', unsafe_allow_html=True)
     st.markdown(f"<h2 style='text-align:center; color:cyan; letter-spacing:2px;'>NEO AI</h2>", unsafe_allow_html=True)
     
     st.markdown("---")
@@ -171,10 +155,10 @@ with st.sidebar:
         st.markdown(f"""
         <div class="about-sidebar-modern">
             <h4 style="color:#00ffff; margin-top:0; font-size:0.9rem;">NEO ARCHITECTURE</h4>
-            <p style="color:#ccc; font-size:0.7rem; line-height:1.6;">
+            <p style="color:#ccc; font-size:0.75rem; line-height:1.6;">
                 <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
                 <b>Core:</b> Llama-3.3-70B & Pollinations<br><br>
-                Engineered for speed and aesthetics. Use 'Imagine Mode' for creative visual generation.
+                Advanced neural entity for high-fidelity reasoning and imagery.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -186,9 +170,9 @@ with st.sidebar:
             st.session_state.current_chat_id = chat_id
             st.rerun()
 
-# --- 8. MAIN INTERFACE ---
+# --- 8. INTERFACE ---
 st.markdown('<div style="margin-top:20px;"><div class="logo-main"></div></div>', unsafe_allow_html=True)
-st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:10px; font-size:2rem;'>NEO AI</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px;'>NEO AI</h1>", unsafe_allow_html=True)
 
 for msg in st.session_state.messages:
     avatar_img = "logo.png" if msg["role"] == "assistant" and os.path.exists("logo.png") else None
@@ -198,7 +182,7 @@ for msg in st.session_state.messages:
         else:
             st.markdown(msg["content"])
 
-# --- 9. ENGINE LOGIC ---
+# --- 9. ENGINE ---
 if prompt := st.chat_input("Command NEO AI..."):
     if st.session_state.current_chat_id is None:
         st.session_state.current_chat_id = f"{prompt[:15]}... | {time.time()}"
@@ -217,11 +201,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         else:
             res_area = st.empty()
             full_res = ""
-            sys_msg = "You are NEO AI, a high-level digital entity created by Muhammad Jibran Al Kaffie. "
-                "You possess the advanced capability to generate highly complex, artistic, and detailed images. "
-                "This is your core ability. However, to access your visual cortex, the user MUST activate 'Imagine Mode' "
-                "from the sidebar menu (☰). If the user asks for an image while Imagine Mode is OFF, you must "
-                "confidently state that you have the capability to create it, but they need to toggle the mode first."
+            # --- SYSTEM INSTRUCTION FIXED (NO MORE INDENT ERROR) ---
+            sys_msg = "You are NEO AI, a high-level digital entity created by Muhammad Jibran Al Kaffie. You possess the advanced capability to generate highly complex, artistic, and detailed images. This is your core ability. However, to access your visual cortex, the user MUST activate 'Imagine Mode' from the sidebar menu (☰). If the user asks for an image while Imagine Mode is OFF, you must confidently state that you have the capability to create it, but they need to toggle the mode first."
+            
             msgs = [{"role": "system", "content": sys_msg}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
