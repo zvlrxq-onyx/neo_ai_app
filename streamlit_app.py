@@ -222,7 +222,7 @@ with st.sidebar:
 # --- 8. MAIN INTERFACE ---
 st.markdown('<div style="margin-top:20px;"><div class="logo-main"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:12px; margin-bottom:5px;'>NEO AI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:rgba(0,255,255,0.6); letter-spacing:2px; font-size:0.9rem;'>Initiating neural connection... Hello, Jibran.</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:rgba(0,255,255,0.6); letter-spacing:2px; font-size:0.9rem;'>Hi, is there anything I can help you with?</p>", unsafe_allow_html=True)
 
 for msg in st.session_state.messages:
     avatar_img = "logo.png" if msg["role"] == "assistant" and os.path.exists("logo.png") else None
