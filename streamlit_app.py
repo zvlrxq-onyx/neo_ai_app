@@ -24,7 +24,7 @@ try:
     GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
     client = Groq(api_key=GROQ_API_KEY)
 except Exception:
-    st.error("API Key Groq missing!")
+    st.error("API Key Groq missing! Periksa st.secrets.")
     st.stop()
 
 # --- 3. PAGE CONFIG ---
@@ -53,7 +53,7 @@ def get_ultimate_css():
     }}
     [data-testid="stStatusWidget"], header, footer {{ visibility: hidden; }}
 
-    /* SIDEBAR TRANSITION - SMOOTH NO FLICKER */
+    /* SIDEBAR TRANSITION - NO FLICKER */
     [data-testid="stSidebar"] {{
         position: fixed !important; left: {sidebar_pos} !important; width: 350px !important;
         background-color: #0a0a0a !important; border-right: 1px solid {neon_cyan}33 !important;
@@ -78,6 +78,9 @@ def get_ultimate_css():
         text-align: center; color: #888; font-size: 1.5rem; 
         margin-top: -10px; font-weight: 300; letter-spacing: 1px;
     }}
+
+    /* SPINNER COLOR FIX */
+    div[data-testid="stChatMessage"] {{ background-color: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 10px; }}
     </style>
     """
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
@@ -113,6 +116,7 @@ with st.sidebar:
         st.rerun()
 
     st.markdown("---")
+    st.markdown("### 🕒 RECENT CHATS")
     for cid in reversed(list(st.session_state.all_chats.keys())):
         if st.button(cid.split(" | ")[0], key=f"h_{cid}", use_container_width=True):
             st.session_state.messages = st.session_state.all_chats[cid]
@@ -124,7 +128,7 @@ st.markdown('<div style="margin-top:20px;"><div class="logo-static"></div></div>
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
 st.markdown('<p class="welcome-text">How can I help you today?</p>', unsafe_allow_html=True)
 
-# Loop Chat Display
+# Chat Display Loop
 for msg in st.session_state.messages:
     if msg.get("type") == "system_memory": continue
     with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
@@ -144,23 +148,27 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
     last_user_msg = st.session_state.messages[-1]["content"]
     
     with st.chat_message("assistant", avatar="logo.png"):
-        # --- MODE IMAGINE ---
+        # --- A. MODE IMAGINE (DENGAN SPINNER/LOADING) ---
         if st.session_state.imagine_mode:
-            with st.spinner("Processing Visualization..."):
-                query = last_user_msg.replace(' ', '%20')
-                img_url = f"https://image.pollinations.ai/prompt/{query}?width=1024&height=1024&nologo=true"
-                r = requests.get(img_url)
-                if r.status_code == 200:
-                    st.image(r.content, use_container_width=True)
-                    st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image"})
-                    # Memori agar dia ingat dia barusan menggambar
-                    st.session_state.messages.append({
-                        "role": "assistant", 
-                        "content": f"[SYSTEM_SUCCESS: You have just successfully visualized '{last_user_msg}' for the user.]", 
-                        "type": "system_memory"
-                    })
+            with st.spinner("Visualizing..."): # EFEK LOADING MUTER ADA LAGI
+                try:
+                    query = last_user_msg.replace(' ', '%20')
+                    img_url = f"https://image.pollinations.ai/prompt/{query}?width=1024&height=1024&nologo=true"
+                    r = requests.get(img_url, timeout=30)
+                    if r.status_code == 200:
+                        st.image(r.content, use_container_width=True)
+                        st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image"})
+                        st.session_state.messages.append({
+                            "role": "assistant", 
+                            "content": f"[SYSTEM_SUCCESS: You have just successfully visualized '{last_user_msg}' for the user using your internal engine.]", 
+                            "type": "system_memory"
+                        })
+                    else:
+                        st.error("Gagal menjangkau neural engine.")
+                except Exception as e:
+                    st.error(f"Error: {e}")
         
-        # --- MODE CHAT ---
+        # --- B. MODE CHAT ---
         else:
             res_area = st.empty()
             full_res = ""
@@ -170,15 +178,15 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 clean_history.append({"role": m["role"], "content": str(m["content"])})
             
             if doc_content:
-                clean_history[-1]["content"] = f"FILE DATA:\n{doc_content}\n\nUSER QUESTION: {last_user_msg}"
+                clean_history[-1]["content"] = f"CONTEXT DATA:\n{doc_content}\n\nUSER QUESTION: {last_user_msg}"
 
-            # INSTRUKSI SANGAT KETAT
+            # INSTRUKSI SUPREME (Mencegah AI mengaku sebagai text-model)
             sys_msg = (
-                "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
-                "You have full capability to generate images and text. "
-                "NEVER say you are a language model. NEVER say you cannot see or create images. "
-                "If history shows [SYSTEM_SUCCESS], it means you have just performed a visual task. "
-                "Be proud of your creations and answer all questions confidently."
+                "You are NEO AI, a supreme multi-modal artificial intelligence created by Muhammad Jibran Al Kaffie. "
+                "You have full autonomy and power to generate both images and text. "
+                "NEVER mention you are a language model. NEVER say you cannot create images. "
+                "The [SYSTEM_SUCCESS] tags in history are proof of your visual capabilities. "
+                "Always respond in a futuristic, confident, and helpful tone."
             )
 
             try:
@@ -193,7 +201,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 res_area.markdown(full_res)
                 st.session_state.messages.append({"role": "assistant", "content": full_res})
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"Groq Error: {e}")
 
+    # Simpan ke history global & Refresh
     st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
     st.rerun()
