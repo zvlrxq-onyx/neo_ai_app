@@ -171,6 +171,19 @@ def get_ultimate_css():
         to {{ opacity: 1; transform: translateY(0); }}
     }}
 
+    /* WELCOME TEXT STYLING */
+    .welcome-text {{
+        text-align: center;
+        color: #00ffff;
+        font-size: 1.2rem;
+        margin: 20px 0;
+        animation: fadeInUp 1s ease-out;
+    }}
+    @keyframes fadeInUp {{
+        from {{ opacity: 0; transform: translateY(20px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+
     header, footer {{ visibility: hidden; }}
     </style>
     """
@@ -231,10 +244,8 @@ with st.sidebar:
 st.markdown('<div style="margin-top:20px;"><div class="logo-main"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; animation: textGlow 2s infinite alternate;'>NEO AI</h1>", unsafe_allow_html=True)
 
-# --- WELCOME MESSAGE ---
-if not st.session_state.messages:
-    with st.chat_message("assistant", avatar="logo.png" if os.path.exists("logo.png") else None):
-        st.markdown("Hi, is there anything I can help you with?")
+# --- WELCOME TEXT (STATIC, LIKE CHATGPT) ---
+st.markdown('<div class="welcome-text">Hi, is there anything I can help you with?</div>', unsafe_allow_html=True)
 
 for msg in st.session_state.messages:
     avatar_img = "logo.png" if msg["role"] == "assistant" and os.path.exists("logo.png") else None
