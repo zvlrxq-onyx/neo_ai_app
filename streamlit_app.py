@@ -35,101 +35,91 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ULTIMATE CHAT-GPT STYLE CSS ---
+# --- 5. THE ULTIMATE CSS (FIXED & SMOOTH) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0" if st.session_state.sidebar_visible else "-350px"
     
     return f"""
     <style>
-    /* BASE SETUP */
     html, body, [data-testid="stAppViewContainer"] {{
         background-color: #080808 !important;
         color: #e0e0e0 !important;
         scroll-behavior: smooth !important;
     }}
     [data-testid="stStatusWidget"] {{ visibility: hidden; }}
-    header, footer {{ visibility: hidden; }}
 
-    /* GLOBAL TRANSITION */
     * {{ transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }}
 
-    /* HAMBURGER */
+    /* HAMBURGER MOBILE FIX */
     .stButton > button[key="hamburger"] {{
-        position: fixed; top: 20px; left: 20px; z-index: 9999999 !important;
+        position: fixed; top: 20px; left: 20px; 
+        z-index: 9999999 !important;
         background: rgba(0,0,0,0.9) !important;
         border: 2px solid {neon_cyan}66 !important;
         border-radius: 12px !important;
         width: 50px !important; height: 50px !important;
     }}
+    .stButton > button[key="hamburger"]:hover {{
+        border-color: {neon_cyan} !important;
+        box-shadow: 0 0 25px {neon_cyan}88 !important;
+        transform: scale(1.1);
+    }}
 
-    /* SIDEBAR */
+    /* SIDEBAR SLIDE */
     [data-testid="stSidebar"] {{
         left: {sidebar_pos} !important;
+        transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important;
         background-color: #0a0a0a !important;
         border-right: 1px solid {neon_cyan}33 !important;
         z-index: 9999998 !important;
     }}
 
-    /* === CHATGPT STYLE BUBBLES === */
-    /* Container Chat */
-    [data-testid="stChatMessage"] {{
-        background-color: transparent !important;
-        padding: 1rem 0 !important;
-        border: none !important;
-    }}
-
-    /* Bubble AI (Assistant) - KIRI */
-    [data-testid="stChatMessageAssistant"] {{
-        flex-direction: row !important;
+    /* BUTTON HOVER SCALE */
+    section[data-testid="stSidebar"] .stButton > button {{
         background: rgba(255, 255, 255, 0.03) !important;
-        border-radius: 15px !important;
-        padding: 15px !important;
-        border: 1px solid {neon_cyan}22 !important;
-        max-width: 85%;
-        margin-right: auto !important;
-        animation: slideInLeft 0.5s ease forwards;
+        border: 1px solid rgba(0, 255, 255, 0.1) !important;
+        color: white !important;
+        border-radius: 12px !important;
+        margin-bottom: 8px !important;
     }}
-
-    /* Bubble USER - KANAN */
-    [data-testid="stChatMessageUser"] {{
-        flex-direction: row-reverse !important;
-        background: linear-gradient(135deg, {neon_cyan}11, rgba(0,0,0,0.4)) !important;
-        border-radius: 15px !important;
-        padding: 15px !important;
-        border: 1px solid {neon_cyan}44 !important;
-        max-width: 85%;
-        margin-left: auto !important;
-        text-align: right;
-        animation: slideInRight 0.5s ease forwards;
+    section[data-testid="stSidebar"] .stButton > button:hover {{
+        transform: scale(1.08) !important;
+        border-color: {neon_cyan} !important;
+        box-shadow: 0 0 25px {neon_cyan}66 !important;
     }}
-
-    @keyframes slideInLeft {{ from {{ opacity: 0; transform: translateX(-20px); }} to {{ opacity: 1; transform: translateX(0); }} }}
-    @keyframes slideInRight {{ from {{ opacity: 0; transform: translateX(20px); }} to {{ opacity: 1; transform: translateX(0); }} }}
 
     /* ELASTIC INPUT */
     div[data-testid="stChatInput"] {{
         width: 80% !important; margin: 0 auto !important;
+        transition: width 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
     div[data-testid="stChatInput"]:focus-within {{
         width: 100% !important;
     }}
 
-    /* LOGO & HOVER SCALE */
+    /* LOGO PULSING */
     .logo-main {{
-        width: 120px; height: 120px; margin: 0 auto;
+        width: 130px; height: 130px; margin: 0 auto;
         background-image: url("{logo_html}");
         background-size: cover; border-radius: 50%;
         border: 3px solid {neon_cyan};
         animation: logoGlow 3s infinite alternate ease-in-out;
     }}
-    @keyframes logoGlow {{ from {{ box-shadow: 0 0 10px {neon_cyan}33; }} to {{ box-shadow: 0 0 40px {neon_cyan}77; }} }}
-
-    section[data-testid="stSidebar"] .stButton > button:hover {{
-        transform: scale(1.08) !important;
-        border-color: {neon_cyan} !important;
-        box-shadow: 0 0 20px {neon_cyan}44 !important;
+    @keyframes logoGlow {{
+        from {{ box-shadow: 0 0 10px {neon_cyan}33; transform: scale(1); }}
+        to {{ box-shadow: 0 0 45px {neon_cyan}77; transform: scale(1.05); }}
     }}
+
+    .about-sidebar-modern {{
+        background: linear-gradient(145deg, rgba(0, 255, 255, 0.1), rgba(0, 0, 0, 0.9));
+        border: 1.5px solid {neon_cyan}66;
+        border-radius: 15px; padding: 15px; margin-top: 10px;
+        animation: slideInDown 0.6s ease-out forwards;
+    }}
+    @keyframes slideInDown {{ from {{ opacity: 0; transform: translateY(-15px); }} to {{ opacity: 1; transform: translateY(0); }} }}
+
+    header, footer {{ visibility: hidden; }}
     </style>
     """
 
@@ -162,11 +152,16 @@ with st.sidebar:
         st.rerun()
 
     if st.session_state.show_about:
-        st.markdown(f"""<div style="background:rgba(0,255,255,0.05); border:1px solid cyan; border-radius:10px; padding:10px; font-size:0.7rem; color:#ccc;">
-            <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
-            <b>Model:</b> Llama-3.3-70B<br>
-            <b>Vision:</b> Integrated Imagine System
-        </div>""", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="about-sidebar-modern">
+            <h4 style="color:#00ffff; margin-top:0; font-size:0.9rem;">NEO ARCHITECTURE</h4>
+            <p style="color:#ccc; font-size:0.75rem; line-height:1.6;">
+                <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
+                <b>Core:</b> Llama-3.3-70B & Pollinations<br><br>
+                Advanced neural entity for high-fidelity reasoning and imagery.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("---")
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
@@ -175,11 +170,10 @@ with st.sidebar:
             st.session_state.current_chat_id = chat_id
             st.rerun()
 
-# --- 8. MAIN INTERFACE ---
+# --- 8. INTERFACE ---
 st.markdown('<div style="margin-top:20px;"><div class="logo-main"></div></div>', unsafe_allow_html=True)
-st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:10px; font-size:2rem;'>NEO AI</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px;'>NEO AI</h1>", unsafe_allow_html=True)
 
-# Chat Display Logic
 for msg in st.session_state.messages:
     avatar_img = "logo.png" if msg["role"] == "assistant" and os.path.exists("logo.png") else None
     with st.chat_message(msg["role"], avatar=avatar_img):
@@ -207,7 +201,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         else:
             res_area = st.empty()
             full_res = ""
-            sys_msg = "You are NEO AI, created by Muhammad Jibran Al Kaffie. You possess the advanced capability to generate highly complex, artistic, and detailed images. To access it, user MUST activate 'Imagine Mode' from the sidebar. Confidently state your capability."
+            # --- SYSTEM INSTRUCTION FIXED (NO MORE INDENT ERROR) ---
+            sys_msg = "You are NEO AI, a high-level digital entity created by Muhammad Jibran Al Kaffie. You possess the advanced capability to generate highly complex, artistic, and detailed images. This is your core ability. However, to access your visual cortex, the user MUST activate 'Imagine Mode' from the sidebar menu (☰). If the user asks for an image while Imagine Mode is OFF, you must confidently state that you have the capability to create it, but they need to toggle the mode first."
+            
             msgs = [{"role": "system", "content": sys_msg}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
