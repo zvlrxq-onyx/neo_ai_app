@@ -81,9 +81,15 @@ def get_ultimate_css():
         border-color: {neon_cyan} !important;
     }}
 
-    /* CHAT INPUT EXPAND SMOOTH */
-    [data-testid="stChatInput"] {{ transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; }}
-    [data-testid="stChatInput"]:focus-within {{ transform: scaleX(1.02) !important; }}
+    /* CHAT INPUT EXPAND SMOOTH & STRETCH EFFECT */
+    [data-testid="stChatInput"] {{ 
+        transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; 
+        transform-origin: center !important;
+    }}
+    [data-testid="stChatInput"]:focus-within {{ 
+        transform: scaleX(1.05) scaleY(1.02) !important; 
+        box-shadow: 0 0 20px {neon_cyan}33 !important;
+    }}
 
     /* IMAGE STYLING */
     [data-testid="stChatMessage"] img {{
@@ -93,6 +99,11 @@ def get_ultimate_css():
         margin: 10px auto;
         display: block;
         border: 1px solid {neon_cyan}22;
+        transition: all 0.5s ease !important;
+    }}
+    [data-testid="stChatMessage"] img:hover {{
+        transform: scale(1.02) !important;
+        box-shadow: 0 0 15px {neon_cyan}44 !important;
     }}
 
     .logo-static {{ 
@@ -100,6 +111,11 @@ def get_ultimate_css():
         background-image: url("{logo_html}"); background-size: cover; 
         border-radius: 50%; border: 3px solid {neon_cyan};
         box-shadow: 0 0 20px {neon_cyan}33;
+        transition: all 0.5s ease !important;
+    }}
+    .logo-static:hover {{
+        transform: scale(1.05) !important;
+        box-shadow: 0 0 30px {neon_cyan}66 !important;
     }}
     
     .about-box {{
@@ -211,8 +227,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
 
             sys_msg = (
                 "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
-                "You are NOT a text-only model. You can process images, files, and complex data. "
-                "NEVER say you are limited to text. Respond with superior intelligence and confidence."
+                "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
+                "NEVER say you are limited to text. Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+                "If the user mentions or praises images (e.g., cats, drawings), acknowledge it by saying something like: 'Terimakasih atas pujiannya, aku memang bisa membuat gambar seperti itu. Apakah mau aku rekomendasikan gambar apa yang keren?' or seamlessly integrate offers to generate related visuals. "
+                "Always be ready to switch to visual mode or suggest generating images based on context."
             )
 
             try:
