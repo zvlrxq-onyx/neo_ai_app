@@ -35,7 +35,7 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ULTIMATE NEON SYSTEM CSS ---
+# --- 5. THE SUPREME SMOOTH CSS ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0" if st.session_state.sidebar_visible else "-350px"
@@ -46,125 +46,81 @@ def get_ultimate_css():
     html, body, [data-testid="stAppViewContainer"] {{
         background-color: #080808 !important;
         color: #e0e0e0 !important;
-        scroll-behavior: smooth !important;
     }}
     [data-testid="stStatusWidget"] {{ visibility: hidden; }}
     header, footer {{ visibility: hidden; }}
 
-    /* UNIVERSAL SMOOTHNESS */
-    * {{ transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1); }}
+    /* ULTRA SMOOTH TRANSITIONS */
+    * {{ transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); }}
 
-    /* HAMBURGER BUTTON */
+    /* HAMBURGER */
     .stButton > button[key="hamburger"] {{
         position: fixed; top: 20px; left: 20px; z-index: 9999999 !important;
-        background: rgba(0,0,0,0.9) !important;
+        background: rgba(0,0,0,0.8) !important;
         border: 2px solid {neon_cyan}44 !important;
-        border-radius: 12px !important;
+        border-radius: 50% !important; /* Buat bulat agar lebih modern */
         width: 50px !important; height: 50px !important;
     }}
     .stButton > button[key="hamburger"]:hover {{
         border-color: {neon_cyan} !important;
-        box-shadow: 0 0 25px {neon_cyan}88 !important;
+        box-shadow: 0 0 20px {neon_cyan}88 !important;
+        transform: rotate(90deg) scale(1.1);
     }}
 
-    /* SIDEBAR SLIDE */
+    /* SIDEBAR SLIDE - THE SMOOTH WAY */
     [data-testid="stSidebar"] {{
         left: {sidebar_pos} !important;
         background-color: #0a0a0a !important;
-        border-right: 1px solid {neon_cyan}33 !important;
+        border-right: 1px solid {neon_cyan}22 !important;
         z-index: 9999998 !important;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.5);
     }}
 
-    /* SIDEBAR BUTTONS HOVER */
-    section[data-testid="stSidebar"] .stButton > button {{
-        background: rgba(255, 255, 255, 0.03) !important;
-        border: 1px solid rgba(0, 255, 255, 0.1) !important;
-        border-radius: 12px !important;
-        color: white !important;
+    /* CHAT BUBBLES ANIMATION */
+    [data-testid="stChatMessage"] {{
+        background-color: transparent !important;
+        animation: smoothAppear 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }}
-    section[data-testid="stSidebar"] .stButton > button:hover {{
-        transform: scale(1.05) !important;
-        border-color: {neon_cyan} !important;
-        box-shadow: 0 0 15px {neon_cyan}55 !important;
+    @keyframes smoothAppear {{
+        from {{ opacity: 0; transform: translateY(20px); filter: blur(10px); }}
+        to {{ opacity: 1; transform: translateY(0); filter: blur(0); }}
     }}
 
-    /* === ADVANCED SYSTEM INFO PANEL === */
-    .system-info-panel {{
-        background: linear-gradient(165deg, rgba(0, 255, 255, 0.08), rgba(0, 0, 0, 0.95));
-        border: 1px solid {neon_cyan}33;
-        border-radius: 18px;
-        padding: 20px;
-        margin-top: 15px;
-        overflow: hidden;
-        max-height: 0;
-        opacity: 0;
-        transform: translateY(-10px);
-        animation: expandPanel 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-    }}
-    
-    .system-info-panel:hover {{
-        border-color: {neon_cyan} !important;
-        box-shadow: 0 0 35px {neon_cyan}33 !important;
-        transform: scale(1.02);
-    }}
-
-    @keyframes expandPanel {{
-        to {{ max-height: 1000px; opacity: 1; transform: translateY(0); }}
-    }}
-
-    .info-header {{
-        color: {neon_cyan};
-        font-family: 'Courier New', monospace;
-        font-weight: bold;
-        letter-spacing: 2px;
-        font-size: 0.9rem;
-        border-bottom: 1px solid {neon_cyan}44;
-        padding-bottom: 8px;
-        margin-bottom: 12px;
-    }}
-
-    .info-item {{
-        font-size: 0.75rem;
-        line-height: 1.6;
-        color: #bbb;
-        margin-bottom: 8px;
-    }}
-
-    /* CHAT BUBBLES */
+    /* CHATGPT STYLE BUBBLES */
     [data-testid="stChatMessageAssistant"] {{
-        background: rgba(255, 255, 255, 0.03) !important;
-        border-radius: 15px !important;
-        border: 1px solid {neon_cyan}22 !important;
-        max-width: 85%; margin-right: auto !important;
-        animation: slideIn 0.6s ease-out;
+        background: rgba(255, 255, 255, 0.02) !important;
+        border-radius: 20px !important;
+        border: 1px solid {neon_cyan}11 !important;
+        margin-right: 15% !important;
     }}
     [data-testid="stChatMessageUser"] {{
         flex-direction: row-reverse !important;
-        background: linear-gradient(135deg, {neon_cyan}11, rgba(0,0,0,0.3)) !important;
-        border-radius: 15px !important;
-        border: 1px solid {neon_cyan}44 !important;
-        max-width: 85%; margin-left: auto !important;
-        animation: slideIn 0.6s ease-out;
+        background: linear-gradient(135deg, {neon_cyan}08, rgba(0,0,0,0.4)) !important;
+        border-radius: 20px !important;
+        border: 1px solid {neon_cyan}33 !important;
+        margin-left: 15% !important;
     }}
-    @keyframes slideIn {{ from {{ opacity: 0; transform: translateY(15px); }} }}
+
+    /* SYSTEM INFO PANEL GOW */
+    .system-info-panel {{
+        background: rgba(0, 255, 255, 0.03);
+        border: 1px solid {neon_cyan}22;
+        border-radius: 15px; padding: 15px; margin-top: 10px;
+        transition: 0.5s;
+    }}
+    .system-info-panel:hover {{
+        box-shadow: 0 0 25px {neon_cyan}33;
+        border-color: {neon_cyan};
+    }}
 
     /* ELASTIC INPUT */
     div[data-testid="stChatInput"] {{
         width: 80% !important; margin: 0 auto !important;
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }}
     div[data-testid="stChatInput"]:focus-within {{
         width: 100% !important;
     }}
-
-    /* LOGO PULSE */
-    .logo-main {{
-        width: 120px; height: 120px; margin: 0 auto;
-        background-image: url("{logo_html}");
-        background-size: cover; border-radius: 50%;
-        border: 3px solid {neon_cyan};
-        animation: logoGlow 3s infinite alternate ease-in-out;
-    }}
-    @keyframes logoGlow {{ from {{ box-shadow: 0 0 10px {neon_cyan}22; }} to {{ box-shadow: 0 0 45px {neon_cyan}66; transform: scale(1.05); }} }}
     </style>
     """
 
@@ -199,16 +155,12 @@ with st.sidebar:
     if st.session_state.show_about:
         st.markdown(f"""
         <div class="system-info-panel">
-            <div class="info-header">> CORE_SPECS.sh</div>
-            <div class="info-item"><b>Architect:</b> Muhammad Jibran Al Kaffie</div>
-            <div class="info-item"><b>Project Designation:</b> NEO-Artificial Intelligence Interface</div>
-            <div class="info-item"><b>Neural Engine:</b> Llama-3.3-70B Ultra-Versatile Architecture</div>
-            <div class="info-item"><b>Visual Cortex:</b> Pollinations.ai Generative Synthesis</div>
-            <div class="info-item"><b>System Status:</b> Operational / High Fidelity</div>
-            <div class="info-item"><b>UI Framework:</b> Streamlit Elastic-Neon Interface</div>
-            <div class="info-item" style="margin-top:15px; border-top: 1px solid #333; padding-top:10px; font-style: italic; color:#00ffff;">
-                "The future is not written, it is rendered in real-time."
-            </div>
+            <div style="color:{neon_cyan}; font-size:0.8rem; font-family:monospace; margin-bottom:10px;">> ACCESSING CORE...</div>
+            <p style="font-size:0.75rem; color:#bbb; line-height:1.6; margin:0;">
+                <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
+                <b>Core Engine:</b> Llama-3.3-70B<br>
+                <b>Status:</b> High-Fidelity Sync Active
+            </p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -220,9 +172,8 @@ with st.sidebar:
             st.rerun()
 
 # --- 8. MAIN INTERFACE ---
-st.markdown('<div style="margin-top:20px;"><div class="logo-main"></div></div>', unsafe_allow_html=True)
-st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:12px; margin-bottom:5px;'>NEO AI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:rgba(0,255,255,0.6); letter-spacing:2px; font-size:0.9rem;'>Hi, is there anything I can help you with?</p>", unsafe_allow_html=True)
+st.markdown('<div style="margin-top:20px;"><div style="width:120px;height:120px;margin:0 auto;background-image:url('+logo_html+');background-size:cover;border-radius:50%;border:3px solid cyan;box-shadow: 0 0 30px rgba(0,255,255,0.3);"></div></div>', unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px;'>NEO AI</h1>", unsafe_allow_html=True)
 
 for msg in st.session_state.messages:
     avatar_img = "logo.png" if msg["role"] == "assistant" and os.path.exists("logo.png") else None
@@ -242,7 +193,7 @@ if prompt := st.chat_input("Command NEO AI..."):
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     with st.chat_message("assistant", avatar="logo.png" if os.path.exists("logo.png") else None):
         if st.session_state.imagine_mode:
-            with st.spinner("Decoding imagination..."):
+            with st.spinner("Synthesizing..."):
                 url = f"https://image.pollinations.ai/prompt/{st.session_state.messages[-1]['content'].replace(' ', '%20')}?width=1024&height=1024&nologo=true"
                 r = requests.get(url)
                 if r.status_code == 200:
@@ -251,13 +202,15 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         else:
             res_area = st.empty()
             full_res = ""
-            sys_msg = "You are NEO AI, a high-level digital entity created by Muhammad Jibran Al Kaffie. You possess the advanced capability to generate highly complex, artistic, and detailed images. This is your core ability. To access it, user MUST activate 'Imagine Mode' from the sidebar menu (☰)."
+            sys_msg = "You are NEO AI by Muhammad Jibran Al Kaffie. Professional and high-tech."
             msgs = [{"role": "system", "content": sys_msg}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
                 if chunk.choices[0].delta.content:
                     full_res += chunk.choices[0].delta.content
+                    # PENAMBAHAN DELAY UNTUK SMOOTH TYPING
                     res_area.markdown(full_res + "▌")
+                    time.sleep(0.01) # Mikro-delay agar teks mengalir mulus
             res_area.markdown(full_res)
             st.session_state.messages.append({"role": "assistant", "content": full_res})
     st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
