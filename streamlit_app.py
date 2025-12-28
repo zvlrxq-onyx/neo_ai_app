@@ -35,14 +35,14 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ULTIMATE SMOOTH & SYMMETRIC CSS ---
+# --- 5. THE SUPREME CSS (SMOOTH & SYMMETRIC) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0" if st.session_state.sidebar_visible else "-350px"
     
     return f"""
     <style>
-    /* GLOBAL RESET */
+    /* GLOBAL FIX */
     html, body, [data-testid="stAppViewContainer"] {{
         background-color: #080808 !important;
         color: #e0e0e0 !important;
@@ -51,7 +51,7 @@ def get_ultimate_css():
     [data-testid="stStatusWidget"] {{ visibility: hidden; }}
     header, footer {{ visibility: hidden; }}
 
-    /* SIDEBAR SLIDE SMOOTHING */
+    /* SIDEBAR SLIDE SMOOTH */
     [data-testid="stSidebar"] {{
         left: {sidebar_pos} !important;
         background-color: #0a0a0a !important;
@@ -60,7 +60,7 @@ def get_ultimate_css():
         z-index: 9999998 !important;
     }}
 
-    /* HISTORY BUTTONS ANIMATION (MEMBESAR DIKIT) */
+    /* HISTORY HOVER POP */
     section[data-testid="stSidebar"] .stButton > button {{
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
@@ -70,41 +70,26 @@ def get_ultimate_css():
         box-shadow: 0 0 15px {neon_cyan}44 !important;
     }}
 
-    /* HAMBURGER */
-    .stButton > button[key="hamburger"] {{
-        position: fixed; top: 20px; left: 20px; z-index: 9999999 !important;
-        background: rgba(0,0,0,0.9) !important;
-        border: 2px solid {neon_cyan}44 !important;
-        border-radius: 50% !important;
-        width: 50px !important; height: 50px !important;
-        transition: 0.5s !important;
+    /* ABOUT PANEL (SMOOTH & GLOW) */
+    .about-panel {{
+        background: linear-gradient(145deg, rgba(0,255,255,0.05), rgba(0,0,0,0.9));
+        border: 1px solid {neon_cyan}22;
+        border-radius: 15px; padding: 20px; margin-top: 15px;
+        transition: 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
     }}
-    .stButton > button[key="hamburger"]:hover {{
-        transform: rotate(90deg);
-        border-color: {neon_cyan} !important;
-    }}
-
-    /* MAIN CONTAINER ENTRANCE */
-    @keyframes fadeInBlur {{
-        from {{ opacity: 0; filter: blur(10px); transform: translateY(20px); }}
-        to {{ opacity: 1; filter: blur(0); transform: translateY(0); }}
-    }}
-    .main-content {{
-        animation: fadeInBlur 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    .about-panel:hover {{
+        border-color: {neon_cyan};
+        box-shadow: 0 0 30px {neon_cyan}33;
+        transform: translateY(-5px);
     }}
 
-    /* SYMMETRIC CHAT BUBBLES */
-    [data-testid="stChatMessage"] {{
-        padding: 1.5rem !important;
-        animation: chatFade 0.8s ease-out forwards;
-    }}
-    @keyframes chatFade {{ from {{ opacity: 0; transform: translateY(10px); }} to {{ opacity: 1; transform: translateY(0); }} }}
-
+    /* CHAT SYMMETRY */
     [data-testid="stChatMessageAssistant"] {{
         background: rgba(255, 255, 255, 0.03) !important;
         border-radius: 0 20px 20px 20px !important;
         margin-right: 15% !important;
-        border: 1px solid {neon_cyan}22 !important;
+        border: 1px solid {neon_cyan}11 !important;
     }}
     [data-testid="stChatMessageUser"] {{
         flex-direction: row-reverse !important;
@@ -114,24 +99,21 @@ def get_ultimate_css():
         border: 1px solid {neon_cyan}33 !important;
     }}
 
-    /* ELASTIC INPUT */
-    div[data-testid="stChatInput"] {{
-        width: 80% !important; margin: 0 auto !important;
-        transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    /* ENTRANCE ANIMATION */
+    .main-content {{
+        animation: fadeIn 1.2s ease-out;
     }}
-    div[data-testid="stChatInput"]:focus-within {{ width: 100% !important; }}
+    @keyframes fadeIn {{ from {{ opacity: 0; transform: translateY(20px); }} to {{ opacity: 1; transform: translateY(0); }} }}
 
     /* LOGO PULSE */
     .logo-pulse {{
-        width: 130px; height: 130px; margin: 0 auto;
+        width: 120px; height: 120px; margin: 0 auto;
         background-image: url("{logo_html}");
         background-size: cover; border-radius: 50%;
         border: 3px solid {neon_cyan};
-        animation: pulseLogo 3s infinite alternate ease-in-out;
+        animation: pulse 3s infinite alternate ease-in-out;
     }}
-    @keyframes pulseLogo {{
-        to {{ transform: scale(1.05); box-shadow: 0 0 40px {neon_cyan}55; }}
-    }}
+    @keyframes pulse {{ to {{ transform: scale(1.05); box-shadow: 0 0 40px {neon_cyan}55; }} }}
     </style>
     """
 
@@ -164,11 +146,24 @@ with st.sidebar:
         st.rerun()
 
     if st.session_state.show_about:
-        st.markdown(f"""<div style="background:rgba(0,255,255,0.05); border:1px solid cyan; border-radius:15px; padding:15px; font-size:0.8rem; color:#bbb;">
-            <b>Architect:</b> Jibran Al Kaffie<br><b>Engine:</b> Llama-3.3-70B</div>""", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="about-panel">
+            <div style="color:cyan; font-family:monospace; font-weight:bold; margin-bottom:10px;">> CORE_MANIFEST.sys</div>
+            <p style="font-size:0.75rem; color:#ccc; line-height:1.5;">
+                <b>Designation:</b> NEO AI (Neural Electronic Organism)<br>
+                <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
+                <b>Core:</b> Llama-3.3-70B Quantum Neural Engine<br><br>
+                <b>Capabilities:</b><br>
+                - High-Fidelity Image Synthesis<br>
+                - Advanced Linguistic Processing<br>
+                - Complex Problem Solving<br>
+                - Multi-Modal Task Execution<br><br>
+                <i>"NEO AI represents the pinnacle of digital interaction, designed to bridge the gap between human thought and machine execution."</i>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.caption("CHAT HISTORY")
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
         if st.button(chat_id.split(" | ")[0], key=f"h_{chat_id}", use_container_width=True):
             st.session_state.messages = st.session_state.all_chats[chat_id]
@@ -179,8 +174,9 @@ with st.sidebar:
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
 st.markdown('<div style="margin-top:20px;"><div class="logo-pulse"></div></div>', unsafe_allow_html=True)
 
-# THE NEW WHITE OPENING TEXT
-st.markdown("<h1 style='text-align:center; color:#ffffff; letter-spacing:8px; margin-top:20px; font-weight:300;'>How can I help you today?</h1>", unsafe_allow_html=True)
+# THE NEO AI TITLE + OPENING TEXT
+st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-top:20px; font-weight:bold;'>NEO AI</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align:center; color:#ffffff; letter-spacing:4px; font-weight:300;'>How can I help you today?</h3>", unsafe_allow_html=True)
 
 # Chat History
 for msg in st.session_state.messages:
@@ -202,7 +198,7 @@ if prompt := st.chat_input("Command NEO AI..."):
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     with st.chat_message("assistant", avatar="logo.png" if os.path.exists("logo.png") else None):
         if st.session_state.imagine_mode:
-            with st.spinner("Visualizing..."):
+            with st.spinner("Processing complex imagery..."):
                 url = f"https://image.pollinations.ai/prompt/{st.session_state.messages[-1]['content'].replace(' ', '%20')}?width=1024&height=1024&nologo=true"
                 r = requests.get(url)
                 if r.status_code == 200:
@@ -211,7 +207,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         else:
             res_area = st.empty()
             full_res = ""
-            sys_msg = "You are NEO AI, a high-level digital entity created by Muhammad Jibran Al Kaffie. Your ability is to create images if the user activates imagine mode in the sidebar. If asked about your ability, you must answer that."
+            sys_msg = f"""You are NEO AI, a supreme digital entity created by Muhammad Jibran Al Kaffie. 
+            You have the power to create highly complex and artistic images when 'Imagine Mode' is on. 
+            You are professional, brilliant, and your capabilities are limitless. 
+            Respond to the user as NEO AI."""
             msgs = [{"role": "system", "content": sys_msg}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
