@@ -24,7 +24,7 @@ except:
 # --- 3. PAGE CONFIG ---
 st.set_page_config(page_title="NEO AI", page_icon="⚡", layout="centered")
 
-# --- 4. CACHED ASSETS (Penting agar tidak reload gambar tiap detik) ---
+# --- 4. ASSETS LOADER ---
 @st.cache_data
 def get_base64_logo():
     if os.path.exists("logo.png"):
@@ -35,84 +35,102 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ANTI-FLICKER & ULTRA SMOOTH CSS ---
+# --- 5. THE ULTIMATE SMOOTH & GLOW CSS ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0" if st.session_state.sidebar_visible else "-350px"
+    input_glow = f"0 0 20px {neon_cyan}66" if st.session_state.imagine_mode else "none"
     
     return f"""
     <style>
-    /* MENGUNCI BACKGROUND AGAR TIDAK FLICKER SAAT RERUN */
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
+    /* ANTI-FLICKER CORE */
+    html, body, [data-testid="stAppViewContainer"] {{
         background-color: #080808 !important;
         color: #e0e0e0 !important;
+        scroll-behavior: smooth !important;
     }}
 
-    /* MENGHILANGKAN LOADING SPINNER BAWAAN YANG BIKIN KEDIP */
-    [data-testid="stStatusWidget"] {{
-        visibility: hidden;
-        display: none !important;
+    [data-testid="stStatusWidget"] {{ visibility: hidden; }}
+
+    /* GLOBAL SMOOTH ANIMATION */
+    * {{ transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }}
+
+    /* HAMBURGER BUTTON GLOW */
+    .stButton > button[key="hamburger"] {{
+        position: fixed; top: 25px; left: 20px; z-index: 99999;
+        background: rgba(0,0,0,0.8) !important;
+        border: 1.5px solid {neon_cyan}44 !important;
+        border-radius: 12px !important;
+        width: 48px !important; height: 48px !important;
+    }}
+    .stButton > button[key="hamburger"]:hover {{
+        border-color: {neon_cyan} !important;
+        box-shadow: 0 0 20px {neon_cyan}66 !important;
     }}
 
-    /* TRANSISI HALUS UNTUK SELURUH ELEMEN */
-    * {{
-        transition: background-color 0s, opacity 0.3s ease-in-out;
-    }}
-
-    /* CUSTOM SIDEBAR DENGAN TRANSFORM (SMOOTH) */
+    /* SIDEBAR SLIDE EFFECT */
     [data-testid="stSidebar"] {{
         left: {sidebar_pos} !important;
-        transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
+        transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important;
         background-color: #0a0a0a !important;
         border-right: 1px solid {neon_cyan}33 !important;
-        z-index: 1000000 !important;
+        z-index: 99998 !important;
     }}
 
-    /* HAMBURGER BUTTON FIX POSITION */
-    .stButton > button[key="hamburger"] {{
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        z-index: 1000001;
-        background: rgba(0,0,0,0.7) !important;
-        border: 1.5px solid {neon_cyan}55 !important;
-        border-radius: 12px !important;
-        width: 45px !important;
-        height: 45px !important;
+    /* LOGO PULSING GLOW EFFECT */
+    .logo-container {{
+        text-align: center;
+        margin-top: 20px;
     }}
-
-    .ham-line {{
-        width: 20px; height: 2px; background: {neon_cyan};
-        margin: 3px 0; border-radius: 2px; display: block;
-    }}
-
-    /* AVATAR & IMAGE STYLING */
-    [data-testid="stChatMessage"] div[data-testid="stChatAvatar"] img {{
-        border-radius: 50% !important;
-        border: 1.5px solid {neon_cyan}66 !important;
-    }}
-    [data-testid="stChatMessage"] [data-testid="stImage"] img {{
-        border-radius: 15px !important;
-    }}
-
-    /* MAIN LOGO */
     .logo-main {{
-        width: 130px; height: 130px; margin: 0 auto;
+        width: 135px; height: 135px; margin: 0 auto;
         background-image: url("{logo_html}");
         background-size: cover; border-radius: 50%;
         border: 3px solid {neon_cyan};
-        box-shadow: 0 0 25px {neon_cyan}22;
+        animation: glowPulse 3s infinite alternate ease-in-out;
+    }}
+    @keyframes glowPulse {{
+        from {{ box-shadow: 0 0 10px {neon_cyan}22, inset 0 0 5px {neon_cyan}11; transform: scale(1); }}
+        to {{ box-shadow: 0 0 35px {neon_cyan}55, inset 0 0 15px {neon_cyan}22; transform: scale(1.03); }}
     }}
 
-    /* CHAT INPUT DESIGN */
+    /* INPUT FIELD: ELASTIC EXPAND & MEMANJANG */
+    div[data-testid="stChatInput"] {{
+        width: 80% !important;
+        margin: 0 auto !important;
+        transition: width 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    }}
+    div[data-testid="stChatInput"]:focus-within {{
+        width: 100% !important;
+    }}
     div[data-testid="stChatInput"] textarea {{
-        border: 1.5px solid {neon_cyan}22 !important;
-        border-radius: 25px !important;
+        border: 2px solid rgba(0, 255, 255, 0.1) !important;
+        border-radius: 30px !important;
         background: #111 !important;
+        box-shadow: {input_glow};
+    }}
+    div[data-testid="stChatInput"] textarea:focus {{
+        border-color: {neon_cyan} !important;
+        box-shadow: 0 0 25px {neon_cyan}33 !important;
     }}
 
-    /* HIDE ELEMENT BAWAAN */
-    [data-testid="stSidebarNav"] {{ display: none; }}
+    /* CHAT BUBBLES SMOOTH APPEAR */
+    [data-testid="stChatMessage"] {{
+        animation: chatFade 0.6s ease-out forwards;
+        border-radius: 20px !important;
+    }}
+    @keyframes chatFade {{
+        from {{ opacity: 0; transform: translateY(15px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+
+    /* AVATAR ROUNDED */
+    [data-testid="stChatMessage"] div[data-testid="stChatAvatar"] img {{
+        border-radius: 50% !important;
+        border: 1.5px solid {neon_cyan}44 !important;
+    }}
+
+    header, footer {{ visibility: hidden; }}
     </style>
     """
 
@@ -123,23 +141,24 @@ if st.button("☰", key="hamburger"):
     st.session_state.sidebar_visible = not st.session_state.sidebar_visible
     st.rerun()
 
-# --- 7. SIDEBAR (HISTORY & SETTINGS) ---
+# --- 7. SIDEBAR ---
 with st.sidebar:
-    st.markdown(f'<div style="text-align:center; margin-top:40px;"><div style="width:90px; height:90px; background-image:url({logo_html}); background-size:cover; border-radius:50%; border:2px solid cyan; margin:0 auto;"></div></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height: 50px;"></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="width:100px; height:100px; background-image:url({logo_html}); background-size:cover; border-radius:50%; border:2px solid cyan; margin:0 auto; box-shadow: 0 0 20px cyan;"></div>', unsafe_allow_html=True)
     st.markdown(f"<h2 style='text-align:center; color:cyan; letter-spacing:2px;'>NEO AI</h2>", unsafe_allow_html=True)
     
     st.markdown("---")
-    if st.button("➕ NEW CHAT", use_container_width=True):
+    if st.button("➕ NEW SESSION", use_container_width=True):
         st.session_state.messages = []
         st.session_state.current_chat_id = None
         st.rerun()
 
-    mode_btn = "🎨 IMAGINE: ON" if st.session_state.imagine_mode else "🖼️ MODE: CHAT"
-    if st.button(mode_btn, use_container_width=True):
+    imagine_lbl = "🎨 IMAGINE: ON" if st.session_state.imagine_mode else "🖼️ MODE: CHAT"
+    if st.button(imagine_lbl, use_container_width=True):
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
 
-    if st.button("ℹ️ ABOUT SYSTEM", use_container_width=True):
+    if st.button("ℹ️ SYSTEM INFO", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
     
@@ -147,13 +166,13 @@ with st.sidebar:
         st.markdown(f"""
         <div style="background:rgba(0,255,255,0.05); border:1px solid cyan; border-radius:15px; padding:15px; font-size:0.8rem; color:#ccc;">
             <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
-            <b>Engine:</b> Llama-3.3-70B & Pollinations<br><br>
-            <i>NEO AI dirancang untuk performa tanpa flicker dan visualisasi tajam.</i>
+            <b>Engine:</b> Llama-3.3-70B & Pollinations<br>
+            <i>NEO AI dirancang untuk visualisasi tajam & performa smooth.</i>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.caption("RECENT HISTORY")
+    st.caption("HISTORY")
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
         if st.button(chat_id.split(" | ")[0], key=f"h_{chat_id}", use_container_width=True):
             st.session_state.messages = st.session_state.all_chats[chat_id]
@@ -161,20 +180,19 @@ with st.sidebar:
             st.rerun()
 
 # --- 8. MAIN INTERFACE ---
-st.markdown('<div class="logo-main"></div>', unsafe_allow_html=True)
-st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:12px; margin-bottom:30px;'>NEO AI</h1>", unsafe_allow_html=True)
+st.markdown('<div class="logo-container"><div class="logo-main"></div></div>', unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-top:10px;'>NEO AI</h1>", unsafe_allow_html=True)
 
-# Container Chat (Scrollable)
+# Chat Display
 for msg in st.session_state.messages:
-    logo_path_final = "logo.png" if os.path.exists("logo.png") else None
-    avatar_img = logo_path_final if msg["role"] == "assistant" else None
+    avatar_img = "logo.png" if msg["role"] == "assistant" and os.path.exists("logo.png") else None
     with st.chat_message(msg["role"], avatar=avatar_img):
         if msg.get("type") == "image":
             st.image(msg["content"], use_container_width=True)
         else:
             st.markdown(msg["content"])
 
-# --- 9. AI ENGINE LOGIC ---
+# --- 9. ENGINE LOGIC ---
 if prompt := st.chat_input("Command NEO AI..."):
     if st.session_state.current_chat_id is None:
         st.session_state.current_chat_id = f"{prompt[:15]}... | {time.time()}"
@@ -184,7 +202,7 @@ if prompt := st.chat_input("Command NEO AI..."):
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     with st.chat_message("assistant", avatar="logo.png" if os.path.exists("logo.png") else None):
         if st.session_state.imagine_mode:
-            with st.spinner("Visualizing..."):
+            with st.spinner("Visualizing Imagination..."):
                 url = f"https://image.pollinations.ai/prompt/{st.session_state.messages[-1]['content'].replace(' ', '%20')}?width=1024&height=1024&nologo=true"
                 r = requests.get(url)
                 if r.status_code == 200:
@@ -193,7 +211,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         else:
             res_area = st.empty()
             full_res = ""
-            sys_msg = "You are NEO AI, created by Muhammad Jibran Al Kaffie. Professional, sharp, and futuristic."
+            sys_msg = "You are NEO AI, created by Muhammad Jibran Al Kaffie. High-end and futuristic."
             msgs = [{"role": "system", "content": sys_msg}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
