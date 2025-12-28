@@ -35,14 +35,14 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE NEO-SMOOTH TYPING & CHAT CSS ---
+# --- 5. THE ULTIMATE GOD-LEVEL CSS (HOVER, ELASTIC, GLOW) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0" if st.session_state.sidebar_visible else "-350px"
     
     return f"""
     <style>
-    /* BASE SETTINGS */
+    /* ANTI-FLICKER & BASE */
     html, body, [data-testid="stAppViewContainer"] {{
         background-color: #080808 !important;
         color: #e0e0e0 !important;
@@ -50,16 +50,21 @@ def get_ultimate_css():
     }}
     [data-testid="stStatusWidget"] {{ visibility: hidden; }}
 
-    /* GLOBAL TRANSITION */
+    /* GLOBAL TRANSITION - WAJIB ADA UNTUK SEMUA ELEMEN */
     * {{ transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }}
 
-    /* HAMBURGER BUTTON */
+    /* HAMBURGER */
     .stButton > button[key="hamburger"] {{
         position: fixed; top: 25px; left: 20px; z-index: 99999;
         background: rgba(0,0,0,0.8) !important;
         border: 1.5px solid {neon_cyan}44 !important;
         border-radius: 12px !important;
         width: 48px !important; height: 48px !important;
+    }}
+    .stButton > button[key="hamburger"]:hover {{
+        border-color: {neon_cyan} !important;
+        box-shadow: 0 0 20px {neon_cyan}88 !important;
+        transform: scale(1.1);
     }}
 
     /* SIDEBAR SLIDE */
@@ -68,63 +73,81 @@ def get_ultimate_css():
         transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important;
         background-color: #0a0a0a !important;
         border-right: 1px solid {neon_cyan}33 !important;
+        z-index: 99998 !important;
     }}
 
-    /* === ANIMASI CHAT HALUS === */
-    [data-testid="stChatMessage"] {{
-        animation: slideInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
-        background: rgba(255, 255, 255, 0.02) !important;
-        border-radius: 20px !important;
-        border: 1px solid rgba(0, 255, 255, 0.05) !important;
-        margin-bottom: 10px !important;
+    /* HOVER EFFECT: MEMBESAR DIKIT & GLOW */
+    section[data-testid="stSidebar"] .stButton > button {{
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid rgba(0, 255, 255, 0.1) !important;
+        color: white !important;
+        border-radius: 12px !important;
+        margin-bottom: 8px !important;
+    }}
+    section[data-testid="stSidebar"] .stButton > button:hover {{
+        transform: scale(1.08) !important; /* MEMBESAR DIKIT */
+        border-color: {neon_cyan} !important;
+        box-shadow: 0 0 25px {neon_cyan}66 !important;
+        background: rgba(0, 255, 255, 0.1) !important;
     }}
 
-    @keyframes slideInUp {{
-        from {{ opacity: 0; transform: translateY(30px) scale(0.98); }}
-        to {{ opacity: 1; transform: translateY(0) scale(1); }}
+    /* MODERN ABOUT PANEL (GLASSMORPHISM) */
+    .about-panel-modern {{
+        background: linear-gradient(145deg, rgba(0, 255, 255, 0.1), rgba(0, 0, 0, 0.8));
+        border: 1.5px solid {neon_cyan}66;
+        border-radius: 20px;
+        padding: 20px;
+        margin: 15px 0;
+        box-shadow: 0 0 30px {neon_cyan}22;
+        animation: slideInDown 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+    }}
+    @keyframes slideInDown {{
+        from {{ opacity: 0; transform: translateY(-20px); max-height: 0; }}
+        to {{ opacity: 1; transform: translateY(0); max-height: 800px; }}
     }}
 
-    /* TYPING FLOW ANIMATION (EFEK TEKS MENGALIR) */
-    .typing-text {{
-        animation: typingReveal 0.3s ease-out forwards;
-    }}
-
-    @keyframes typingReveal {{
-        from {{ opacity: 0; filter: blur(5px); transform: translateX(-5px); }}
-        to {{ opacity: 1; filter: blur(0); transform: translateX(0); }}
-    }}
-
-    /* LOGO GLOW */
-    .logo-main {{
-        width: 130px; height: 130px; margin: 0 auto;
-        background-image: url("{logo_html}");
-        background-size: cover; border-radius: 50%;
-        border: 2px solid {neon_cyan};
-        animation: logoGlow 3s infinite alternate ease-in-out;
-    }}
-    @keyframes logoGlow {{
-        from {{ box-shadow: 0 0 15px {neon_cyan}22; }}
-        to {{ box-shadow: 0 0 45px {neon_cyan}55; transform: scale(1.02); }}
-    }}
-
-    /* ELASTIC INPUT */
+    /* ELASTIC INPUT: MEMANJANG SAAT DIKLIK */
     div[data-testid="stChatInput"] {{
-        width: 80% !important; margin: 0 auto !important;
+        width: 80% !important;
+        margin: 0 auto !important;
+        transition: width 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }}
     div[data-testid="stChatInput"]:focus-within {{
         width: 100% !important;
     }}
-
-    /* SIDEBAR ABOUT PANEL */
-    .about-sidebar-panel {{
-        background: rgba(0, 255, 255, 0.05);
-        border: 1px solid {neon_cyan}33;
-        border-radius: 15px; padding: 15px; margin-top: 10px;
-        animation: slideDown 0.5s ease-out;
+    div[data-testid="stChatInput"] textarea {{
+        border: 2px solid rgba(0, 255, 255, 0.1) !important;
+        border-radius: 30px !important;
+        background: #111 !important;
     }}
-    @keyframes slideDown {{
-        from {{ opacity: 0; max-height: 0; }}
-        to {{ opacity: 1; max-height: 500px; }}
+    div[data-testid="stChatInput"] textarea:focus {{
+        border-color: {neon_cyan} !important;
+        box-shadow: 0 0 30px {neon_cyan}44 !important;
+    }}
+
+    /* CHAT ANIMATION */
+    [data-testid="stChatMessage"] {{
+        animation: fadeInUp 0.5s ease-out forwards;
+        background: rgba(255, 255, 255, 0.02) !important;
+        border-radius: 15px !important;
+        border: 1px solid rgba(0, 255, 255, 0.05) !important;
+    }}
+    @keyframes fadeInUp {{
+        from {{ opacity: 0; transform: translateY(20px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+
+    /* LOGO PULSING */
+    .logo-main {{
+        width: 130px; height: 130px; margin: 0 auto;
+        background-image: url("{logo_html}");
+        background-size: cover; border-radius: 50%;
+        border: 3px solid {neon_cyan};
+        animation: logoGlow 3s infinite alternate ease-in-out;
+    }}
+    @keyframes logoGlow {{
+        from {{ box-shadow: 0 0 15px {neon_cyan}33; transform: scale(1); }}
+        to {{ box-shadow: 0 0 45px {neon_cyan}77; transform: scale(1.05); }}
     }}
 
     header, footer {{ visibility: hidden; }}
@@ -141,8 +164,8 @@ if st.button("☰", key="hamburger"):
 # --- 7. SIDEBAR ---
 with st.sidebar:
     st.markdown('<div style="height: 50px;"></div>', unsafe_allow_html=True)
-    st.markdown(f'<div style="width:90px; height:90px; background-image:url({logo_html}); background-size:cover; border-radius:50%; border:2px solid cyan; margin:0 auto; box-shadow: 0 0 15px cyan;"></div>', unsafe_allow_html=True)
-    st.markdown(f"<h2 style='text-align:center; color:cyan; letter-spacing:2px;'>NEO AI</h2>", unsafe_allow_html=True)
+    st.markdown(f'<div style="width:100px; height:100px; background-image:url({logo_html}); background-size:cover; border-radius:50%; border:2px solid cyan; margin:0 auto; box-shadow: 0 0 20px cyan;"></div>', unsafe_allow_html=True)
+    st.markdown(f"<h2 style='text-align:center; color:cyan; letter-spacing:2px; margin-bottom:20px;'>NEO AI</h2>", unsafe_allow_html=True)
     
     if st.button("➕ NEW SESSION", use_container_width=True):
         st.session_state.messages = []
@@ -157,21 +180,24 @@ with st.sidebar:
     if st.button("ℹ️ SYSTEM INFO", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
-    
+
+    # MODERN ABOUT PANEL INSIDE SIDEBAR
     if st.session_state.show_about:
         st.markdown(f"""
-        <div class="about-sidebar-panel">
-            <h4 style="color:cyan; font-size:0.9rem; margin:0;">NEO CORE ARCHITECTURE</h4>
-            <p style="color:#bbb; font-size:0.75rem; line-height:1.5; margin-top:10px;">
-                <b>Architect:</b> Muhammad Jibran Al Kaffie<br><br>
-                NEO AI utilizes Llama-3.3-70B for logic and Pollinations for 
-                generative imagery. Designed with elastic CSS for a seamless interface.
+        <div class="about-panel-modern">
+            <h4 style="color:#00ffff; margin-top:0;">NEO CORE SYSTEM</h4>
+            <p style="color:#ccc; font-size:0.75rem; line-height:1.6;">
+                <b>Architect:</b> Muhammad Jibran Al Kaffie<br>
+                <b>Engine:</b> Llama-3.3-70B & Pollinations<br><br>
+                NEO AI is an advanced neural interface designed for high-fidelity reasoning 
+                and creative visualization. It features elastic UI dynamics and neon 
+                glassmorphism aesthetics.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.caption("CHATS")
+    st.caption("RECENT SESSIONS")
     for chat_id in reversed(list(st.session_state.all_chats.keys())):
         if st.button(chat_id.split(" | ")[0], key=f"h_{chat_id}", use_container_width=True):
             st.session_state.messages = st.session_state.all_chats[chat_id]
@@ -189,8 +215,7 @@ for msg in st.session_state.messages:
         if msg.get("type") == "image":
             st.image(msg["content"], use_container_width=True)
         else:
-            # Menggunakan div typing-text agar pesan lama tetap smooth
-            st.markdown(f'<div class="typing-text">{msg["content"]}</div>', unsafe_allow_html=True)
+            st.markdown(msg["content"])
 
 # --- 9. ENGINE LOGIC ---
 if prompt := st.chat_input("Command NEO AI..."):
@@ -213,17 +238,16 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             full_res = ""
             sys_msg = (
                 "You are NEO AI, created by Muhammad Jibran Al Kaffie. "
-                "You are a professional AI that can generate complex images. "
-                "If a user asks for an image, strictly tell them to turn on 'Imagine Mode' in the sidebar first."
+                "You can generate complex images, but you must tell the user to "
+                "turn on 'Imagine Mode' in the sidebar first if they ask for an image."
             )
             msgs = [{"role": "system", "content": sys_msg}] + st.session_state.messages
             stream = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", stream=True)
             for chunk in stream:
                 if chunk.choices[0].delta.content:
                     full_res += chunk.choices[0].delta.content
-                    # Bungkus dalam div typing-text agar setiap chunk muncul halus
-                    res_area.markdown(f'<div class="typing-text">{full_res}▌</div>', unsafe_allow_html=True)
-            res_area.markdown(f'<div class="typing-text">{full_res}</div>', unsafe_allow_html=True)
+                    res_area.markdown(full_res + "▌")
+            res_area.markdown(full_res)
             st.session_state.messages.append({"role": "assistant", "content": full_res})
     st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
     st.rerun()
