@@ -178,13 +178,13 @@ with col_btn:
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
 
-# Glow logo logic
-glow_css = "box-shadow: 0 0 45px #00ffff; border: 3px solid #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
+# Logo emoji kecil berdasarkan mode
+logo_emoji = "🎨" if st.session_state.imagine_mode else "💬"
 sub_text = "Visualizing your thoughts..." if st.session_state.imagine_mode else "How can I help you today?"
 
 st.markdown(f'''
 <div style="margin-top:-20px; text-align:center;">
-    <div class="logo-static" style="width:135px; height:135px; {glow_css}"></div>
+    <span style="font-size:60px;">{logo_emoji}</span>
 </div>
 ''', unsafe_allow_html=True)
 
