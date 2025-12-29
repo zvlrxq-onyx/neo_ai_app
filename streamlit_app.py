@@ -172,13 +172,38 @@ with st.sidebar:
     </p></div>""", unsafe_allow_html=True)
 
 # --- 8. MAIN UI ---
-# Top right mode toggle
-col1, col2 = st.columns([4, 1])
-with col2:
-    label_mode = "🎨 IMAGINE" if st.session_state.imagine_mode else "🖼️ CHAT"
-    if st.button(label_mode, key="mode_toggle"):
+# Layout kolom untuk tombol toggle di pojok kanan atas
+col_space, col_btn = st.columns([5, 1.2])
+with col_btn:
+    # Label tombol yang berubah sesuai mode
+    label_mode = "🎨 IMAGINE" if st.session_state.imagine_mode else "💬 CHAT"
+    if st.button(label_mode, key="mode_toggle", use_container_width=True):
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
+
+# LOGO LOGIC: Tetap menampilkan logo.png dengan tambahan efek visual
+# Efek Glow Cyan menyala hanya jika imagine_mode bernilai True
+glow_css = "box-shadow: 0 0 40px #00ffff; border: 3px solid #00ffff;" if st.session_state.imagine_mode else ""
+sub_text = "Visualizing your thoughts..." if st.session_state.imagine_mode else "How can I help you today?"
+
+st.markdown(f'''
+<div style="margin-top:-20px; text-align:center;">
+    <div class="logo-static" style="width:135px; height:135px; {glow_css}"></div>
+</div>
+''', unsafe_allow_html=True)
+
+# Nama Brand & Deskripsi
+st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
+st.markdown(f'<p style="text-align:center; color:#888; font-size:1.3rem; margin-top:-5px;">{sub_text}</p>', unsafe_allow_html=True)
+
+# Render pesan chat (tanpa memory system)
+for msg in st.session_state.messages:
+    if msg.get("type") == "system_memory": continue
+    with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
+        if msg.get("type") == "image":
+            st.image(msg["content"])
+        else:
+            st.markdown(msg["content"])
 
 # Logo changes based on mode - FIXED: Always show something in center
 st.markdown(f'''
