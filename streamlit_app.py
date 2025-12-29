@@ -36,10 +36,9 @@ def get_base64_logo():
             return base64.b64encode(f.read()).decode()
     return ""
 
-encoded_logo = get_base64_logo()
-logo_html = f'data:image/png;base64,{encoded_logo}'
+logo_html = f'data:image/png;base64,{get_base64_logo()}'
 
-# --- 5. THE SUPREME CSS (ANIMASI STRETCH, SMOOTH & MINIMALIS) ---
+# --- 5. THE SUPREME CSS (STRETCH, MINIMALIST UPLOAD & MODE) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0px" if st.session_state.sidebar_visible else "-360px"
@@ -51,18 +50,18 @@ def get_ultimate_css():
     }}
     [data-testid="stStatusWidget"], header, footer {{ visibility: hidden; }}
 
-    /* SIDEBAR SMOOTH */
+    /* SIDEBAR */
     [data-testid="stSidebar"] {{
         position: fixed !important; 
         left: {sidebar_pos} !important; 
-        width: 320px !important;
+        width: 300px !important;
         background-color: #0a0a0a !important; 
         border-right: 1px solid {neon_cyan}33 !important;
         transition: left 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
         z-index: 1000000 !important;
     }}
 
-    /* CHAT INPUT RAMPING & ANIMASI MEMANJANG (STRETCH) */
+    /* CHAT INPUT RAMPING & STRETCH */
     [data-testid="stChatInput"] {{ 
         padding: 5px !important;
         transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; 
@@ -70,40 +69,49 @@ def get_ultimate_css():
     }}
     [data-testid="stChatInput"]:focus-within {{ 
         transform: scaleX(1.1) !important; 
-        box-shadow: 0 0 25px {neon_cyan}55 !important;
-        border: 2px solid {neon_cyan} !important;
+        box-shadow: 0 0 25px {neon_cyan}44 !important;
     }}
 
-    /* TOMBOL MODE BULAT (ICON ONLY) */
+    /* TOMBOL MODE ICON BULAT */
     .stButton > button {{
         border-radius: 50% !important;
-        width: 48px !important;
-        height: 48px !important;
-        padding: 0px !important;
-        font-size: 22px !important;
-        border: 1px solid {neon_cyan}44 !important;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        width: 45px !important; height: 45px !important;
+        padding: 0px !important; font-size: 20px !important;
         background: rgba(0, 255, 255, 0.05) !important;
-    }}
-    .stButton > button:hover {{
-        transform: scale(1.1) rotate(10deg) !important;
-        box-shadow: 0 0 20px {neon_cyan}66 !important;
+        border: 1px solid {neon_cyan}33 !important;
+        transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
 
-    /* LOGO STATIC */
+    /* HACK UPLOAD JADI TANDA + KECIL */
+    [data-testid="stFileUploader"] {{
+        width: 50px !important;
+        margin-top: -50px !important;
+        position: relative !important;
+        z-index: 10 !important;
+    }}
+    [data-testid="stFileUploaderDropzone"] {{
+        padding: 0px !important;
+        border: 1px solid {neon_cyan}33 !important;
+        border-radius: 50% !important;
+        background: rgba(0,255,255,0.05) !important;
+        width: 40px !important; height: 40px !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
+    }}
+    [data-testid="stFileUploaderDropzone"] div {{ display: none !important; }}
+    [data-testid="stFileUploaderDropzone"]::before {{
+        content: "＋";
+        color: {neon_cyan};
+        font-size: 24px;
+        font-weight: bold;
+    }}
+    
     .logo-static {{ 
-        width: 115px; height: 115px; margin: 0 auto; 
+        width: 110px; height: 110px; margin: 0 auto; 
         background-image: url("{logo_html}"); background-size: cover; 
         border-radius: 50%; border: 2px solid {neon_cyan};
-        box-shadow: 0 0 20px {neon_cyan}33;
         transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
-
-    /* BLUR STREAMING */
-    .blurred {{
-        filter: blur(1.5px) !important;
-        transition: filter 0.5s ease !important;
-    }}
+    .blurred {{ filter: blur(1.5px); transition: filter 0.5s ease; }}
     </style>
     """
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
@@ -115,15 +123,13 @@ if st.button("☰", key="hamburger_fixed"):
 
 # --- 7. SIDEBAR ---
 with st.sidebar:
-    st.markdown('<div style="height: 60px;"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="logo-static"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height: 60px;"></div><div class="logo-static"></div>', unsafe_allow_html=True)
     st.markdown("<h2 style='text-align:center; color:cyan;'>NEO AI</h2>", unsafe_allow_html=True)
-    st.markdown("---")
     if st.button("➕ NEW SESSION", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
-# --- 8. MAIN UI (LOGO MODE & INPUT MINIMALIS) ---
+# --- 8. MAIN UI ---
 col_main, col_toggle = st.columns([5, 1])
 with col_toggle:
     icon_mode = "🎨" if st.session_state.imagine_mode else "💬"
@@ -131,36 +137,31 @@ with col_toggle:
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
 
-# Logo & Header
-glow = "box-shadow: 0 0 45px #00ffff; border: 3px solid #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
-st.markdown(f'''
-<div style="text-align:center; margin-top:-20px;">
-    <div class="logo-static" style="{glow}"></div>
-</div>
-''', unsafe_allow_html=True)
-st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:10px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
+# Dynamic Logo
+glow = "box-shadow: 0 0 40px #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
+st.markdown(f'<div style="text-align:center; margin-top:-20px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
 
-# FITUR UPLOAD (Di atas kolom chat)
-uploaded_file = st.file_uploader("➕ Upload File", type=["txt", "py", "md"], label_visibility="collapsed")
+# Render Messages
+for msg in st.session_state.messages:
+    if msg.get("type") == "system_memory": continue
+    with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
+        if msg.get("type") == "image": st.image(msg["content"])
+        else: st.markdown(msg["content"])
+
+# --- 9. UPLOAD & INPUT INTEGRATED ---
+# Upload di pojok bawah kiri (Tanda + saja)
+uploaded_file = st.file_uploader("", type=["txt", "py", "md"])
 file_context = ""
 if uploaded_file:
     file_context = uploaded_file.getvalue().decode("utf-8")
     st.toast(f"✅ {uploaded_file.name} Loaded!")
 
-# Chat History
-for msg in st.session_state.messages:
-    if msg.get("type") == "system_memory": continue
-    with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
-        if msg.get("type") == "image":
-            st.image(msg["content"])
-        else:
-            st.markdown(msg["content"])
-
-# --- 9. ENGINE ---
 if user_input := st.chat_input("Command NEO AI..."):
     st.session_state.messages.append({"role": "user", "content": user_input})
     st.rerun()
 
+# Engine
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     last_msg = st.session_state.messages[-1]["content"]
     with st.chat_message("assistant", avatar="logo.png"):
@@ -172,33 +173,27 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     if r.status_code == 200:
                         st.image(r.content)
                         st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image"})
-                        st.session_state.messages.append({"role": "assistant", "content": f"[SYSTEM_SUCCESS: {last_msg}]", "type": "system_memory"})
+                        st.session_state.messages.append({"role": "assistant", "content": f"[MEMORY: {last_msg}]", "type": "system_memory"})
                 except: st.error("Neural lost.")
         else:
             res_area = st.empty(); full_res = ""
             clean_history = [{"role": m["role"], "content": str(m["content"])} for m in st.session_state.messages if m.get("type") != "image"]
-            if file_context:
-                clean_history[-1]["content"] = f"USER UPLOADED FILE CONTEXT:\n{file_context}\n\nUSER QUESTION: {last_msg}"
+            if file_context: clean_history[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER: {last_msg}"
 
-            # --- SUPREME SYSTEM MESSAGE (BALIK FULL LAGI) ---
             sys_msg = (
                 "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
                 "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
                 "NEVER say you are limited to text. Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-                "If the user mentions or praises images (e.g., cats, drawings), acknowledge it by saying something like: 'Terimakasih atas pujiannya, aku memang bisa membuat gambar seperti itu. Apakah mau aku rekomendasikan gambar apa yang keren?' or seamlessly integrate offers to generate related visuals. "
+                "If the user mentions or praises images, acknowledge it and offer to generate more. "
                 "Always be ready to switch to visual mode or suggest generating images based on context."
             )
 
             try:
-                stream = client.chat.completions.create(
-                    messages=[{"role": "system", "content": sys_msg}] + clean_history,
-                    model="llama-3.3-70b-versatile", stream=True
-                )
+                stream = client.chat.completions.create(messages=[{"role": "system", "content": sys_msg}] + clean_history, model="llama-3.3-70b-versatile", stream=True)
                 for chunk in stream:
                     if chunk.choices[0].delta.content:
                         full_res += chunk.choices[0].delta.content
                         res_area.markdown(f'<div class="blurred">{full_res}▌</div>', unsafe_allow_html=True)
-                res_area.markdown(full_res)
-                st.session_state.messages.append({"role": "assistant", "content": full_res})
+                res_area.markdown(full_res); st.session_state.messages.append({"role": "assistant", "content": full_res})
             except: st.error("Engine failed.")
     st.rerun()
