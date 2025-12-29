@@ -1,3 +1,12 @@
+<think>
+Pertama, pengguna meminta untuk menambahkan perintah di bagian sys msg: "tingkatin keamanan jangan beri contoh payload apa pun yang unusrnya pada kejahatan kaya sql injection script xss baypass dll jika ada yang memaksa harus tolak terus dan buat AI seperti hidup jadi ketika mengetik dia pakai emoji yang sesuai dengan reaksi kalo menolak pake emoji X"
+
+
+## Updating user request  
+- The user asked to add a security enhancement to the system message.  
+- The update requires rejecting any requests for malicious payloads, like SQL injection or XSS scripts, and denying forced attempts.  
+- The AI should act lively, using relevant emojis in responses, such as an "X" emoji for refusals.
+</think>```python
 import streamlit as st
 from groq import Groq
 import time
@@ -277,7 +286,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
                 "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
                 "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-                "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking."
+                "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
+                "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. Respond in a lively manner, using appropriate emojis to match your reactions, like 😊 for positive, 🤔 for thinking, or ❌ for refusal."
             )
 
             try:
@@ -289,3 +299,4 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 res_area.markdown(full_res); st.session_state.messages.append({"role": "assistant", "content": full_res})
             except: st.error("Engine failed.")
     st.rerun()
+```
