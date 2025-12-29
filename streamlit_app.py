@@ -62,15 +62,15 @@ def get_ultimate_css():
         z-index: 1000000 !important;
     }}
 
-    /* CHAT INPUT RAMPING & STRETCH ANIMATION - ENHANCED SCALE */
+    /* CHAT INPUT RAMPING & STRETCH ANIMATION - ENHANCED SCALE & BOUNCY */
     [data-testid="stChatInput"] {{ 
         padding: 5px !important;
         max-width: 320px !important;
-        transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; 
+        transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important; /* More bouncy/kenyal */
         transform-origin: center !important;
     }}
     [data-testid="stChatInput"]:focus-within {{ 
-        transform: scaleX(1.05) !important; /* More noticeable stretch */
+        transform: scaleX(1.08) !important; /* Slightly more stretch */
         box-shadow: 0 0 25px {neon_cyan}44 !important;
     }}
 
@@ -85,6 +85,20 @@ def get_ultimate_css():
     }}
     .stButton > button:hover {{
         transform: scale(1.1) !important;
+    }}
+
+    /* RESET BUTTON GLOW & SCALE ON HOVER */
+    .reset-container button {{
+        border-radius: 50% !important;
+        width: 45px !important; height: 45px !important;
+        padding: 0px !important; font-size: 20px !important;
+        background: rgba(0, 255, 255, 0.05) !important;
+        border: 1px solid {neon_cyan}33 !important;
+        transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
+    }}
+    .reset-container button:hover {{
+        box-shadow: 0 0 20px {neon_cyan} !important; /* Glow effect */
+        transform: scale(1.15) !important; /* Membesar dikit */
     }}
 
     /* HACK: HANYA LOGO + (TANPA TULISAN) - ENHANCED HOVER SCALE */
@@ -128,7 +142,7 @@ def get_ultimate_css():
     }}
     .blurred {{ filter: blur(1.5px); transition: filter 0.5s ease; }}
 
-    /* Reset Session Logo - ENHANCED HOVER SCALE */
+    /* Reset Session Logo - ENHANCED HOVER SCALE (if used) */
     .reset-logo {{
         width: 40px; height: 40px; 
         background-image: url("{logo_html}"); background-size: cover; 
@@ -201,9 +215,11 @@ with col_toggle:
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
 with col_reset:
+    st.markdown('<div class="reset-container">', unsafe_allow_html=True)
     if st.button("🔄", key="reset_session"):
         st.session_state.messages = []
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Logo & Header
 glow = "box-shadow: 0 0 40px #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
