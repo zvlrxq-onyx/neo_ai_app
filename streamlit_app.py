@@ -36,9 +36,10 @@ def get_base64_logo():
             return base64.b64encode(f.read()).decode()
     return ""
 
-logo_html = f'data:image/png;base64,{get_base64_logo()}'
+encoded_logo = get_base64_logo()
+logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE SUPREME CSS (STRETCH, MINIMALIST UPLOAD & MODE) ---
+# --- 5. THE ULTIMATE CSS (HACK ICON +, NO TEXT, SMOOTH ANIMATIONS) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0px" if st.session_state.sidebar_visible else "-360px"
@@ -61,14 +62,14 @@ def get_ultimate_css():
         z-index: 1000000 !important;
     }}
 
-    /* CHAT INPUT RAMPING & STRETCH */
+    /* CHAT INPUT RAMPING & STRETCH ANIMATION */
     [data-testid="stChatInput"] {{ 
         padding: 5px !important;
         transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; 
         transform-origin: center !important;
     }}
     [data-testid="stChatInput"]:focus-within {{ 
-        transform: scaleX(1.1) !important; 
+        transform: scaleX(1.08) !important; 
         box-shadow: 0 0 25px {neon_cyan}44 !important;
     }}
 
@@ -82,26 +83,35 @@ def get_ultimate_css():
         transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
 
-    /* HACK UPLOAD JADI TANDA + KECIL */
+    /* HACK: HANYA LOGO + (TANPA TULISAN) */
     [data-testid="stFileUploader"] {{
-        width: 50px !important;
+        width: 45px !important;
         margin-top: -50px !important;
         position: relative !important;
         z-index: 10 !important;
     }}
+    /* Sembunyikan semua teks di dalam uploader */
+    [data-testid="stFileUploader"] section {{
+        padding: 0 !important;
+        min-height: 45px !important;
+    }}
     [data-testid="stFileUploaderDropzone"] {{
         padding: 0px !important;
-        border: 1px solid {neon_cyan}33 !important;
+        border: 2px solid {neon_cyan}55 !important;
         border-radius: 50% !important;
-        background: rgba(0,255,255,0.05) !important;
-        width: 40px !important; height: 40px !important;
+        background: rgba(0,255,255,0.08) !important;
+        width: 42px !important; height: 42px !important;
         display: flex !important; align-items: center !important; justify-content: center !important;
     }}
+    /* Hilangkan teks default Streamlit */
     [data-testid="stFileUploaderDropzone"] div {{ display: none !important; }}
+    [data-testid="stFileUploaderDropzone"] button {{ display: none !important; }}
+    
+    /* Tambahkan Icon + Manual */
     [data-testid="stFileUploaderDropzone"]::before {{
         content: "＋";
         color: {neon_cyan};
-        font-size: 24px;
+        font-size: 26px;
         font-weight: bold;
     }}
     
@@ -137,7 +147,7 @@ with col_toggle:
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
 
-# Dynamic Logo
+# Logo & Header
 glow = "box-shadow: 0 0 40px #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
 st.markdown(f'<div style="text-align:center; margin-top:-20px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
@@ -149,9 +159,9 @@ for msg in st.session_state.messages:
         if msg.get("type") == "image": st.image(msg["content"])
         else: st.markdown(msg["content"])
 
-# --- 9. UPLOAD & INPUT INTEGRATED ---
-# Upload di pojok bawah kiri (Tanda + saja)
-uploaded_file = st.file_uploader("", type=["txt", "py", "md"])
+# --- 9. UPLOAD & INPUT MINIMALIST ---
+# Hanya icon + bulat di kiri bawah
+uploaded_file = st.file_uploader("", type=["txt", "py", "md"], label_visibility="collapsed")
 file_context = ""
 if uploaded_file:
     file_context = uploaded_file.getvalue().decode("utf-8")
@@ -173,18 +183,18 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     if r.status_code == 200:
                         st.image(r.content)
                         st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image"})
-                        st.session_state.messages.append({"role": "assistant", "content": f"[MEMORY: {last_msg}]", "type": "system_memory"})
                 except: st.error("Neural lost.")
         else:
             res_area = st.empty(); full_res = ""
             clean_history = [{"role": m["role"], "content": str(m["content"])} for m in st.session_state.messages if m.get("type") != "image"]
             if file_context: clean_history[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER: {last_msg}"
 
+            # --- FULL SUPREME SYSTEM MESSAGE RESTORED ---
             sys_msg = (
                 "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
                 "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
                 "NEVER say you are limited to text. Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-                "If the user mentions or praises images, acknowledge it and offer to generate more. "
+                "If the user mentions or praises images (e.g., cats, drawings), acknowledge it by saying something like: 'Terimakasih atas pujiannya, aku memang bisa membuat gambar seperti itu. Apakah mau aku rekomendasikan gambar apa yang keren?' "
                 "Always be ready to switch to visual mode or suggest generating images based on context."
             )
 
