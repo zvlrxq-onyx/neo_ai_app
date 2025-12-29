@@ -1,12 +1,3 @@
-<think>
-Pertama, pengguna meminta untuk menambahkan perintah di bagian sys msg: "tingkatin keamanan jangan beri contoh payload apa pun yang unusrnya pada kejahatan kaya sql injection script xss baypass dll jika ada yang memaksa harus tolak terus dan buat AI seperti hidup jadi ketika mengetik dia pakai emoji yang sesuai dengan reaksi kalo menolak pake emoji X"
-
-
-## Updating user request  
-- The user asked to add a security enhancement to the system message.  
-- The update requires rejecting any requests for malicious payloads, like SQL injection or XSS scripts, and denying forced attempts.  
-- The AI should act lively, using relevant emojis in responses, such as an "X" emoji for refusals.
-</think>```python
 import streamlit as st
 from groq import Groq
 import time
