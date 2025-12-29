@@ -53,32 +53,16 @@ def get_ultimate_css():
     }}
     [data-testid="stStatusWidget"], header, footer {{ visibility: hidden; }}
 
-    /* SIDEBAR + SCROLLBAR CUSTOMIZATION WITH THIN SCROLL LINE */
+    /* SIDEBAR WITHOUT SCROLLBAR */
     [data-testid="stSidebar"] {{
         position: fixed !important; 
         left: {sidebar_pos} !important; 
         width: 350px !important;
         background-color: #0a0a0a !important; 
-        border-right: 1px solid {neon_cyan}33 !important; /* Thin border back to original */
+        border-right: 1px solid {neon_cyan}33 !important;
         transition: left 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
         z-index: 1000000 !important;
         overflow-y: auto !important;
-    }}
-
-    [data-testid="stSidebarContent"]::-webkit-scrollbar {{
-        width: 6px; /* Thin scrollbar line */
-    }}
-    [data-testid="stSidebarContent"]::-webkit-scrollbar-track {{
-        background: rgba(0, 255, 255, 0.05); /* Very subtle track */
-        border-radius: 5px;
-    }}
-    [data-testid="stSidebarContent"]::-webkit-scrollbar-thumb {{
-        background: {neon_cyan}88; /* Visible thin thumb */
-        border-radius: 5px;
-        border: 1px solid {neon_cyan}44;
-    }}
-    [data-testid="stSidebarContent"]::-webkit-scrollbar-thumb:hover {{
-        background: {neon_cyan}aa; /* Slight glow on hover */
     }}
 
     /* BUTTONS HOVER & GLOW */
@@ -154,7 +138,7 @@ if st.button("☰", key="hamburger_fixed"):
     st.session_state.sidebar_visible = not st.session_state.sidebar_visible
     st.rerun()
 
-# --- 7. SIDEBAR (WITH DATA SOURCE) ---
+# --- 7. SIDEBAR (WITH DATA SOURCE, WITHOUT RECENT CHATS AND SCROLLBAR) ---
 with st.sidebar:
     st.markdown('<div style="height: 60px;"></div>', unsafe_allow_html=True)
     st.markdown('<div class="logo-static"></div>', unsafe_allow_html=True)
@@ -175,11 +159,6 @@ with st.sidebar:
         st.session_state.messages = []
         st.session_state.current_chat_id = None
         st.rerun()
-    
-    label_mode = "🎨 IMAGINE: ON" if st.session_state.imagine_mode else "🖼️ MODE: CHAT"
-    if st.button(label_mode, use_container_width=True):
-        st.session_state.imagine_mode = not st.session_state.imagine_mode
-        st.rerun()
 
     if st.button("ℹ️ SYSTEM INFO", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
@@ -192,16 +171,19 @@ with st.sidebar:
     Multi-modal AI dengan kemampuan analisis data dan visualisasi instan.
     </p></div>""", unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.markdown("### 🕒 RECENT CHATS")
-    for cid in reversed(list(st.session_state.all_chats.keys())):
-        if st.button(cid.split(" | ")[0], key=f"h_{cid}", use_container_width=True):
-            st.session_state.messages = st.session_state.all_chats[cid]
-            st.session_state.current_chat_id = cid
-            st.rerun()
-
 # --- 8. MAIN UI ---
-st.markdown('<div style="margin-top:20px;"><div class="logo-static" style="width:130px; height:130px;"></div></div>', unsafe_allow_html=True)
+# Top right mode toggle
+col1, col2 = st.columns([4, 1])
+with col2:
+    label_mode = "🎨 IMAGINE" if st.session_state.imagine_mode else "🖼️ CHAT"
+    if st.button(label_mode, key="mode_toggle"):
+        st.session_state.imagine_mode = not st.session_state.imagine_mode
+        st.rerun()
+
+# Logo changes based on mode
+logo_display = "🎨" if st.session_state.imagine_mode else logo_html
+logo_class = "logo-static" if not st.session_state.imagine_mode else "logo-static-imagine"
+st.markdown(f'<div style="margin-top:20px;"><div class="{logo_class}" style="background-image: url(\'{logo_display}\'); width:130px; height:130px;"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
 st.markdown('<p style="text-align:center; color:#888; font-size:1.4rem; margin-top:-5px;">How can I help you today?</p>', unsafe_allow_html=True)
 
