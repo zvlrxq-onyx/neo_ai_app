@@ -26,7 +26,7 @@ except:
     st.stop()
 
 # --- 3. PAGE CONFIG ---
-st.set_page_config(page_title="NEO AI", page_icon="⚡", layout="centered")
+st.set_page_config(page_title="NEO AI", page_icon="⚡", layout="wide")  # Changed to "wide" for better chat layout
 
 # --- 4. ASSETS LOADER ---
 @st.cache_data
@@ -167,6 +167,23 @@ def get_ultimate_css():
     .system-info:hover {{
         text-shadow: 0 0 20px {neon_cyan};
     }}
+
+    /* FIX CHAT LAYOUT: Force side-by-side like ChatGPT */
+    [data-testid="stChatMessage"] {{
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        margin-bottom: 10px !important;
+    }}
+    [data-testid="stChatMessage"][data-testid*="user"] {{
+        justify-content: flex-end !important;
+    }}
+    [data-testid="stChatMessage"][data-testid*="assistant"] {{
+        justify-content: flex-start !important;
+    }}
+    [data-testid="stChatMessage"] > div {{
+        max-width: 70% !important;
+    }}
     </style>
     """
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
@@ -235,12 +252,20 @@ else:
     subheader = "How can I help you today?"
 st.markdown(f"<p style='text-align:center; color:#b0b0b0; font-size:18px; margin-top:10px;'>{subheader}</p>", unsafe_allow_html=True)
 
-# Render Messages
+# Render Messages with Manual Columns for Better Control (Alternative to st.chat_message if CSS fails)
 for msg in st.session_state.messages:
     if msg.get("type") == "system_memory": continue
-    with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
-        if msg.get("type") == "image": st.image(msg["content"])
-        else: st.markdown(msg["content"])
+    if msg["role"] == "user":
+        col1, col2 = st.columns([1, 3])  # User on the right
+        with col2:
+            st.markdown(f"**You:** {msg['content']}")
+    else:
+        col1, col2 = st.columns([3, 1])  # AI on the left
+        with col1:
+            if msg.get("type") == "image":
+                st.image(msg["content"])
+            else:
+                st.markdown(f"**NEO AI:** {msg['content']}")
 
 # --- 9. UPLOAD & INPUT MINIMALIST ---
 uploaded_file = st.file_uploader("", type=["txt", "py", "md"], label_visibility="collapsed")
