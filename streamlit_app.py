@@ -116,9 +116,11 @@ def get_ultimate_css():
         background: rgba(0, 255, 255, 0.05) !important;
         border: 1px solid {neon_cyan}33 !important;
         transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
+        position: relative !important;
+        z-index: 1000001 !important;
     }}
     .stButton > button:hover, .reset-container button:hover {{
-        transform: scale(1.15) !important;
+        transform: scale(1.25) !important;
         box-shadow: 0 0 20px {neon_cyan} !important;
     }}
 
