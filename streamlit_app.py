@@ -207,7 +207,13 @@ if uploaded_file:
     file_context = uploaded_file.getvalue().decode("utf-8")
     st.toast(f"✅ {uploaded_file.name} Loaded!")
 
-if user_input := st.chat_input("Command NEO AI..."):
+# Dynamic Placeholder
+if st.session_state.imagine_mode:
+    placeholder = "Ready to make you a work of art?"
+else:
+    placeholder = "How can I help you today?"
+
+if user_input := st.chat_input(placeholder):
     st.session_state.messages.append({"role": "user", "content": user_input})
     st.rerun()
 
