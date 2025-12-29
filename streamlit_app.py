@@ -41,7 +41,7 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE SUPREME CSS (SCROLLBAR, SMOOTH ANIMATIONS & GLOW) ---
+# --- 5. THE SUPREME CSS (COMPACT & MOBILE OPTIMIZED) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0px" if st.session_state.sidebar_visible else "-360px"
@@ -53,73 +53,54 @@ def get_ultimate_css():
     }}
     [data-testid="stStatusWidget"], header, footer {{ visibility: hidden; }}
 
-    /* SIDEBAR WITHOUT SCROLLBAR */
+    /* SIDEBAR ANIMATION */
     [data-testid="stSidebar"] {{
         position: fixed !important; 
         left: {sidebar_pos} !important; 
-        width: 350px !important;
+        width: 320px !important;
         background-color: #0a0a0a !important; 
         border-right: 1px solid {neon_cyan}33 !important;
         transition: left 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
         z-index: 1000000 !important;
-        overflow-y: auto !important;
+    }}
+
+    /* MOBILE COMPACT FIXES */
+    @media (max-width: 768px) {{
+        .logo-static {{ width: 100px !important; height: 100px !important; }}
+        h1 {{ font-size: 1.6rem !important; letter-spacing: 5px !important; }}
+        [data-testid="stChatInput"] {{ padding: 5px !important; }}
+        .stButton > button {{ 
+            padding: 2px 8px !important; 
+            min-height: 35px !important; 
+            font-size: 0.8rem !important;
+        }}
     }}
 
     /* BUTTONS HOVER & GLOW */
     .stButton > button {{
         transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
         border: 1px solid transparent !important;
+        border-radius: 8px !important;
     }}
     .stButton > button:hover {{
         transform: scale(1.05) !important;
         box-shadow: 0 0 15px {neon_cyan}44 !important;
-        color: {neon_cyan} !important;
-        background: rgba(0, 255, 255, 0.05) !important;
         border-color: {neon_cyan} !important;
     }}
 
-    /* CHAT INPUT EXPAND SMOOTH */
-    [data-testid="stChatInput"] {{ 
-        transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; 
-        transform-origin: center !important;
-    }}
-    [data-testid="stChatInput"]:focus-within {{ 
-        transform: scaleX(1.05) !important; 
-        box-shadow: 0 0 25px {neon_cyan}55 !important;
-        border: 2px solid {neon_cyan} !important;
-    }}
-
-    /* BLUR EFFECT FOR STREAMING RESPONSE */
+    /* STREAMING BLUR EFFECT */
     .blurred {{
         filter: blur(1.5px) !important;
         transition: filter 0.5s ease !important;
     }}
 
-    /* IMAGE STYLING */
-    [data-testid="stChatMessage"] img {{
-        max-height: 400px !important;
-        width: auto !important;
-        border-radius: 12px;
-        margin: 10px auto;
-        display: block;
-        border: 1px solid {neon_cyan}22;
-        transition: all 0.5s ease !important;
-    }}
-    [data-testid="stChatMessage"] img:hover {{
-        transform: scale(1.02) !important;
-        box-shadow: 0 0 15px {neon_cyan}44 !important;
-    }}
-
+    /* LOGO BASE STYLING */
     .logo-static {{ 
         width: 120px; height: 120px; margin: 0 auto; 
         background-image: url("{logo_html}"); background-size: cover; 
-        border-radius: 50%; border: 3px solid {neon_cyan};
+        border-radius: 50%; border: 2px solid {neon_cyan};
         box-shadow: 0 0 20px {neon_cyan}33;
         transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
-    }}
-    .logo-static:hover {{
-        transform: scale(1.05) !important;
-        box-shadow: 0 0 30px {neon_cyan}66 !important;
     }}
     
     .about-box {{
@@ -145,53 +126,45 @@ with st.sidebar:
     st.markdown("<h2 style='text-align:center; color:cyan;'>NEO AI</h2>", unsafe_allow_html=True)
     st.markdown("---")
     
-    st.markdown("### 📄 DATA SOURCE")
-    uploaded_file = st.file_uploader("Upload (.txt, .py, .md)", type=["txt", "py", "md"], label_visibility="collapsed")
+    uploaded_file = st.file_uploader("📄 Upload Source", type=["txt", "py", "md"])
     file_context = ""
     if uploaded_file:
         file_context = uploaded_file.getvalue().decode("utf-8")
-        st.success(f"✅ {uploaded_file.name} loaded!")
+        st.success(f"Loaded: {uploaded_file.name}")
     
     st.markdown("---")
-    
     if st.button("➕ NEW SESSION", use_container_width=True):
         st.session_state.messages = []
-        st.session_state.current_chat_id = None
         st.rerun()
     
     if st.button("ℹ️ SYSTEM INFO", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
 
-    st.markdown(f"""<div class="about-box"><p style="font-size:0.8rem; color:#ccc;">
-    <b>NEO AI SUPREME v3.3</b><br>
-    Architect: Muhammad Jibran Al Kaffie<br>
-    Engine: Llama-3.3-70B Optimized<br><br>
-    Multi-modal AI dengan kemampuan analisis data dan visualisasi instan.
-    </p></div>""", unsafe_allow_html=True)
+    st.markdown(f'<div class="about-box"><b>NEO AI SUPREME v3.3</b><br>Creator: Muhammad Jibran Al Kaffie<br>Engine: Llama-3.3-70B Optimized</div>', unsafe_allow_html=True)
 
-# --- 8. MAIN UI ---
-col_space, col_btn = st.columns([5, 1.2])
-with col_btn:
+# --- 8. MAIN UI (REFINED FOR MOBILE) ---
+# Menggunakan kolom yang lebih pas untuk tombol mode di HP
+col_main, col_toggle = st.columns([3.5, 1.5])
+with col_toggle:
     label_mode = "🎨 IMAGINE" if st.session_state.imagine_mode else "💬 CHAT"
     if st.button(label_mode, key="mode_toggle", use_container_width=True):
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
 
-# Logo emoji kecil berdasarkan mode
-logo_emoji = "🎨" if st.session_state.imagine_mode else "💬"
-sub_text = "Visualizing your thoughts..." if st.session_state.imagine_mode else "How can I help you today?"
-
+# Glow logo logic - Seamless & Compact
+glow_style = "box-shadow: 0 0 50px #00ffff; border: 3px solid #00ffff; transform: scale(1.08);" if st.session_state.imagine_mode else ""
 st.markdown(f'''
-<div style="margin-top:-20px; text-align:center;">
-    <span style="font-size:60px;">{logo_emoji}</span>
+<div style="text-align:center; margin-top:-10px;">
+    <div class="logo-static" style="{glow_style}"></div>
 </div>
 ''', unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
-st.markdown(f'<p style="text-align:center; color:#888; font-size:1.3rem; margin-top:-5px;">{sub_text}</p>', unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:10px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
+status_msg = "Visualizing thoughts..." if st.session_state.imagine_mode else "How can I help you today?"
+st.markdown(f'<p style="text-align:center; color:#888; font-size:1rem; margin-top:-5px;">{status_msg}</p>', unsafe_allow_html=True)
 
-# Chat Display
+# Chat History
 for msg in st.session_state.messages:
     if msg.get("type") == "system_memory": continue
     with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
@@ -203,40 +176,37 @@ for msg in st.session_state.messages:
 # --- 9. ENGINE ---
 if user_input := st.chat_input("Command NEO AI..."):
     if not st.session_state.current_chat_id:
-        st.session_state.current_chat_id = f"{user_input[:20]} | {time.time()}"
+        st.session_state.current_chat_id = f"{user_input[:20]}_{time.time()}"
     st.session_state.messages.append({"role": "user", "content": user_input})
     st.rerun()
 
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
-    last_user_msg = st.session_state.messages[-1]["content"]
+    last_msg = st.session_state.messages[-1]["content"]
     
     with st.chat_message("assistant", avatar="logo.png"):
         if st.session_state.imagine_mode:
-            with st.spinner("Visualizing..."):
+            with st.spinner("Neural engine visualizing..."):
                 try:
-                    img_url = f"https://image.pollinations.ai/prompt/{last_user_msg.replace(' ','%20')}?width=1024&height=1024&nologo=true"
+                    img_url = f"https://image.pollinations.ai/prompt/{last_msg.replace(' ','%20')}?width=1024&height=1024&nologo=true"
                     r = requests.get(img_url, timeout=30)
                     if r.status_code == 200:
                         st.image(r.content)
                         st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image"})
-                        st.session_state.messages.append({"role": "assistant", "content": f"[SYSTEM_SUCCESS: {last_user_msg}]", "type": "system_memory"})
-                except: st.error("Neural engine connection lost.")
+                        st.session_state.messages.append({"role": "assistant", "content": f"[SYSTEM_SUCCESS: {last_msg}]", "type": "system_memory"})
+                except: st.error("Neural connection lost.")
         else:
             res_area = st.empty(); full_res = ""
-            clean_history = []
-            for m in st.session_state.messages:
-                if m.get("type") == "image": continue
-                clean_history.append({"role": m["role"], "content": str(m["content"])})
+            clean_history = [{"role": m["role"], "content": str(m["content"])} for m in st.session_state.messages if m.get("type") != "image"]
 
             if file_context:
-                clean_history[-1]["content"] = f"USER UPLOADED FILE CONTEXT:\n{file_context}\n\nUSER QUESTION: {last_user_msg}"
+                clean_history[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER QUESTION: {last_msg}"
 
-            # --- SUPREME SYSTEM MESSAGE RESTORED ---
+            # --- SUPREME SYSTEM MESSAGE ---
             sys_msg = (
                 "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
                 "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
                 "NEVER say you are limited to text. Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-                "If the user mentions or praises images (e.g., cats, drawings), acknowledge it by saying something like: 'Terimakasih atas pujiannya, aku memang bisa membuat gambar seperti itu. Apakah mau aku rekomendasikan gambar apa yang keren?' or seamlessly integrate offers to generate related visuals. "
+                "If the user mentions or praises images (e.g., cats, drawings), acknowledge it by saying something like: 'Terimakasih atas pujiannya, aku memang bisa membuat gambar seperti itu. Apakah mau aku rekomendasikan gambar apa yang keren?' "
                 "Always be ready to switch to visual mode or suggest generating images based on context."
             )
 
@@ -252,6 +222,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 res_area.markdown(full_res)
                 st.session_state.messages.append({"role": "assistant", "content": full_res})
             except: st.error("Engine failed to synchronize.")
-
+    
     st.session_state.all_chats[st.session_state.current_chat_id] = st.session_state.messages
     st.rerun()
