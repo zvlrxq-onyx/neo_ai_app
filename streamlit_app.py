@@ -62,19 +62,19 @@ def get_ultimate_css():
         z-index: 1000000 !important;
     }}
 
-    /* CHAT INPUT RAMPING & STRETCH ANIMATION */
+    /* CHAT INPUT RAMPING & STRETCH ANIMATION - RESPONSIVE & SUBTLE SCALE */
     [data-testid="stChatInput"] {{ 
         padding: 5px !important;
-        max-width: 400px !important; /* Make it shorter */
+        max-width: 320px !important; /* Smaller for mobile/laptop balance */
         transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; 
         transform-origin: center !important;
     }}
     [data-testid="stChatInput"]:focus-within {{ 
-        transform: scaleX(1.08) !important; 
+        transform: scaleX(1.03) !important; /* Subtle stretch, not too much */
         box-shadow: 0 0 25px {neon_cyan}44 !important;
     }}
 
-    /* TOMBOL MODE ICON BULAT */
+    /* TOMBOL MODE ICON BULAT - HOVER SCALE */
     .stButton > button {{
         border-radius: 50% !important;
         width: 45px !important; height: 45px !important;
@@ -83,8 +83,11 @@ def get_ultimate_css():
         border: 1px solid {neon_cyan}33 !important;
         transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
+    .stButton > button:hover {{
+        transform: scale(1.1) !important; /* Smooth enlarge on hover */
+    }}
 
-    /* HACK: HANYA LOGO + (TANPA TULISAN) */
+    /* HACK: HANYA LOGO + (TANPA TULISAN) - HOVER SCALE */
     [data-testid="stFileUploader"] {{
         width: 45px !important;
         margin-top: -50px !important;
@@ -103,6 +106,10 @@ def get_ultimate_css():
         background: rgba(0,255,255,0.08) !important;
         width: 42px !important; height: 42px !important;
         display: flex !important; align-items: center !important; justify-content: center !important;
+        transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
+    }}
+    [data-testid="stFileUploaderDropzone"]:hover {{
+        transform: scale(1.1) !important; /* Smooth enlarge on hover */
     }}
     /* Hilangkan teks default Streamlit */
     [data-testid="stFileUploaderDropzone"] div {{ display: none !important; }}
@@ -123,6 +130,20 @@ def get_ultimate_css():
         transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
     .blurred {{ filter: blur(1.5px); transition: filter 0.5s ease; }}
+
+    /* Reset Session Logo - HOVER SCALE */
+    .reset-logo {{
+        width: 40px; height: 40px; 
+        background-image: url("{logo_html}"); background-size: cover; 
+        border-radius: 50%; border: 1px solid {neon_cyan};
+        cursor: pointer;
+        transition: all 0.5s ease;
+        margin: 10px;
+    }}
+    .reset-logo:hover {{
+        box-shadow: 0 0 15px {neon_cyan};
+        transform: scale(1.1); /* Smooth enlarge on hover */
+    }}
 
     /* System Info Glow */
     .system-info {{
@@ -152,7 +173,7 @@ with st.sidebar:
         st.markdown("""
         <div class="system-info">
         <h3>NEO AI - Supreme Multi-Modal AI</h3>
-        <p>Created by Muhammad Jibran Al Kaffie, NEO AI is a cutting-edge AI capable of processing text, images, files, complex data, and generating stunning visuals. It leverages advanced models like Llama 3.3 for versatile interactions.</p>
+        <p>Created by Muhammad Jibran Al Kaffie, NEO AI is a cutting-edge AI capable of processing text, images, files, and generating stunning visuals. It leverages advanced models like Llama 3.3 for versatile interactions.</p>
         <p>Features:</p>
         <ul>
         <li>Text-based conversations with streaming responses.</li>
@@ -187,9 +208,9 @@ with col_reset:
         st.session_state.messages = []
         st.rerun()
 
-# Logo & Header
+# Logo & Header - RAISED SLIGHTLY FOR SYMMETRY
 glow = "box-shadow: 0 0 40px #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
-st.markdown(f'<div style="text-align:center; margin-top:-20px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)
+st.markdown(f'<div style="text-align:center; margin-top:-30px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)  # Raised from -20px to -30px
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
 
 # Dynamic Subheader like ChatGPT
