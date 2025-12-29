@@ -65,6 +65,7 @@ def get_ultimate_css():
     /* CHAT INPUT RAMPING & STRETCH ANIMATION */
     [data-testid="stChatInput"] {{ 
         padding: 5px !important;
+        max-width: 400px !important; /* Make it shorter */
         transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; 
         transform-origin: center !important;
     }}
@@ -122,6 +123,30 @@ def get_ultimate_css():
         transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
     .blurred {{ filter: blur(1.5px); transition: filter 0.5s ease; }}
+
+    /* Reset Session Logo */
+    .reset-logo {{
+        width: 40px; height: 40px; 
+        background-image: url("{logo_html}"); background-size: cover; 
+        border-radius: 50%; border: 1px solid {neon_cyan};
+        cursor: pointer;
+        transition: all 0.5s ease;
+        margin: 10px;
+    }}
+    .reset-logo:hover {{
+        box-shadow: 0 0 15px {neon_cyan};
+        transform: scale(1.1);
+    }}
+
+    /* System Info Glow */
+    .system-info {{
+        color: {neon_cyan};
+        text-shadow: 0 0 10px {neon_cyan};
+        transition: all 0.5s ease;
+    }}
+    .system-info:hover {{
+        text-shadow: 0 0 20px {neon_cyan};
+    }}
     </style>
     """
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
@@ -135,9 +160,34 @@ if st.button("☰", key="hamburger_fixed"):
 with st.sidebar:
     st.markdown('<div style="height: 60px;"></div><div class="logo-static"></div>', unsafe_allow_html=True)
     st.markdown("<h2 style='text-align:center; color:cyan;'>NEO AI</h2>", unsafe_allow_html=True)
-    if st.button("➕ NEW SESSION", use_container_width=True):
-        st.session_state.messages = []
-        st.rerun()
+    
+    # System Info
+    with st.expander("System Info", expanded=False):
+        st.markdown("""
+        <div class="system-info">
+        <h3>NEO AI - Supreme Multi-Modal AI</h3>
+        <p>Created by Muhammad Jibran Al Kaffie, NEO AI is a cutting-edge AI capable of processing text, images, files, and generating stunning visuals. It leverages advanced models like Llama 3.3 for versatile interactions.</p>
+        <p>Features:</p>
+        <ul>
+        <li>Text-based conversations with streaming responses.</li>
+        <li>Image generation via Pollinations AI.</li>
+        <li>File upload support for context (txt, py, md).</li>
+        <li>Session management with history.</li>
+        </ul>
+        <p>Always ready to switch to visual mode and provide superior intelligence.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Chat History
+    st.markdown("### Chat History")
+    if st.session_state.all_chats:
+        for chat_id, chat_data in st.session_state.all_chats.items():
+            if st.button(f"Load: {chat_id}", key=f"load_{chat_id}"):
+                st.session_state.messages = chat_data["messages"]
+                st.session_state.current_chat_id = chat_id
+                st.rerun()
+    else:
+        st.write("No saved chats.")
 
 # --- 8. MAIN UI ---
 col_main, col_toggle = st.columns([5, 1])
@@ -151,6 +201,12 @@ with col_toggle:
 glow = "box-shadow: 0 0 40px #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
 st.markdown(f'<div style="text-align:center; margin-top:-20px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
+
+# Reset Session Logo in Chat Area
+st.markdown('<div style="text-align:center;"><div class="reset-logo" onclick="document.querySelector(\'[data-testid=stButton]\').click();"></div></div>', unsafe_allow_html=True)
+if st.button("Reset Session", key="reset_session_hidden"):
+    st.session_state.messages = []
+    st.rerun()
 
 # Render Messages
 for msg in st.session_state.messages:
@@ -189,13 +245,12 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             clean_history = [{"role": m["role"], "content": str(m["content"])} for m in st.session_state.messages if m.get("type") != "image"]
             if file_context: clean_history[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER: {last_msg}"
 
-            # --- FULL SUPREME SYSTEM MESSAGE RESTORED ---
+            # --- UPDATED SYSTEM MESSAGE: More natural, less "terimakasih", stay on topic ---
             sys_msg = (
                 "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
                 "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
                 "NEVER say you are limited to text. Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-                "If the user mentions or praises images (e.g., cats, drawings), acknowledge it by saying something like: 'Terimakasih atas pujiannya, aku memang bisa membuat gambar seperti itu. Apakah mau aku rekomendasikan gambar apa yang keren?' "
-                "Always be ready to switch to visual mode or suggest generating images based on context."
+                "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking."
             )
 
             try:
