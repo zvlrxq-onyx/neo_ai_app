@@ -223,12 +223,12 @@ with col_reset:
 
 # Logo & Header
 glow = "box-shadow: 0 0 40px #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
-st.markdown(f'<div style="text-align:center; margin-top:-30px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)
+st.markdown(f'<div style="text-align:center; margin-top:-60px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
 
 # Dynamic Subheader like ChatGPT
 if st.session_state.imagine_mode:
-    subheader = "Ready to make you a work of art?"
+    subheader = "Ready to visualize your imagination."
 else:
     subheader = "How can I help you today?"
 st.markdown(f"<p style='text-align:center; color:#b0b0b0; font-size:18px; margin-top:10px;'>{subheader}</p>", unsafe_allow_html=True)
