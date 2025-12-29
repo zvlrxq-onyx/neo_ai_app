@@ -62,39 +62,38 @@ def get_ultimate_css():
         z-index: 1000000 !important;
     }}
 
-    /* CHAT INPUT RAMPING & STRETCH ANIMATION - RESPONSIVE & SUBTLE SCALE */
+    /* CHAT INPUT RAMPING & STRETCH ANIMATION - ENHANCED SCALE */
     [data-testid="stChatInput"] {{ 
         padding: 5px !important;
-        max-width: 320px !important; /* Smaller for mobile/laptop balance */
-        transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; 
+        max-width: 320px !important;
+        transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; 
         transform-origin: center !important;
     }}
     [data-testid="stChatInput"]:focus-within {{ 
-        transform: scaleX(1.03) !important; /* Subtle stretch, not too much */
+        transform: scaleX(1.05) !important; /* More noticeable stretch */
         box-shadow: 0 0 25px {neon_cyan}44 !important;
     }}
 
-    /* TOMBOL MODE ICON BULAT - HOVER SCALE */
+    /* TOMBOL MODE ICON BULAT - ENHANCED HOVER SCALE */
     .stButton > button {{
         border-radius: 50% !important;
         width: 45px !important; height: 45px !important;
         padding: 0px !important; font-size: 20px !important;
         background: rgba(0, 255, 255, 0.05) !important;
         border: 1px solid {neon_cyan}33 !important;
-        transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
+        transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
     .stButton > button:hover {{
-        transform: scale(1.1) !important; /* Smooth enlarge on hover */
+        transform: scale(1.1) !important;
     }}
 
-    /* HACK: HANYA LOGO + (TANPA TULISAN) - HOVER SCALE */
+    /* HACK: HANYA LOGO + (TANPA TULISAN) - ENHANCED HOVER SCALE */
     [data-testid="stFileUploader"] {{
         width: 45px !important;
         margin-top: -50px !important;
         position: relative !important;
         z-index: 10 !important;
     }}
-    /* Sembunyikan semua teks di dalam uploader */
     [data-testid="stFileUploader"] section {{
         padding: 0 !important;
         min-height: 45px !important;
@@ -106,16 +105,14 @@ def get_ultimate_css():
         background: rgba(0,255,255,0.08) !important;
         width: 42px !important; height: 42px !important;
         display: flex !important; align-items: center !important; justify-content: center !important;
-        transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
+        transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
     [data-testid="stFileUploaderDropzone"]:hover {{
-        transform: scale(1.1) !important; /* Smooth enlarge on hover */
+        transform: scale(1.1) !important;
     }}
-    /* Hilangkan teks default Streamlit */
     [data-testid="stFileUploaderDropzone"] div {{ display: none !important; }}
     [data-testid="stFileUploaderDropzone"] button {{ display: none !important; }}
     
-    /* Tambahkan Icon + Manual */
     [data-testid="stFileUploaderDropzone"]::before {{
         content: "＋";
         color: {neon_cyan};
@@ -131,18 +128,18 @@ def get_ultimate_css():
     }}
     .blurred {{ filter: blur(1.5px); transition: filter 0.5s ease; }}
 
-    /* Reset Session Logo - HOVER SCALE */
+    /* Reset Session Logo - ENHANCED HOVER SCALE */
     .reset-logo {{
         width: 40px; height: 40px; 
         background-image: url("{logo_html}"); background-size: cover; 
         border-radius: 50%; border: 1px solid {neon_cyan};
         cursor: pointer;
-        transition: all 0.5s ease;
+        transition: transform 0.5s ease !important;
         margin: 10px;
     }}
     .reset-logo:hover {{
         box-shadow: 0 0 15px {neon_cyan};
-        transform: scale(1.1); /* Smooth enlarge on hover */
+        transform: scale(1.1) !important;
     }}
 
     /* System Info Glow */
@@ -197,20 +194,20 @@ with st.sidebar:
         st.write("No saved chats.")
 
 # --- 8. MAIN UI ---
-col_main, col_toggle, col_reset = st.columns([4, 1, 1])  # Adjusted for reset button
+col_main, col_toggle, col_reset = st.columns([4, 1, 1])
 with col_toggle:
     icon_mode = "🎨" if st.session_state.imagine_mode else "💬"
     if st.button(icon_mode, key="mode_toggle"):
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
 with col_reset:
-    if st.button("🔄", key="reset_session"):  # Emoji only, no text
+    if st.button("🔄", key="reset_session"):
         st.session_state.messages = []
         st.rerun()
 
-# Logo & Header - RAISED SLIGHTLY FOR SYMMETRY
+# Logo & Header
 glow = "box-shadow: 0 0 40px #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
-st.markdown(f'<div style="text-align:center; margin-top:-30px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)  # Raised from -20px to -30px
+st.markdown(f'<div style="text-align:center; margin-top:-30px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
 
 # Dynamic Subheader like ChatGPT
@@ -228,7 +225,6 @@ for msg in st.session_state.messages:
         else: st.markdown(msg["content"])
 
 # --- 9. UPLOAD & INPUT MINIMALIST ---
-# Hanya icon + bulat di kiri bawah
 uploaded_file = st.file_uploader("", type=["txt", "py", "md"], label_visibility="collapsed")
 file_context = ""
 if uploaded_file:
@@ -257,7 +253,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             clean_history = [{"role": m["role"], "content": str(m["content"])} for m in st.session_state.messages if m.get("type") != "image"]
             if file_context: clean_history[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER: {last_msg}"
 
-            # --- ENHANCED SYSTEM MESSAGE: Strongly emphasize file processing capabilities ---
             sys_msg = (
                 "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
                 "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
