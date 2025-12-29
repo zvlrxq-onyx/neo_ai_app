@@ -63,9 +63,8 @@ def get_ultimate_css():
         border-radius: 20px !important;
     }}
 
-    /* PESAN USER (KANAN) */
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]), 
-    [data-testid="stChatMessage"]:has(img[alt="user"]) {{
+    /* PESAN USER (KANAN) - tanpa avatar */
+    [data-testid="stChatMessage"]:not(:has(img)) {{
         margin-left: auto !important;
         background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.5) 100%) !important;
         border: 1px solid {neon_cyan}44 !important;
@@ -73,9 +72,8 @@ def get_ultimate_css():
         flex-direction: row-reverse !important;
     }}
 
-    /* PESAN AI (KIRI) */
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]), 
-    [data-testid="stChatMessage"]:has(img[alt="assistant"]) {{
+    /* PESAN AI (KIRI) - ada avatar (img) */
+    [data-testid="stChatMessage"]:has(img) {{
         margin-right: auto !important;
         background: rgba(255, 255, 255, 0.05) !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
