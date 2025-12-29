@@ -62,10 +62,11 @@ def get_ultimate_css():
         z-index: 1000000 !important;
     }}
 
-    /* CHAT INPUT RAMPING & STRETCH ANIMATION - ENHANCED SCALE & BOUNCY, MORE STRETCH */
+    /* CHAT INPUT RAMPING & STRETCH ANIMATION - ENHANCED SCALE & BOUNCY, MORE STRETCH, SHIFTED RIGHT */
     [data-testid="stChatInput"] {{ 
         padding: 5px !important;
         max-width: 320px !important;
+        margin-left: 20px !important; /* Shifted agak ke kanan dikit */
         transition: transform 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important; /* Longer duration for smoother feel */
         transform-origin: center !important;
     }}
