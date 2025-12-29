@@ -152,7 +152,7 @@ with st.sidebar:
         st.markdown("""
         <div class="system-info">
         <h3>NEO AI - Supreme Multi-Modal AI</h3>
-        <p>Created by Muhammad Jibran Al Kaffie, NEO AI is a cutting-edge AI capable of processing text, images, files, and generating stunning visuals. It leverages advanced models like Llama 3.3 for versatile interactions.</p>
+        <p>Created by Muhammad Jibran Al Kaffie, NEO AI is a cutting-edge AI capable of processing text, images, files, complex data, and generating stunning visuals. It leverages advanced models like Llama 3.3 for versatile interactions.</p>
         <p>Features:</p>
         <ul>
         <li>Text-based conversations with streaming responses.</li>
@@ -236,11 +236,13 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             clean_history = [{"role": m["role"], "content": str(m["content"])} for m in st.session_state.messages if m.get("type") != "image"]
             if file_context: clean_history[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER: {last_msg}"
 
-            # --- UPDATED SYSTEM MESSAGE: More natural, less "terimakasih", stay on topic ---
+            # --- ENHANCED SYSTEM MESSAGE: Strongly emphasize file processing capabilities ---
             sys_msg = (
                 "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
                 "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
-                "NEVER say you are limited to text. Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+                "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+                "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
+                "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
                 "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking."
             )
 
