@@ -45,13 +45,49 @@ def get_ultimate_css():
     sidebar_pos = "0px" if st.session_state.sidebar_visible else "-360px"
     return f"""
     <style>
+    /* --- CORE SETTINGS --- */
     html, body, [data-testid="stAppViewContainer"] {{ 
         background-color: #050505 !important; 
         color: #f0f0f0 !important; 
     }}
     [data-testid="stStatusWidget"], header, footer {{ visibility: hidden; }}
 
-    /* SIDEBAR */
+    /* --- CHAT BUBBLE LOGIC (KANAN-KIRI) --- */
+    [data-testid="stChatMessage"] {{
+        padding: 1rem !important;
+        margin-bottom: 15px !important;
+        display: flex !important;
+        width: fit-content !important;
+        max-width: 85% !important;
+        animation: fadeInSlide 0.5s ease forwards;
+        border-radius: 20px !important;
+    }}
+
+    /* PESAN USER (KANAN) */
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]), 
+    [data-testid="stChatMessage"]:has(img[alt="user"]) {{
+        margin-left: auto !important;
+        background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.5) 100%) !important;
+        border: 1px solid {neon_cyan}44 !important;
+        border-radius: 25px 25px 5px 25px !important;
+        flex-direction: row-reverse !important;
+    }}
+
+    /* PESAN AI (KIRI) */
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]), 
+    [data-testid="stChatMessage"]:has(img[alt="assistant"]) {{
+        margin-right: auto !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 25px 25px 25px 5px !important;
+    }}
+
+    @keyframes fadeInSlide {{
+        from {{ opacity: 0; transform: translateY(15px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+
+    /* --- SIDEBAR --- */
     [data-testid="stSidebar"] {{
         position: fixed !important; 
         left: {sidebar_pos} !important; 
@@ -62,111 +98,55 @@ def get_ultimate_css():
         z-index: 1000000 !important;
     }}
 
-    /* CHAT INPUT RAMPING & STRETCH ANIMATION - ENHANCED SCALE & BOUNCY, CENTERED, MORE STRETCH */
+    /* --- INPUT CHAT (STRETCH ANIMATION) --- */
     [data-testid="stChatInput"] {{ 
         padding: 5px !important;
         max-width: 320px !important;
-        margin: 0 auto !important; /* Centered */
-        transition: transform 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important; /* Longer duration for smoother feel */
+        margin: 0 auto !important;
+        transition: transform 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
         transform-origin: center !important;
     }}
     [data-testid="stChatInput"]:focus-within {{ 
-        transform: scaleX(1.25) !important; /* More stretch for longer effect */
+        transform: scaleX(1.25) !important;
         box-shadow: 0 0 25px {neon_cyan}44 !important;
     }}
 
-    /* TOMBOL MODE ICON BULAT - ENHANCED HOVER SCALE & GLOW */
-    .stButton > button {{
+    /* --- UI ELEMENTS (BUTTONS & LOGO) --- */
+    .stButton > button, .reset-container button {{
         border-radius: 50% !important;
         width: 45px !important; height: 45px !important;
-        padding: 0px !important; font-size: 20px !important;
         background: rgba(0, 255, 255, 0.05) !important;
         border: 1px solid {neon_cyan}33 !important;
         transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
-    .stButton > button:hover {{
-        transform: scale(1.15) !important; /* Membesar dikit */
-        box-shadow: 0 0 20px {neon_cyan} !important; /* Glow effect */
+    .stButton > button:hover, .reset-container button:hover {{
+        transform: scale(1.15) !important;
+        box-shadow: 0 0 20px {neon_cyan} !important;
     }}
 
-    /* RESET BUTTON GLOW & SCALE ON HOVER */
-    .reset-container button {{
-        border-radius: 50% !important;
-        width: 45px !important; height: 45px !important;
-        padding: 0px !important; font-size: 20px !important;
-        background: rgba(0, 255, 255, 0.05) !important;
-        border: 1px solid {neon_cyan}33 !important;
-        transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
-    }}
-    .reset-container button:hover {{
-        box-shadow: 0 0 20px {neon_cyan} !important; /* Glow effect */
-        transform: scale(1.15) !important; /* Membesar dikit */
-    }}
-
-    /* HACK: HANYA LOGO + (TANPA TULISAN) - ENHANCED HOVER SCALE */
-    [data-testid="stFileUploader"] {{
-        width: 45px !important;
-        margin-top: -50px !important;
-        position: relative !important;
-        z-index: 10 !important;
-    }}
-    [data-testid="stFileUploader"] section {{
-        padding: 0 !important;
-        min-height: 45px !important;
-    }}
-    [data-testid="stFileUploaderDropzone"] {{
-        padding: 0px !important;
-        border: 2px solid {neon_cyan}55 !important;
-        border-radius: 50% !important;
-        background: rgba(0,255,255,0.08) !important;
-        width: 42px !important; height: 42px !important;
-        display: flex !important; align-items: center !important; justify-content: center !important;
-        transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
-    }}
-    [data-testid="stFileUploaderDropzone"]:hover {{
-        transform: scale(1.1) !important;
-    }}
-    [data-testid="stFileUploaderDropzone"] div {{ display: none !important; }}
-    [data-testid="stFileUploaderDropzone"] button {{ display: none !important; }}
-    
-    [data-testid="stFileUploaderDropzone"]::before {{
-        content: "＋";
-        color: {neon_cyan};
-        font-size: 26px;
-        font-weight: bold;
-    }}
-    
     .logo-static {{ 
         width: 110px; height: 110px; margin: 0 auto; 
         background-image: url("{logo_html}"); background-size: cover; 
         border-radius: 50%; border: 2px solid {neon_cyan};
-        transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
+    
+    /* HACK: FILE UPLOADER ICON ONLY */
+    [data-testid="stFileUploader"] {{
+        width: 45px !important; margin-top: -50px !important;
+        position: relative !important; z-index: 10 !important;
+    }}
+    [data-testid="stFileUploaderDropzone"] {{
+        padding: 0px !important; border-radius: 50% !important;
+        background: rgba(0,255,255,0.08) !important;
+        width: 42px !important; height: 42px !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
+    }}
+    [data-testid="stFileUploaderDropzone"] div, [data-testid="stFileUploaderDropzone"] button {{ display: none !important; }}
+    [data-testid="stFileUploaderDropzone"]::before {{
+        content: "＋"; color: {neon_cyan}; font-size: 26px; font-weight: bold;
+    }}
+
     .blurred {{ filter: blur(1.5px); transition: filter 0.5s ease; }}
-
-    /* Reset Session Logo - ENHANCED HOVER SCALE (if used) */
-    .reset-logo {{
-        width: 40px; height: 40px; 
-        background-image: url("{logo_html}"); background-size: cover; 
-        border-radius: 50%; border: 1px solid {neon_cyan};
-        cursor: pointer;
-        transition: transform 0.5s ease !important;
-        margin: 10px;
-    }}
-    .reset-logo:hover {{
-        box-shadow: 0 0 15px {neon_cyan};
-        transform: scale(1.1) !important;
-    }}
-
-    /* System Info Glow */
-    .system-info {{
-        color: {neon_cyan};
-        text-shadow: 0 0 10px {neon_cyan};
-        transition: all 0.5s ease;
-    }}
-    .system-info:hover {{
-        text-shadow: 0 0 20px {neon_cyan};
-    }}
     </style>
     """
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
