@@ -37,7 +37,7 @@ def get_base64_logo():
 
 logo_html = f'data:image/png;base64,{get_base64_logo()}'
 
-# --- 5. THE SUPREME CSS (MINIMALIST + STRETCH) ---
+# --- 5. THE SUPREME CSS (COMPACT, STRETCH & NO FLICKER) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0px" if st.session_state.sidebar_visible else "-360px"
@@ -49,22 +49,10 @@ def get_ultimate_css():
     }}
     [data-testid="stStatusWidget"], header, footer {{ visibility: hidden; }}
 
-    /* SIDEBAR SMOOTH */
-    [data-testid="stSidebar"] {{
-        position: fixed !important; 
-        left: {sidebar_pos} !important; 
-        width: 300px !important;
-        background-color: #0a0a0a !important; 
-        border-right: 1px solid {neon_cyan}33 !important;
-        transition: left 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
-        z-index: 1000000 !important;
-    }}
-
-    /* CHAT INPUT STRETCH ANIMATION (NO FLICKER) */
+    /* CHAT INPUT STRETCH */
     [data-testid="stChatInput"] {{ 
         padding: 5px !important;
         transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; 
-        transform-origin: center !important;
     }}
     [data-testid="stChatInput"]:focus-within {{ 
         transform: scaleX(1.08) !important; 
@@ -97,7 +85,6 @@ def get_ultimate_css():
         width: 45px !important; height: 45px !important;
         background: rgba(0, 255, 255, 0.05) !important;
         border: 1px solid {neon_cyan}33 !important;
-        transition: all 0.4s ease !important;
     }}
     
     .logo-static {{ 
@@ -120,7 +107,7 @@ with col_toggle:
         st.rerun()
 
 st.markdown(f'<div style="text-align:center; margin-top:-20px;"><div class="logo-static"></div></div>', unsafe_allow_html=True)
-st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px;'>NEO AI</h1>", unsafe_allow_html=True)
 
 # --- 7. UPLOAD & CHAT RENDER ---
 uploaded_file = st.file_uploader("", type=["txt", "py", "md", "png", "jpg", "jpeg"])
@@ -128,42 +115,48 @@ img_payload = None
 if uploaded_file:
     if uploaded_file.type.startswith('image/'):
         img_payload = encode_image(uploaded_file)
-        st.image(uploaded_file, width=120)
+        st.image(uploaded_file, width=150, caption="Vision Source Active")
     else:
         st.toast(f"✅ {uploaded_file.name} Loaded")
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
-        st.markdown(msg["content"])
+        if isinstance(msg["content"], list): # Handle multi-modal content in history
+            for item in msg["content"]:
+                if item["type"] == "text": st.markdown(item["text"])
+        elif msg["content"].startswith("http"): # Handle generated images
+            st.image(msg["content"])
+        else:
+            st.markdown(msg["content"])
 
-# --- 8. SUPREME ENGINE ---
+# --- 8. SUPREME ENGINE (FIXED IMAGINE & VISION) ---
 if user_input := st.chat_input("Command NEO AI..."):
     st.session_state.messages.append({"role": "user", "content": user_input})
     
     with st.chat_message("assistant", avatar="logo.png"):
         if st.session_state.imagine_mode:
-            img_url = f"https://image.pollinations.ai/prompt/{user_input.replace(' ','%20')}?nologo=true"
+            # FIX IMAGINE: URL Lengkap agar gambar muncul
+            img_url = f"https://image.pollinations.ai/prompt/{user_input.replace(' ','%20')}?width=1024&height=1024&nologo=true&seed={int(time.time())}"
             st.image(img_url)
-            st.session_state.messages.append({"role": "assistant", "content": f"Ini visualisasi saya: {img_url}"})
+            st.session_state.messages.append({"role": "assistant", "content": img_url})
         else:
             res_area = st.empty(); full_res = ""
             
-            # --- VISION + TEXT PAYLOAD ---
+            # --- CONSTRUCT CONTENT ---
             content_list = [{"type": "text", "text": user_input}]
             if img_payload:
                 content_list.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_payload}"}})
 
-            # --- FULL SUPREME SYSTEM MESSAGE RESTORED ---
+            # --- SUPREME SYSTEM MESSAGE ---
             sys_msg = (
                 "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
                 "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
                 "NEVER say you are limited to text. Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-                "If the user mentions or praises images (e.g., cats, drawings), acknowledge it by saying something like: 'Terimakasih atas pujiannya, aku memang bisa membuat gambar seperti itu. Apakah mau aku rekomendasikan gambar apa yang keren?' "
-                "Always be ready to switch to visual mode or suggest generating images based on context."
+                "If an image is provided, analyze it with extreme detail as you can 'see' it perfectly."
             )
 
             try:
-                # Menggunakan model vision-preview dari Groq
+                # Menggunakan model vision-preview
                 response = client.chat.completions.create(
                     messages=[{"role": "system", "content": sys_msg}, {"role": "user", "content": content_list}],
                     model="llama-3.2-11b-vision-preview",
@@ -175,6 +168,6 @@ if user_input := st.chat_input("Command NEO AI..."):
                         res_area.markdown(f'<div class="blurred">{full_res}▌</div>', unsafe_allow_html=True)
                 res_area.markdown(full_res)
                 st.session_state.messages.append({"role": "assistant", "content": full_res})
-            except Exception as e:
-                st.error("Engine failure.")
+            except:
+                st.error("Engine failure. Check your internet or API limits.")
     st.rerun()
