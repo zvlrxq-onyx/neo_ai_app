@@ -62,7 +62,7 @@ def get_ultimate_css():
         z-index: 1000000 !important;
     }}
 
-    /* CHAT INPUT RAMPING & STRETCH ANIMATION - ENHANCED SCALE & BOUNCY, CENTERED */
+    /* CHAT INPUT RAMPING & STRETCH ANIMATION - ENHANCED SCALE & BOUNCY, CENTERED, MORE STRETCH */
     [data-testid="stChatInput"] {{ 
         padding: 5px !important;
         max-width: 320px !important;
@@ -71,7 +71,7 @@ def get_ultimate_css():
         transform-origin: center !important;
     }}
     [data-testid="stChatInput"]:focus-within {{ 
-        transform: scaleX(1.15) !important; /* More stretch for longer effect */
+        transform: scaleX(1.25) !important; /* More stretch for longer effect */
         box-shadow: 0 0 25px {neon_cyan}44 !important;
     }}
 
