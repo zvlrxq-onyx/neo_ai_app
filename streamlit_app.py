@@ -78,20 +78,20 @@ def get_ultimate_css():
         border-color: {neon_cyan} !important;
     }}
 
-    /* CHAT INPUT EXPAND SMOOTH & STRETCH EFFECT (ENHANCED) */
+    /* CHAT INPUT EXPAND SMOOTH */
     [data-testid="stChatInput"] {{ 
         transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important; 
         transform-origin: center !important;
     }}
     [data-testid="stChatInput"]:focus-within {{ 
-        transform: scaleX(1.15) scaleY(1.05) !important; 
+        transform: scaleX(1.05) !important; 
         box-shadow: 0 0 25px {neon_cyan}55 !important;
         border: 2px solid {neon_cyan} !important;
     }}
 
     /* BLUR EFFECT FOR STREAMING RESPONSE */
     .blurred {{
-        filter: blur(2px) !important;
+        filter: blur(1.5px) !important;
         transition: filter 0.5s ease !important;
     }}
 
@@ -115,7 +115,7 @@ def get_ultimate_css():
         background-image: url("{logo_html}"); background-size: cover; 
         border-radius: 50%; border: 3px solid {neon_cyan};
         box-shadow: 0 0 20px {neon_cyan}33;
-        transition: all 0.5s ease !important;
+        transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
     .logo-static:hover {{
         transform: scale(1.05) !important;
@@ -138,14 +138,13 @@ if st.button("☰", key="hamburger_fixed"):
     st.session_state.sidebar_visible = not st.session_state.sidebar_visible
     st.rerun()
 
-# --- 7. SIDEBAR (WITH DATA SOURCE, WITHOUT RECENT CHATS AND SCROLLBAR) ---
+# --- 7. SIDEBAR ---
 with st.sidebar:
     st.markdown('<div style="height: 60px;"></div>', unsafe_allow_html=True)
     st.markdown('<div class="logo-static"></div>', unsafe_allow_html=True)
     st.markdown("<h2 style='text-align:center; color:cyan;'>NEO AI</h2>", unsafe_allow_html=True)
     st.markdown("---")
     
-    # --- FITUR BACA FILE (DATA SOURCE) ---
     st.markdown("### 📄 DATA SOURCE")
     uploaded_file = st.file_uploader("Upload (.txt, .py, .md)", type=["txt", "py", "md"], label_visibility="collapsed")
     file_context = ""
@@ -172,18 +171,15 @@ with st.sidebar:
     </p></div>""", unsafe_allow_html=True)
 
 # --- 8. MAIN UI ---
-# Layout kolom untuk tombol toggle di pojok kanan atas
 col_space, col_btn = st.columns([5, 1.2])
 with col_btn:
-    # Label tombol yang berubah sesuai mode
     label_mode = "🎨 IMAGINE" if st.session_state.imagine_mode else "💬 CHAT"
     if st.button(label_mode, key="mode_toggle", use_container_width=True):
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
 
-# LOGO LOGIC: Tetap menampilkan logo.png dengan tambahan efek visual
-# Efek Glow Cyan menyala hanya jika imagine_mode bernilai True
-glow_css = "box-shadow: 0 0 40px #00ffff; border: 3px solid #00ffff;" if st.session_state.imagine_mode else ""
+# Glow logo logic
+glow_css = "box-shadow: 0 0 45px #00ffff; border: 3px solid #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
 sub_text = "Visualizing your thoughts..." if st.session_state.imagine_mode else "How can I help you today?"
 
 st.markdown(f'''
@@ -192,29 +188,10 @@ st.markdown(f'''
 </div>
 ''', unsafe_allow_html=True)
 
-# Nama Brand & Deskripsi
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
 st.markdown(f'<p style="text-align:center; color:#888; font-size:1.3rem; margin-top:-5px;">{sub_text}</p>', unsafe_allow_html=True)
 
-# Render pesan chat (tanpa memory system)
-for msg in st.session_state.messages:
-    if msg.get("type") == "system_memory": continue
-    with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
-        if msg.get("type") == "image":
-            st.image(msg["content"])
-        else:
-            st.markdown(msg["content"])
-
-# Logo changes based on mode - FIXED: Always show something in center
-st.markdown(f'''
-<div style="margin-top:20px; text-align:center;">
-    {"<span style='font-size:130px;'>🎨</span>" if st.session_state.imagine_mode else f'<div class="logo-static" style="width:130px; height:130px;"></div>'}
-</div>
-''', unsafe_allow_html=True)
-
-st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
-st.markdown('<p style="text-align:center; color:#888; font-size:1.4rem; margin-top:-5px;">How can I help you today?</p>', unsafe_allow_html=True)
-
+# Chat Display
 for msg in st.session_state.messages:
     if msg.get("type") == "system_memory": continue
     with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
@@ -251,10 +228,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 if m.get("type") == "image": continue
                 clean_history.append({"role": m["role"], "content": str(m["content"])})
 
-            # INTEGRASI DATA SOURCE KE MEMORI AKHIR
             if file_context:
                 clean_history[-1]["content"] = f"USER UPLOADED FILE CONTEXT:\n{file_context}\n\nUSER QUESTION: {last_user_msg}"
 
+            # --- SUPREME SYSTEM MESSAGE RESTORED ---
             sys_msg = (
                 "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
                 "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
