@@ -290,4 +290,3 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 res_area.markdown(full_res); st.session_state.messages.append({"role": "assistant", "content": full_res})
             except: st.error("Engine failed.")
     st.rerun()
-```
