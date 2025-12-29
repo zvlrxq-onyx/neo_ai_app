@@ -192,6 +192,13 @@ glow = "box-shadow: 0 0 40px #00ffff; transform: scale(1.05);" if st.session_sta
 st.markdown(f'<div style="text-align:center; margin-top:-20px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
 
+# Dynamic Subheader like ChatGPT
+if st.session_state.imagine_mode:
+    subheader = "Ready to make you a work of art?"
+else:
+    subheader = "How can I help you today?"
+st.markdown(f"<p style='text-align:center; color:#b0b0b0; font-size:18px; margin-top:10px;'>{subheader}</p>", unsafe_allow_html=True)
+
 # Render Messages
 for msg in st.session_state.messages:
     if msg.get("type") == "system_memory": continue
@@ -207,13 +214,7 @@ if uploaded_file:
     file_context = uploaded_file.getvalue().decode("utf-8")
     st.toast(f"✅ {uploaded_file.name} Loaded!")
 
-# Dynamic Placeholder
-if st.session_state.imagine_mode:
-    placeholder = "Ready to make you a work of art?"
-else:
-    placeholder = "How can I help you today?"
-
-if user_input := st.chat_input(placeholder):
+if user_input := st.chat_input("Command NEO AI..."):
     st.session_state.messages.append({"role": "user", "content": user_input})
     st.rerun()
 
