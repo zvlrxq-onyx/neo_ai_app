@@ -62,11 +62,11 @@ def get_ultimate_css():
         z-index: 1000000 !important;
     }}
 
-    /* CHAT INPUT RAMPING & STRETCH ANIMATION - ENHANCED SCALE & BOUNCY, MORE STRETCH, SHIFTED RIGHT */
+    /* CHAT INPUT RAMPING & STRETCH ANIMATION - ENHANCED SCALE & BOUNCY, CENTERED */
     [data-testid="stChatInput"] {{ 
         padding: 5px !important;
         max-width: 320px !important;
-        margin-left: 20px !important; /* Shifted agak ke kanan dikit */
+        margin: 0 auto !important; /* Centered */
         transition: transform 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important; /* Longer duration for smoother feel */
         transform-origin: center !important;
     }}
@@ -75,17 +75,18 @@ def get_ultimate_css():
         box-shadow: 0 0 25px {neon_cyan}44 !important;
     }}
 
-    /* TOMBOL MODE ICON BULAT - ENHANCED HOVER SCALE */
+    /* TOMBOL MODE ICON BULAT - ENHANCED HOVER SCALE & GLOW */
     .stButton > button {{
         border-radius: 50% !important;
         width: 45px !important; height: 45px !important;
         padding: 0px !important; font-size: 20px !important;
         background: rgba(0, 255, 255, 0.05) !important;
         border: 1px solid {neon_cyan}33 !important;
-        transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
+        transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
     .stButton > button:hover {{
-        transform: scale(1.1) !important;
+        transform: scale(1.15) !important; /* Membesar dikit */
+        box-shadow: 0 0 20px {neon_cyan} !important; /* Glow effect */
     }}
 
     /* RESET BUTTON GLOW & SCALE ON HOVER */
