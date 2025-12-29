@@ -159,7 +159,7 @@ with st.sidebar:
         st.session_state.messages = []
         st.session_state.current_chat_id = None
         st.rerun()
-
+    
     if st.button("ℹ️ SYSTEM INFO", use_container_width=True):
         st.session_state.show_about = not st.session_state.show_about
         st.rerun()
@@ -180,10 +180,13 @@ with col2:
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
 
-# Logo changes based on mode
-logo_display = "🎨" if st.session_state.imagine_mode else logo_html
-logo_class = "logo-static" if not st.session_state.imagine_mode else "logo-static-imagine"
-st.markdown(f'<div style="margin-top:20px;"><div class="{logo_class}" style="background-image: url(\'{logo_display}\'); width:130px; height:130px;"></div></div>', unsafe_allow_html=True)
+# Logo changes based on mode - FIXED: Always show something in center
+st.markdown(f'''
+<div style="margin-top:20px; text-align:center;">
+    {"<span style='font-size:130px;'>🎨</span>" if st.session_state.imagine_mode else f'<div class="logo-static" style="width:130px; height:130px;"></div>'}
+</div>
+''', unsafe_allow_html=True)
+
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:15px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
 st.markdown('<p style="text-align:center; color:#888; font-size:1.4rem; margin-top:-5px;">How can I help you today?</p>', unsafe_allow_html=True)
 
