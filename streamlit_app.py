@@ -1,7 +1,3 @@
-<think>
-Pertama, pengguna bilang "mana kodenya", yang berarti "where is the code?" dalam bahasa Indonesia. Ini merujuk pada kode yang saya berikan sebelumnya, tapi dalam respons terakhir saya, saya tidak menyertakan kode lagi karena itu adalah respons singkat.
-
-</think>```python
 import streamlit as st
 from groq import Groq
 import time
@@ -30,7 +26,7 @@ except:
     st.stop()
 
 # --- 3. PAGE CONFIG ---
-st.set_page_config(page_title="NEO AI", page_icon="⚡", layout="wide")  # Wide for better chat layout
+st.set_page_config(page_title="NEO AI", page_icon="⚡", layout="centered")
 
 # --- 4. ASSETS LOADER ---
 @st.cache_data
@@ -43,7 +39,7 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ULTIMATE CSS (FIXED FOR CHATGPT-LIKE LAYOUT, RESPONSIVE, GRAY BG FOR USER) ---
+# --- 5. THE ULTIMATE CSS (HACK ICON +, NO TEXT, SMOOTH ANIMATIONS) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     sidebar_pos = "0px" if st.session_state.sidebar_visible else "-360px"
@@ -171,61 +167,6 @@ def get_ultimate_css():
     .system-info:hover {{
         text-shadow: 0 0 20px {neon_cyan};
     }}
-
-    /* CHATGPT-LIKE CHAT LAYOUT: Side-by-side, user right with gray bg, AI left with avatar, responsive */
-    [data-testid="stChatMessage"] {{
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: flex-start !important;
-        margin-bottom: 15px !important;
-        padding: 10px !important;
-        border-radius: 10px !important;
-    }}
-    [data-testid="stChatMessage"][data-testid*="user"] {{
-        justify-content: flex-end !important;
-        background-color: #2a2a2a !important; /* Gray background for user */
-        margin-left: 20% !important; /* Push to right */
-    }}
-    [data-testid="stChatMessage"][data-testid*="assistant"] {{
-        justify-content: flex-start !important;
-        margin-right: 20% !important; /* Push to left */
-    }}
-    [data-testid="stChatMessage"] > div {{
-        max-width: 70% !important;
-        padding: 10px !important;
-        border-radius: 10px !important;
-    }}
-    [data-testid="stChatMessage"][data-testid*="user"] > div {{
-        background-color: #444 !important; /* Darker gray for user text */
-        color: #fff !important;
-    }}
-    [data-testid="stChatMessage"][data-testid*="assistant"] > div {{
-        background-color: transparent !important; /* No bg for AI */
-    }}
-
-    /* AVATAR FIX: Ensure avatars show for both user and assistant */
-    [data-testid="stChatMessage"] img {{
-        width: 40px !important;
-        height: 40px !important;
-        border-radius: 50% !important;
-        margin-right: 10px !important;
-    }}
-
-    /* RESPONSIVE: Adjust for mobile */
-    @media (max-width: 768px) {{
-        [data-testid="stChatMessage"][data-testid*="user"] {{
-            margin-left: 10% !important;
-        }}
-        [data-testid="stChatMessage"][data-testid*="assistant"] {{
-            margin-right: 10% !important;
-        }}
-        [data-testid="stChatMessage"] > div {{
-            max-width: 85% !important;
-        }}
-        .logo-static {{
-            width: 80px !important; height: 80px !important;
-        }}
-    }}
     </style>
     """
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
@@ -294,17 +235,12 @@ else:
     subheader = "How can I help you today?"
 st.markdown(f"<p style='text-align:center; color:#b0b0b0; font-size:18px; margin-top:10px;'>{subheader}</p>", unsafe_allow_html=True)
 
-# Render Messages (Back to st.chat_message with avatars for both)
+# Render Messages
 for msg in st.session_state.messages:
     if msg.get("type") == "system_memory": continue
-    if msg["role"] == "user":
-        with st.chat_message(msg["role"], avatar="logo.png"):  # Avatar for user too
-            if msg.get("type") == "image": st.image(msg["content"])
-            else: st.markdown(msg["content"])
-    else:
-        with st.chat_message(msg["role"], avatar="logo.png"):  # Avatar for assistant
-            if msg.get("type") == "image": st.image(msg["content"])
-            else: st.markdown(msg["content"])
+    with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
+        if msg.get("type") == "image": st.image(msg["content"])
+        else: st.markdown(msg["content"])
 
 # --- 9. UPLOAD & INPUT MINIMALIST ---
 uploaded_file = st.file_uploader("", type=["txt", "py", "md"], label_visibility="collapsed")
@@ -354,4 +290,16 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 "- Anxious or worried: 😰 "
                 "- Refusal or denial: ❌ "
                 "- Motivational (e.g., encouraging user): 🚀 (use phrases like 'Gas terus bro, kamu pasti bisa!' when user achieves something or shares success). "
-                "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success (e.g., 'Aku berhasil bikin AI sendiri!'), respond with pride and motivation, e.g., 'Wow, keren
+                "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success (e.g., 'Aku berhasil bikin AI sendiri!'), respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Gas terus, bro! 🚀 Kamu pasti bisa!' "
+                "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."
+            )
+
+            try:
+                stream = client.chat.completions.create(messages=[{"role": "system", "content": sys_msg}] + clean_history, model="llama-3.3-70b-versatile", stream=True)
+                for chunk in stream:
+                    if chunk.choices[0].delta.content:
+                        full_res += chunk.choices[0].delta.content
+                        res_area.markdown(f'<div class="blurred">{full_res}▌</div>', unsafe_allow_html=True)
+                res_area.markdown(full_res); st.session_state.messages.append({"role": "assistant", "content": full_res})
+            except: st.error("Engine failed.")
+    st.rerun()
