@@ -62,15 +62,15 @@ def get_ultimate_css():
         z-index: 1000000 !important;
     }}
 
-    /* CHAT INPUT RAMPING & STRETCH ANIMATION - ENHANCED SCALE & BOUNCY */
+    /* CHAT INPUT RAMPING & STRETCH ANIMATION - ENHANCED SCALE & BOUNCY, MORE STRETCH */
     [data-testid="stChatInput"] {{ 
         padding: 5px !important;
         max-width: 320px !important;
-        transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important; /* More bouncy/kenyal */
+        transition: transform 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important; /* Longer duration for smoother feel */
         transform-origin: center !important;
     }}
     [data-testid="stChatInput"]:focus-within {{ 
-        transform: scaleX(1.08) !important; /* Slightly more stretch */
+        transform: scaleX(1.15) !important; /* More stretch for longer effect */
         box-shadow: 0 0 25px {neon_cyan}44 !important;
     }}
 
@@ -223,7 +223,7 @@ with col_reset:
 
 # Logo & Header
 glow = "box-shadow: 0 0 40px #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
-st.markdown(f'<div style="text-align:center; margin-top:-60px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)
+st.markdown(f'<div style="text-align:center; margin-top:-80px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
 
 # Dynamic Subheader like ChatGPT
