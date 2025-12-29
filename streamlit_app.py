@@ -124,20 +124,6 @@ def get_ultimate_css():
     }}
     .blurred {{ filter: blur(1.5px); transition: filter 0.5s ease; }}
 
-    /* Reset Session Logo */
-    .reset-logo {{
-        width: 40px; height: 40px; 
-        background-image: url("{logo_html}"); background-size: cover; 
-        border-radius: 50%; border: 1px solid {neon_cyan};
-        cursor: pointer;
-        transition: all 0.5s ease;
-        margin: 10px;
-    }}
-    .reset-logo:hover {{
-        box-shadow: 0 0 15px {neon_cyan};
-        transform: scale(1.1);
-    }}
-
     /* System Info Glow */
     .system-info {{
         color: {neon_cyan};
@@ -190,23 +176,21 @@ with st.sidebar:
         st.write("No saved chats.")
 
 # --- 8. MAIN UI ---
-col_main, col_toggle = st.columns([5, 1])
+col_main, col_toggle, col_reset = st.columns([4, 1, 1])  # Adjusted for reset button
 with col_toggle:
     icon_mode = "🎨" if st.session_state.imagine_mode else "💬"
     if st.button(icon_mode, key="mode_toggle"):
         st.session_state.imagine_mode = not st.session_state.imagine_mode
+        st.rerun()
+with col_reset:
+    if st.button("🔄", key="reset_session"):  # Emoji only, no text
+        st.session_state.messages = []
         st.rerun()
 
 # Logo & Header
 glow = "box-shadow: 0 0 40px #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
 st.markdown(f'<div style="text-align:center; margin-top:-20px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
-
-# Reset Session Logo in Chat Area
-st.markdown('<div style="text-align:center;"><div class="reset-logo" onclick="document.querySelector(\'[data-testid=stButton]\').click();"></div></div>', unsafe_allow_html=True)
-if st.button("Reset Session", key="reset_session_hidden"):
-    st.session_state.messages = []
-    st.rerun()
 
 # Render Messages
 for msg in st.session_state.messages:
