@@ -233,6 +233,10 @@ if uploaded_file:
             st.session_state.uploaded_file_name = uploaded_file.name
         else:
             file_context = uploaded_file.getvalue().decode("utf-8")
+else:
+    # Kalo kotak upload kosong, bersihin memori gambar! (FIX EFEK BAYANGAN)
+    st.session_state.uploaded_image = None
+    st.session_state.uploaded_file_name = None
 
 if user_input := st.chat_input("Command NEO AI..."):
     st.session_state.messages.append({"role": "user", "content": user_input})
