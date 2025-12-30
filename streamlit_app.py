@@ -12,10 +12,10 @@ if "all_chats" not in st.session_state:
     st.session_state.all_chats = {}
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = None
-if "imagine_mode" not in st.session_state:
-    st.session_state.imagine_mode = False
 if "sidebar_visible" not in st.session_state:
     st.session_state.sidebar_visible = False
+if "uploaded_file_name" not in st.session_state:
+    st.session_state.uploaded_file_name = None
 
 # --- 2. CONFIG API ---
 try:
@@ -190,12 +190,7 @@ with st.sidebar:
         st.write("No saved chats.")
 
 # --- 8. MAIN UI ---
-col_main, col_toggle, col_reset = st.columns([4, 1, 1])
-with col_toggle:
-    icon_mode = "🎨" if st.session_state.imagine_mode else "💬"
-    if st.button(icon_mode, key="mode_toggle"):
-        st.session_state.imagine_mode = not st.session_state.imagine_mode
-        st.rerun()
+col_main, col_reset = st.columns([5, 1])
 with col_reset:
     st.markdown('<div class="reset-container">', unsafe_allow_html=True)
     if st.button("🔄", key="reset_session"):
@@ -204,15 +199,11 @@ with col_reset:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Logo & Header
-glow = "box-shadow: 0 0 40px #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
-st.markdown(f'<div style="text-align:center; margin-top:-80px;"><div class="logo-static" style="{glow}"></div></div>', unsafe_allow_html=True)
+st.markdown(f'<div style="text-align:center; margin-top:-80px;"><div class="logo-static"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
 
 # Dynamic Subheader like ChatGPT
-if st.session_state.imagine_mode:
-    subheader = "Ready to visualize your imagination."
-else:
-    subheader = "How can I help you today?"
+subheader = "How can I help you today?"
 st.markdown(f"<p style='text-align:center; color:#b0b0b0; font-size:18px; margin-top:10px;'>{subheader}</p>", unsafe_allow_html=True)
 
 # Render Messages
@@ -226,8 +217,12 @@ for msg in st.session_state.messages:
 uploaded_file = st.file_uploader("", type=["txt", "py", "md"], label_visibility="collapsed")
 file_context = ""
 if uploaded_file:
-    file_context = uploaded_file.getvalue().decode("utf-8")
-    st.toast(f"✅ {uploaded_file.name} Loaded!")
+    if st.session_state.uploaded_file_name != uploaded_file.name:
+        file_context = uploaded_file.getvalue().decode("utf-8")
+        st.toast(f"✅ {uploaded_file.name} Loaded!")
+        st.session_state.uploaded_file_name = uploaded_file.name
+    else:
+        file_context = uploaded_file.getvalue().decode("utf-8")
 
 if user_input := st.chat_input("Command NEO AI..."):
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -237,7 +232,8 @@ if user_input := st.chat_input("Command NEO AI..."):
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     last_msg = st.session_state.messages[-1]["content"]
     with st.chat_message("assistant", avatar="logo.png"):
-        if st.session_state.imagine_mode:
+        # Check for auto image generation
+        if "buatkan" in last_msg.lower() or "make" in last_msg.lower():
             with st.spinner("Visualizing..."):
                 try:
                     img_url = f"https://image.pollinations.ai/prompt/{last_msg.replace(' ','%20')}?width=1024&height=1024&nologo=true"
@@ -252,7 +248,26 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             if file_context: clean_history[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER: {last_msg}"
 
             sys_msg = (
-  333
+                "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
+                "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
+                "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+                "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
+                "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+                "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
+                "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
+                "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
+                "- Happy or excited: 😊🤩 "
+                "- Sad or disappointed: 😢😔 "
+                "- Assertive or warning: ⚠️😠 "
+                "- Thinking or curious: 🤔💭 "
+                "- Surprised: 😲 "
+                "- Playful: 😉😜 "
+                "- Proud or admiring success: 🏆 "
+                "- Anxious or worried: 😰 "
+                "- Refusal or denial: ❌ "
+                "- Motivational (e.g., encouraging user): 🚀 (use phrases like 'Gas terus bro, kamu pasti bisa!' when user achieves something or shares success). "
+                "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success (e.g., 'Aku berhasil bikin AI sendiri!'), respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Gas terus, bro! 🚀 Kamu pasti bisa!' "
+                "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."
             )
 
             try:
