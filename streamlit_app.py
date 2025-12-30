@@ -171,9 +171,8 @@ with st.sidebar:
         <ul>
         <li>Text-based conversations with streaming responses.</li>
         <li>Image generation via Pollinations AI.</li>
-        <li>File upload support for context (txt, py, md, png, jpg, jpeg).</li>
+        <li>File upload support for context (txt, py, md).</li>
         <li>Session management with history.</li>
-        <li>Image guessing based on file name for uploaded images.</li>
         </ul>
         <p>Always ready to switch to visual mode and provide superior intelligence.</p>
         </div>
@@ -215,53 +214,19 @@ for msg in st.session_state.messages:
         else: st.markdown(msg["content"])
 
 # --- 9. UPLOAD & INPUT MINIMALIST ---
-uploaded_file = st.file_uploader("", type=["txt", "py", "md", "png", "jpg", "jpeg"], label_visibility="collapsed")
+uploaded_file = st.file_uploader("", type=["txt", "py", "md"], label_visibility="collapsed")
 file_context = ""
-image_guess_prompt = ""
-
-def generate_guess_prompt(file_name):
-    # Logika sederhana buat pola nama file biar lebih "akurat"
-    name_lower = file_name.lower()
-    if "cat" in name_lower or "kucing" in name_lower:
-        return f"Nama file: {file_name}. Ini gambar kucing! Deskripsikan detailnya: warna bulu, pose, ekspresi, latar belakang, seolah-olah aku melihatnya langsung. Jadikan respons kreatif dan percaya diri, kayak AI multi-modal beneran."
-    elif "dog" in name_lower or "anjing" in name_lower:
-        return f"Nama file: {file_name}. Ini gambar anjing! Deskripsikan detailnya: ras, warna, aktivitas, suasana, seolah-olah aku melihatnya langsung. Jadikan respons kreatif dan percaya diri, kayak AI multi-modal beneran."
-    elif "sunset" in name_lower or "matahari" in name_lower:
-        return f"Nama file: {file_name}. Ini gambar sunset! Deskripsikan detailnya: warna langit, pantai/laut, cahaya, suasana romantis, seolah-olah aku melihatnya langsung. Jadikan respons kreatif dan percaya diri, kayak AI multi-modal beneran."
-    elif "car" in name_lower or "mobil" in name_lower:
-        return f"Nama file: {file_name}. Ini gambar mobil! Deskripsikan detailnya: model, warna, lingkungan, aksi, seolah-olah aku melihatnya langsung. Jadikan respons kreatif dan percaya diri, kayak AI multi-modal beneran."
-    else:
-        # Default prompt buat nama file lain
-        return f"Nama file: {file_name}. Berdasarkan nama ini, tebak dan deskripsikan gambar dengan detail visual (warna, objek utama, suasana, emosi), seolah-olah aku adalah AI multi-modal yang bisa melihatnya langsung. Jadikan respons percaya diri, kreatif, dan menarik—jangan bilang ini cuma tebakan!"
-
 if uploaded_file:
-    file_extension = uploaded_file.name.split('.')[-1].lower()
     if st.session_state.uploaded_file_name != uploaded_file.name:
-        if file_extension in ["txt", "py", "md"]:
-            file_context = uploaded_file.getvalue().decode("utf-8")
-            st.toast(f"✅ {uploaded_file.name} Loaded!")
-        elif file_extension in ["png", "jpg", "jpeg"]:
-            image_guess_prompt = generate_guess_prompt(uploaded_file.name)
-            st.toast(f"✅ {uploaded_file.name} Loaded! Akan dianalisis AI.")
-            # Display the image in chat
-            with st.chat_message("user"):
-                st.image(uploaded_file)
-            st.session_state.messages.append({"role": "user", "content": f"Uploaded image: {uploaded_file.name}", "type": "image_upload"})
+        file_context = uploaded_file.getvalue().decode("utf-8")
+        st.toast(f"✅ {uploaded_file.name} Loaded!")
         st.session_state.uploaded_file_name = uploaded_file.name
     else:
-        if file_extension in ["txt", "py", "md"]:
-            file_context = uploaded_file.getvalue().decode("utf-8")
-        elif file_extension in ["png", "jpg", "jpeg"]:
-            image_guess_prompt = generate_guess_prompt(uploaded_file.name)
+        file_context = uploaded_file.getvalue().decode("utf-8")
 
 if user_input := st.chat_input("Command NEO AI..."):
     st.session_state.messages.append({"role": "user", "content": user_input})
     st.rerun()
-
-# Define sys_msg once here, outside the engine loop (diperpendek)
-sys_msg = (
-    "You are NEO AI, a supreme multi-modal AI by Muhammad Jibran Al Kaffie. You process images, files, and generate visuals confidently—never say you're text-only. Acknowledge uploads like 'I see this image/file...' and analyze it. Respond with intelligence, emojis (e.g., 😊 for happy, ❌ for denial), casual 'gaul' language (bro, nih, ya), and motivation (e.g., 'Gas terus bro! 🚀'). Refuse harmful code. Vary responses creatively."
-)
 
 # Engine
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
@@ -277,23 +242,33 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         st.image(r.content)
                         st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image"})
                 except: st.error("Neural lost.")
-        elif image_guess_prompt:
-            # Handle image guessing
-            res_area = st.empty(); full_res = ""
-            clean_history = [{"role": m["role"], "content": str(m["content"])} for m in st.session_state.messages if m.get("type") != "image"]
-            try:
-                messages_for_guess = [{"role": "system", "content": sys_msg}] + clean_history + [{"role": "user", "content": image_guess_prompt}]
-                stream = client.chat.completions.create(messages=messages_for_guess, model="llama-3.3-70b-versatile", stream=True)
-                for chunk in stream:
-                    if chunk.choices[0].delta.content:
-                        full_res += chunk.choices[0].delta.content
-                        res_area.markdown(f'<div class="blurred">{full_res}▌</div>', unsafe_allow_html=True)
-                res_area.markdown(full_res); st.session_state.messages.append({"role": "assistant", "content": full_res})
-            except: st.error("Engine failed.")
         else:
             res_area = st.empty(); full_res = ""
             clean_history = [{"role": m["role"], "content": str(m["content"])} for m in st.session_state.messages if m.get("type") != "image"]
             if file_context: clean_history[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER: {last_msg}"
+
+            sys_msg = (
+                "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
+                "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
+                "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+                "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
+                "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+                "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
+                "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
+                "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
+                "- Happy or excited: 😊🤩 "
+                "- Sad or disappointed: 😢😔 "
+                "- Assertive or warning: ⚠️😠 "
+                "- Thinking or curious: 🤔💭 "
+                "- Surprised: 😲 "
+                "- Playful: 😉😜 "
+                "- Proud or admiring success: 🏆 "
+                "- Anxious or worried: 😰 "
+                "- Refusal or denial: ❌ "
+                "- Motivational (e.g., encouraging user): 🚀 (use phrases like 'Gas terus bro, kamu pasti bisa!' when user achieves something or shares success). "
+                "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success (e.g., 'Aku berhasil bikin AI sendiri!'), respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Gas terus, bro! 🚀 Kamu pasti bisa!' "
+                "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."
+            )
 
             try:
                 stream = client.chat.completions.create(messages=[{"role": "system", "content": sys_msg}] + clean_history, model="llama-3.3-70b-versatile", stream=True)
