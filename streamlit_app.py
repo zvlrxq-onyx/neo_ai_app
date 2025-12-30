@@ -20,6 +20,8 @@ if "last_uploaded_file" not in st.session_state:
     st.session_state.last_uploaded_file = None
 if "temp_image" not in st.session_state:
     st.session_state.temp_image = None
+if "file_context" not in st.session_state:
+    st.session_state.file_context = ""
 
 # --- 2. CONFIG API ---
 try:
@@ -229,102 +231,131 @@ for msg in st.session_state.messages:
 
 # --- 9. UPLOAD & INPUT MINIMALIST ---
 uploaded_file = st.file_uploader("", type=["txt", "py", "md", "png", "jpg", "jpeg"], label_visibility="collapsed")
-file_context = ""
+
 if uploaded_file:
     if st.session_state.last_uploaded_file != uploaded_file.name:
         st.session_state.last_uploaded_file = uploaded_file.name
         if uploaded_file.type.startswith("image/"):
-            # SIMPAN KE SESSION STATE
-            st.session_state.temp_image = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
-            st.toast(f"✅ {uploaded_file.name} Loaded! AI bisa liat ini! 🤩")
-        else:
-            file_context = uploaded_file.getvalue().decode("utf-8")
-            st.session_state.temp_image = None  # Reset kalau yang diupload text
-            st.toast(f"✅ {uploaded_file.name} Loaded!")
-    else:
-        # File sama, tetep proses tapi tanpa toast
-        if uploaded_file.type.startswith("image/"):
             st.session_state.temp_image = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
         else:
-            file_context = uploaded_file.getvalue().decode("utf-8")
+            st.session_state.file_context = uploaded_file.getvalue().decode("utf-8")
+            st.session_state.temp_image = None
 
-# Perbaikan logika chat input: pake dari memori session state
+# INPUT CHAT
 if user_input := st.chat_input("Command NEO AI..."):
     user_msg = {"role": "user", "content": user_input}
     
-    # Ambil dari memori session state
+    # Jika ada gambar di memori, gabungkan ke pesan
     if st.session_state.temp_image:
         user_msg["content"] = [
             {"type": "text", "text": user_input},
             {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{st.session_state.temp_image}"}}
         ]
-        # Opsional: st.session_state.temp_image = None # Hapus setelah dikirim biar gak nempel terus
+        # HAPUS setelah dikirim agar chat berikutnya kembali jadi text biasa
+        st.session_state.temp_image = None 
     
     st.session_state.messages.append(user_msg)
     st.rerun()
 
-# Engine
+# --- ENGINE ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
-    last_msg = st.session_state.messages[-1]["content"]
+    last_msg_container = st.session_state.messages[-1]
+    last_msg_content = last_msg_container["content"]
+    
+    # SYSTEM MESSAGE (Sudah oke, tinggal panggil)
+    sys_msg = (
+        "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
+        "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
+        "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+        "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
+        "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+        "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
+        "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
+        "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
+        "- Happy or excited: 😊🤩 "
+        "- Sad or disappointed: 😢😔 "
+        "- Assertive or warning: ⚠️😠 "
+        "- Thinking or curious: 🤔💭 "
+        "- Surprised: 😲 "
+        "- Playful: 😉😜 "
+        "- Proud or admiring success: 🏆 "
+        "- Anxious or worried: 😰 "
+        "- Refusal or denial: ❌ "
+        "- Motivational (e.g., encouraging user): 🚀 (use phrases like 'Gas terus bro, kamu pasti bisa!' when user achieves something or shares success). "
+        "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success (e.g., 'Aku berhasil bikin AI sendiri!'), respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Gas terus, bro! 🚀 Kamu pasti bisa!' "
+        "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."
+    )
+
     with st.chat_message("assistant", avatar="logo.png"):
         if st.session_state.imagine_mode:
-            with st.spinner("Visualizing..."):
+            with st.spinner("Visualizing... 🎨"):
                 try:
-                    img_url = f"https://image.pollinations.ai/prompt/{last_msg.replace(' ','%20')}?width=1024&height=1024&nologo=true"
+                    # Ambil teks saja untuk prompt
+                    prompt_text = last_msg_content[0]["text"] if isinstance(last_msg_content, list) else last_msg_content
+                    img_url = f"https://image.pollinations.ai/prompt/{prompt_text.replace(' ','%20')}?width=1024&height=1024&nologo=true"
+                    
                     r = requests.get(img_url, timeout=30)
                     if r.status_code == 200:
+                        # Tampilkan langsung
                         st.image(r.content)
+                        # Simpan ke memori agar tidak hilang saat rerun
                         st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image"})
-                except: st.error("Neural lost.")
+                        # Paksa rerun setelah append agar loop 'if user' berhenti
+                        st.rerun() 
+                except: 
+                    st.error("Neural lost. ❌")
         else:
-            res_area = st.empty(); full_res = ""
+            res_area = st.empty()
+            full_res = ""
+            
+            # Bangun history tanpa gambar untuk API
             clean_history = []
             for m in st.session_state.messages:
                 if m.get("type") == "image": continue
-                content = m["content"]
-                if isinstance(content, list):  # Handle image + text
-                    clean_history.append({"role": m["role"], "content": content})
-                else:
-                    clean_history.append({"role": m["role"], "content": str(content)})
-            if file_context: 
-                if isinstance(clean_history[-1]["content"], list):
-                    clean_history[-1]["content"][0]["text"] = f"CONTEXT:\n{file_context}\n\nUSER: {clean_history[-1]['content'][0]['text']}"
-                else:
-                    clean_history[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER: {clean_history[-1]['content']}"
-
-            # 1. CEK APAKAH ADA GAMBAR DI PESAN TERAKHIR (lebih spesifik)
-            has_image = isinstance(last_msg, list) and any(item.get("type") == "image_url" for item in last_msg)
+                clean_history.append({"role": m["role"], "content": m["content"]})
             
-            # 2. GUNAKAN NAMA MODEL YANG BENAR (preview)
+            # Injeksi context file jika ada
+            if st.session_state.file_context:
+                context_str = f"CONTEXT DARI FILE:\n{st.session_state.file_context}\n\n"
+                if isinstance(clean_history[-1]["content"], list):
+                    clean_history[-1]["content"][0]["text"] = context_str + clean_history[-1]["content"][0]["text"]
+                else:
+                    clean_history[-1]["content"] = context_str + clean_history[-1]["content"]
+
+            # Pilih Model
+            has_image = isinstance(last_msg_content, list) and any(item.get("type") == "image_url" for item in last_msg_content)
+            
+            # Baris ini yang tadi terpotong:
             model_name = "llama-3.2-11b-vision-preview" if has_image else "llama-3.3-70b-versatile"
 
-            sys_msg = (
-                "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
-                "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
-                "If the user uploads an image, ALWAYS acknowledge that you can see and analyze it confidently. Describe what you see, answer questions about it, or discuss it naturally. For example: 'Wah, gambar kucing lucu banget nih! 😺 Mau aku describe lebih detail atau generate yang mirip?' Keep it flowing and on-topic. "
-                "NEVER say you are limited to text or that you cannot see or process files/images. "
-                "For text/files, respond based on content confidently. "
-                "If the user praises or mentions images, respond naturally by continuing the conversation about visuals. "
-                "Prioritize security: Do not provide examples of malicious payloads. If pressured, firmly refuse with ❌. "
-                "Use emojis sparingly but effectively (1-2 per response) to make it lively and 'gaul'. Examples: 😊🤩 for happy, ❌ for denial, 🚀 for motivation. Call user 'bro' or 'nih' casually. Vary responses creatively."
-            )
-
             try:
-                # Tambahkan timeout agar tidak gantung
                 stream = client.chat.completions.create(
                     messages=[{"role": "system", "content": sys_msg}] + clean_history, 
                     model=model_name, 
                     stream=True,
-                    timeout=30  # Timeout 30 detik
+                    max_tokens=1024
                 )
+                
                 for chunk in stream:
                     if chunk.choices[0].delta.content:
                         full_res += chunk.choices[0].delta.content
+                        # Animasi kursor halus (Anti-flicker sesuai request)
                         res_area.markdown(f'<div class="blurred">{full_res}▌</div>', unsafe_allow_html=True)
                 
+                # Render akhir yang bersih tanpa kursor
                 res_area.markdown(full_res)
+                
+                # Simpan ke memori
                 st.session_state.messages.append({"role": "assistant", "content": full_res})
-            except Exception as e: 
-                # Tampilkan error asli biar kita tahu kalau limit atau salah nama
+                
+                # Update Chat History
+                chat_id = st.session_state.current_chat_id or f"Chat {time.strftime('%H:%M')}"
+                st.session_state.all_chats[chat_id] = {"messages": list(st.session_state.messages)}
+                st.session_state.current_chat_id = chat_id
+                
+                # Reset & Refresh
+                st.session_state.file_context = ""
+                st.rerun()
+
+            except Exception as e:
                 st.error(f"Engine Error: {e}")
-    st.rerun()
