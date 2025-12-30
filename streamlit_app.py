@@ -4,6 +4,8 @@ import time
 import os
 import base64
 import requests
+from PIL import Image
+import io
 
 # --- 1. INITIALIZE SESSION STATE ---
 if "messages" not in st.session_state:
@@ -16,6 +18,8 @@ if "sidebar_visible" not in st.session_state:
     st.session_state.sidebar_visible = False
 if "uploaded_file_name" not in st.session_state:
     st.session_state.uploaded_file_name = None
+if "uploaded_image" not in st.session_state:
+    st.session_state.uploaded_image = None
 
 # --- 2. CONFIG API ---
 try:
@@ -171,7 +175,8 @@ with st.sidebar:
         <ul>
         <li>Text-based conversations with streaming responses.</li>
         <li>Image generation via Pollinations AI.</li>
-        <li>File upload support for context (txt, py, md).</li>
+        <li>File upload support for context (txt, py, md, png, jpg, jpeg).</li>
+        <li>Image analysis with pixel breakdown using advanced vision models.</li>
         <li>Session management with history.</li>
         </ul>
         <p>Always ready to switch to visual mode and provide superior intelligence.</p>
@@ -195,6 +200,8 @@ with col_reset:
     st.markdown('<div class="reset-container">', unsafe_allow_html=True)
     if st.button("🔄", key="reset_session"):
         st.session_state.messages = []
+        st.session_state.uploaded_image = None
+        st.session_state.uploaded_file_name = None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -214,15 +221,36 @@ for msg in st.session_state.messages:
         else: st.markdown(msg["content"])
 
 # --- 9. UPLOAD & INPUT MINIMALIST ---
-uploaded_file = st.file_uploader("", type=["txt", "py", "md"], label_visibility="collapsed")
+uploaded_file = st.file_uploader("", type=["txt", "py", "md", "png", "jpg", "jpeg", "gif"], label_visibility="collapsed")
 file_context = ""
+image_data = None
 if uploaded_file:
-    if st.session_state.uploaded_file_name != uploaded_file.name:
-        file_context = uploaded_file.getvalue().decode("utf-8")
-        st.toast(f"✅ {uploaded_file.name} Loaded!")
-        st.session_state.uploaded_file_name = uploaded_file.name
+    file_name = uploaded_file.name.lower()
+    if file_name.endswith(('.png', '.jpg', '.jpeg', '.gif')):
+        # Handle image upload
+        if st.session_state.uploaded_file_name != uploaded_file.name:
+            image = Image.open(uploaded_file)
+            # Pixel analysis: Get basic info
+            width, height = image.size
+            mode = image.mode
+            pixel_info = f"Image dimensions: {width}x{height}, Mode: {mode}. Pixel breakdown: Analyzing color distribution..."
+            # For deeper analysis, we'll rely on AI model
+            st.session_state.uploaded_image = uploaded_file.getvalue()
+            st.session_state.uploaded_file_name = uploaded_file.name
+            st.toast(f"✅ {uploaded_file.name} Loaded! Dimensions: {width}x{height}")
+            # Display image
+            st.image(image, caption=f"Uploaded: {uploaded_file.name}")
+            image_data = uploaded_file.getvalue()
+        else:
+            image_data = st.session_state.uploaded_image
     else:
-        file_context = uploaded_file.getvalue().decode("utf-8")
+        # Handle text file
+        if st.session_state.uploaded_file_name != uploaded_file.name:
+            file_context = uploaded_file.getvalue().decode("utf-8")
+            st.toast(f"✅ {uploaded_file.name} Loaded!")
+            st.session_state.uploaded_file_name = uploaded_file.name
+        else:
+            file_context = uploaded_file.getvalue().decode("utf-8")
 
 if user_input := st.chat_input("Command NEO AI..."):
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -244,13 +272,21 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 except: st.error("Neural lost.")
         else:
             res_area = st.empty(); full_res = ""
-            clean_history = [{"role": m["role"], "content": str(m["content"])} for m in st.session_state.messages if m.get("type") != "image"]
-            if file_context: clean_history[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER: {last_msg}"
-
-            sys_msg = (
+            clean_history = []
+            for m in st.session_state.messages:
+                if m.get("type") != "image":
+                    if isinstance(m["content"], str):
+                        clean_history.append({"role": m["role"], "content": m["content"]})
+                    else:
+                        # If content is bytes (image), skip or handle differently
+                        pass
+            
+            # Prepare messages for Groq
+            messages = [{"role": "system", "content": (
                 "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
                 "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
                 "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+                "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. "
                 "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
                 "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
                 "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
@@ -268,10 +304,25 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 "- Motivational (e.g., encouraging user): 🚀 (use phrases like 'Gas terus bro, kamu pasti bisa!' when user achieves something or shares success). "
                 "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success (e.g., 'Aku berhasil bikin AI sendiri!'), respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Gas terus, bro! 🚀 Kamu pasti bisa!' "
                 "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."
-            )
+            )}] + clean_history
+            
+            # If image is uploaded, add it to the last user message
+            if image_data:
+                base64_image = base64.b64encode(image_data).decode('utf-8')
+                image_ext = st.session_state.uploaded_file_name.split('.')[-1].lower()
+                if image_ext == 'jpg': image_ext = 'jpeg'
+                messages[-1]["content"] = [
+                    {"type": "text", "text": last_msg + " (Analyze the uploaded image, including pixel breakdown.)"},
+                    {"type": "image_url", "image_url": {"url": f"data:image/{image_ext};base64,{base64_image}"}}
+                ]
+            else:
+                if file_context:
+                    messages[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER: {last_msg}"
 
             try:
-                stream = client.chat.completions.create(messages=[{"role": "system", "content": sys_msg}] + clean_history, model="llama-3.3-70b-versatile", stream=True)
+                # Use vision-capable model if image is present, else default
+                model = "llama-3.2-11b-vision-instruct" if image_data else "llama-3.3-70b-versatile"
+                stream = client.chat.completions.create(messages=messages, model=model, stream=True)
                 for chunk in stream:
                     if chunk.choices[0].delta.content:
                         full_res += chunk.choices[0].delta.content
