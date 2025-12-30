@@ -1,27 +1,10 @@
-<think>
-Pertama, pengguna memberikan feedback teknis yang sangat detail tentang dua masalah krusial dalam kode NEO AI:
-
-
-## Reviewing User Feedback  
-- User provided detailed technical feedback on two critical issues in NEO AI's code.  
-- The first issue involves a vision model, `llama-3.
-</think>Terima kasih atas bedahannya yang tajam dan detail banget! 🔥 Gue setuju 100%—masalahnya memang di situ. Model lama bikin error 400, dan base64 bikin vision "bohong" (halu karena AI nggak lihat gambar sebenarnya). Gue udah perbaiki berdasarkan instruksi lo:
-
-### Perubahan Utama:
-1. **Model Vision**: Ganti dari `llama-3.2-11b-vision-preview` (mati) ke `meta-llama/llama-4-scout-17b-16e-instruct` untuk vision, tetap `llama-3.3-70b-versatile` untuk text.
-2. **Upload Gambar**: Tambah fungsi `upload_image_to_url` pakai 0x0.st untuk upload gambar ke URL publik. Simpan sebagai URL, bukan base64.
-3. **Kirim ke API**: Ubah dari base64 data URL ke URL publik.
-4. **Pemilihan Model**: Update logic untuk pilih model berdasarkan ada gambar atau nggak.
-
-Kode lengkap yang sudah diperbaiki di bawah. Gue test konsepnya (belum run full karena butuh API key), tapi logic-nya aman. Jalankan dan test dengan upload gambar + prompt "berapa jari di gambar ini" untuk validasi vision.
-
-```python
 import streamlit as st
 from groq import Groq
 import time
 import os
 import base64
 import requests
+import random
 
 # --- 1. INITIALIZE SESSION STATE ---
 if "messages" not in st.session_state:
@@ -40,6 +23,10 @@ if "temp_image" not in st.session_state:
     st.session_state.temp_image = None
 if "file_context" not in st.session_state:
     st.session_state.file_context = ""
+if "last_image_url" not in st.session_state:  # BARU: Untuk vision memory multi-turn
+    st.session_state.last_image_url = None
+if "selected_style" not in st.session_state:  # BARU: Untuk style control
+    st.session_state.selected_style = "realistic"
 
 # --- 2. CONFIG API ---
 try:
@@ -163,7 +150,12 @@ def get_ultimate_css():
     """
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
 
-# --- 6. HELPER FUNCTION FOR IMAGE UPLOAD ---
+# --- 6. HELPER FUNCTIONS ---
+def is_image_prompt(text):  # BARU: Auto deteksi prompt gambar
+    keywords = ["gambar", "ilustrasi", "draw", "generate image", "buatkan gambar", "visualize"]
+    return any(k in text.lower() for k in keywords)
+
+@st.cache_data(ttl=3600)  # BARU: Cache upload untuk reliability
 def upload_image_to_url(image_bytes):
     try:
         r = requests.post("https://0x0.st", files={"file": image_bytes}, timeout=10)
@@ -181,12 +173,7 @@ with col_toggle:
     if st.button(icon_mode, key="mode_toggle"):
         st.session_state.imagine_mode = not st.session_state.imagine_mode
         st.rerun()
-with col_reset:
-    st.markdown('<div class="reset-container">', unsafe_allow_html=True)
-    if st.button("🔄", key="reset_session"):
-        st.session_state.messages = []
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+# RESET SESSION DIHAPUS SESUAI REQUEST
 
 # Logo & Header
 glow = "box-shadow: 0 0 40px #00ffff; transform: scale(1.05);" if st.session_state.imagine_mode else ""
@@ -199,6 +186,10 @@ if st.session_state.imagine_mode:
 else:
     subheader = "How can I help you today?"
 st.markdown(f"<p style='text-align:center; color:#b0b0b0; font-size:18px; margin-top:10px;'>{subheader}</p>", unsafe_allow_html=True)
+
+# BARU: Style Selector untuk Image Generation
+if st.session_state.imagine_mode:
+    st.session_state.selected_style = st.selectbox("Art Style", ["realistic", "anime", "cinematic", "cyberpunk"], index=0, label_visibility="collapsed")
 
 # Render Messages
 for msg in st.session_state.messages:
@@ -214,10 +205,11 @@ if uploaded_file:
     if st.session_state.last_uploaded_file != uploaded_file.name:
         st.session_state.last_uploaded_file = uploaded_file.name
         if uploaded_file.type.startswith("image/"):
-            # UPLOAD KE URL PUBLIK (GANTI BASE64)
+            # UPLOAD KE URL PUBLIK (DENGAN CACHE)
             image_url = upload_image_to_url(uploaded_file.getvalue())
             if image_url:
                 st.session_state.temp_image = image_url
+                st.session_state.last_image_url = image_url  # BARU: Simpan untuk memory multi-turn
             else:
                 st.error("Failed to upload image. Try again.")
                 st.session_state.temp_image = None
@@ -227,16 +219,26 @@ if uploaded_file:
 
 # INPUT CHAT
 if user_input := st.chat_input("Command NEO AI..."):
+    # BARU: Auto switch mode jika prompt gambar
+    if is_image_prompt(user_input) and not st.session_state.imagine_mode:
+        st.session_state.imagine_mode = True
+        st.rerun()
+    
     user_msg = {"role": "user", "content": user_input}
     
-    # Jika ada gambar di memori, gabungkan ke pesan (PAKAI URL, BUKAN BASE64)
-    if st.session_state.temp_image:
+    # BARU: Attach last image jika user refer "gambar tadi"
+    attach_image = False
+    if "gambar" in user_input.lower() and st.session_state.last_image_url:
+        attach_image = True
+    
+    # Jika ada gambar di memori atau attach, gabungkan
+    if st.session_state.temp_image or attach_image:
+        image_to_use = st.session_state.temp_image or st.session_state.last_image_url
         user_msg["content"] = [
             {"type": "text", "text": user_input},
-            {"type": "image_url", "image_url": {"url": st.session_state.temp_image}}
+            {"type": "image_url", "image_url": {"url": image_to_use}}
         ]
-        # HAPUS setelah dikirim agar chat berikutnya kembali jadi text biasa
-        st.session_state.temp_image = None 
+        st.session_state.temp_image = None  # Reset temp
     
     st.session_state.messages.append(user_msg)
     st.rerun()
@@ -246,28 +248,12 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
     last_msg_container = st.session_state.messages[-1]
     last_msg_content = last_msg_container["content"]
     
-    # SYSTEM MESSAGE (Sudah oke, tinggal panggil)
+    # SYSTEM MESSAGE (PENDek: Core identity + style guide)
     sys_msg = (
-        "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
-        "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
-        "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
-        "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
-        "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-        "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
-        "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
-        "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
-        "- Happy or excited: 😊🤩 "
-        "- Sad or disappointed: 😢😔 "
-        "- Assertive or warning: ⚠️😠 "
-        "- Thinking or curious: 🤔💭 "
-        "- Surprised: 😲 "
-        "- Playful: 😉😜 "
-        "- Proud or admiring success: 🏆 "
-        "- Anxious or worried: 😰 "
-        "- Refusal or denial: ❌ "
-        "- Motivational (e.g., encouraging user): 🚀 (use phrases like 'Gas terus bro, kamu pasti bisa!' when user achieves something or shares success). "
-        "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success (e.g., 'Aku berhasil bikin AI sendiri!'), respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Gas terus, bro! 🚀 Kamu pasti bisa!' "
-        "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."
+        "You are NEO AI, a supreme multi-modal AI by Muhammad Jibran Al Kaffie. Process images, files, and generate visuals confidently. "
+        "Acknowledge uploads: 'I see the file/image...' Respond lively with emojis (1-2 per reply). Casual language like 'bro'. "
+        "For images: Continue visual discussions naturally. Refuse harmful requests with ❌. "
+        "Motivate successes: 'Gas terus bro! 🚀'"
     )
 
     with st.chat_message("assistant", avatar="logo.png"):
@@ -276,7 +262,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 try:
                     # Ambil teks saja untuk prompt
                     prompt_text = last_msg_content[0]["text"] if isinstance(last_msg_content, list) else last_msg_content
-                    img_url = f"https://image.pollinations.ai/prompt/{prompt_text.replace(' ','%20')}?width=1024&height=1024&nologo=true"
+                    # BARU: Tambah seed & style untuk control
+                    seed = random.randint(1, 1000)
+                    img_url = f"https://image.pollinations.ai/prompt/{prompt_text.replace(' ','%20')}?seed={seed}&model={st.session_state.selected_style}&width=1024&height=1024&nologo=true"
                     
                     r = requests.get(img_url, timeout=30)
                     if r.status_code == 200:
@@ -327,7 +315,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 for chunk in stream:
                     if chunk.choices[0].delta.content:
                         full_res += chunk.choices[0].delta.content
-                        # Animasi kursor halus (Anti-flicker sesuai request)
+                        # Animasi kursor halus (Anti-flicker)
                         res_area.markdown(f'<div class="blurred">{full_res}▌</div>', unsafe_allow_html=True)
                 
                 # Render akhir yang bersih tanpa kursor
@@ -336,7 +324,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 # Simpan ke memori
                 st.session_state.messages.append({"role": "assistant", "content": full_res})
                 
-                # Update Chat History (Tanpa sidebar, history tetap disimpan di session state tapi tidak ditampilkan)
+                # Update Chat History (Tanpa sidebar, tetap disimpan)
                 chat_id = st.session_state.current_chat_id or f"Chat {time.strftime('%H:%M')}"
                 st.session_state.all_chats[chat_id] = {"messages": list(st.session_state.messages)}
                 st.session_state.current_chat_id = chat_id
@@ -345,4 +333,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 st.session_state.file_context = ""
                 st.rerun()
 
-            except Exception
+            except Exception as e:
+                # BARU: Error recovery - pop pesan terakhir biar nggak nyangkut
+                if st.session_state.messages:
+                    st.session_state.messages.pop()
+                st.error(f"Engine Error: {e}. Chat recovered.")
+                st.rerun()
