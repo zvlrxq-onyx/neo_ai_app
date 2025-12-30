@@ -198,7 +198,7 @@ def analyze_pixels(image):
         analysis += "**Mode lain:** Analisis terbatas, fokus pada struktur piksel.\n"
     
     # Tambahan: Deteksi edge sederhana (menggunakan PIL filter)
-    edge_image = image.filter(Image.FILTER_EDGE_ENHANCE)
+    edge_image = image.filter(ImageFilter.EDGE_ENHANCE)  # SESUDAH (BENAR): edge_image = image.filter(ImageFilter.EDGE_ENHANCE)
     analysis += "**Deteksi Edge:** Gambar telah diproses untuk menonjolkan tepi (edges) menggunakan filter PIL.\n"
     
     return analysis, edge_image
