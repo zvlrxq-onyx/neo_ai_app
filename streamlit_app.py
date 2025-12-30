@@ -1,30 +1,3 @@
-<think>
-Pertama, pengguna ingin memperbaiki logika input untuk `st.chat_input`. Kode yang diberikan:
-
-
-## Examining input logic  
-- The user aims to refine the input logic for `st.chat_input`.  
-- The provided code snippet shows an incomplete `if` statement capturing user input with `user_input := st.chat_input("Command NEO AI...")`.
-</think>Bro, aku ngerti nih! Masalahnya di logika input dan nama model. Kita perbaiki biar lebih efisien dan akurat. Berikut penjelasan dan kode lengkap yang sudah diperbaiki:
-
-### Penjelasan Perbaikan:
-1. **Logika Input (`st.chat_input`)**:
-   - Sebelumnya, kita encode gambar ulang setiap kali input, yang nggak efisien. Sekarang, kita pake `image_b64` yang udah di-set dari upload (biar nggak encode berulang).
-   - Pastiin gambar cuma ditambahin ke message kalau ada `image_b64` (dari upload terbaru).
-   - Kalau nggak ada gambar, content tetap text biasa.
-
-2. **Nama Model**:
-   - Kamu pake "llama-3.2-11b-vision-preview" untuk gambar. Aku ikuti itu (meski di Groq biasanya "instruct", tapi kalau preview yang kamu maksud, yaudah). Kalau salah, cek di dashboard Groq-mu.
-   - Cek gambar lebih spesifik: bukan cuma `isinstance(last_msg, list)`, tapi pastiin ada item dengan "image_url".
-   - Tambah timeout 30 detik biar nggak gantung, dan error handling yang lebih detail (tampilkan error asli).
-
-3. **Gabung Semua**:
-   - Kode lengkap ini gabung semua perbaikan sebelumnya (upload gambar, no spam toast, dll.).
-
-### Kode Lengkap yang Diperbaiki:
-Copy-paste ke file `app.py`-mu.
-
-```python
 import streamlit as st
 from groq import Groq
 import time
@@ -45,6 +18,8 @@ if "sidebar_visible" not in st.session_state:
     st.session_state.sidebar_visible = False
 if "last_uploaded_file" not in st.session_state:
     st.session_state.last_uploaded_file = None
+if "temp_image" not in st.session_state:
+    st.session_state.temp_image = None
 
 # --- 2. CONFIG API ---
 try:
@@ -255,34 +230,35 @@ for msg in st.session_state.messages:
 # --- 9. UPLOAD & INPUT MINIMALIST ---
 uploaded_file = st.file_uploader("", type=["txt", "py", "md", "png", "jpg", "jpeg"], label_visibility="collapsed")
 file_context = ""
-image_b64 = ""
 if uploaded_file:
-    # Cek kalau file baru (beda nama dari yang terakhir)
     if st.session_state.last_uploaded_file != uploaded_file.name:
         st.session_state.last_uploaded_file = uploaded_file.name
         if uploaded_file.type.startswith("image/"):
-            image_b64 = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
-            st.toast(f"✅ {uploaded_file.name} Loaded! AI bisa liat gambar ini nih! 🤩")
+            # SIMPAN KE SESSION STATE
+            st.session_state.temp_image = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
+            st.toast(f"✅ {uploaded_file.name} Loaded! AI bisa liat ini! 🤩")
         else:
             file_context = uploaded_file.getvalue().decode("utf-8")
+            st.session_state.temp_image = None  # Reset kalau yang diupload text
             st.toast(f"✅ {uploaded_file.name} Loaded!")
     else:
         # File sama, tetep proses tapi tanpa toast
         if uploaded_file.type.startswith("image/"):
-            image_b64 = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
+            st.session_state.temp_image = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
         else:
             file_context = uploaded_file.getvalue().decode("utf-8")
 
-# Perbaikan logika input: pake image_b64 yang udah di-set, nggak encode ulang
+# Perbaikan logika chat input: pake dari memori session state
 if user_input := st.chat_input("Command NEO AI..."):
     user_msg = {"role": "user", "content": user_input}
     
-    # Tambahin gambar kalau ada image_b64 dari upload
-    if image_b64:
+    # Ambil dari memori session state
+    if st.session_state.temp_image:
         user_msg["content"] = [
             {"type": "text", "text": user_input},
-            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_b64}"}}
+            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{st.session_state.temp_image}"}}
         ]
+        # Opsional: st.session_state.temp_image = None # Hapus setelah dikirim biar gak nempel terus
     
     st.session_state.messages.append(user_msg)
     st.rerun()
@@ -347,4 +323,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         res_area.markdown(f'<div class="blurred">{full_res}▌</div>', unsafe_allow_html=True)
                 
                 res_area.markdown(full_res)
-                st.session_state.messages.append({"role": "assistant",
+                st.session_state.messages.append({"role": "assistant", "content": full_res})
+            except Exception as e: 
+                # Tampilkan error asli biar kita tahu kalau limit atau salah nama
+                st.error(f"Engine Error: {e}")
+    st.rerun()
