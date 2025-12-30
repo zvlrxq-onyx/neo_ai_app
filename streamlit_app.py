@@ -4,7 +4,7 @@ import time
 import os
 import base64
 import requests
-from PIL import Image
+from PIL import Image, ImageFilter  # Tambahin ImageFilter di sini
 import io
 import numpy as np
 
