@@ -335,4 +335,3 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 st.error(f"Engine failed: {e}")
                 
     st.rerun()
-```
