@@ -15,8 +15,10 @@ if "uploaded_file_name" not in st.session_state:
     st.session_state.uploaded_file_name = None
 if "uploaded_image" not in st.session_state:
     st.session_state.uploaded_image = None
-if "emoji_mode" not in st.session_state:
-    st.session_state.emoji_mode = False  # Mode emoji chat
+if "pixel_analysis" not in st.session_state:
+    st.session_state.pixel_analysis = ""
+if "edge_image_data" not in st.session_state:
+    st.session_state.edge_image_data = None
 
 # --- 2. CONFIG API ---
 try:
@@ -40,7 +42,7 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ULTIMATE CSS (HACK ICON +, NO TEXT, SMOOTH ANIMATIONS, FIXED BOTTOM BAR) ---
+# --- 5. THE ULTIMATE CSS (HACK ICON +, NO TEXT, SMOOTH ANIMATIONS) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     return f"""
@@ -136,27 +138,6 @@ def get_ultimate_css():
     }}
 
     .blurred {{ filter: blur(1.5px); transition: filter 0.5s ease; }}
-
-    /* --- FIXED BOTTOM BAR FOR INPUT, MODE, UPLOAD --- */
-    .fixed-bottom-bar {{
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        background-color: #050505 !important;
-        padding: 10px 0 !important;
-        border-top: 1px solid {neon_cyan}22 !important;
-        z-index: 999999 !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        gap: 10px !important;
-    }}
-    .fixed-bottom-bar .stColumn {{
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }}
     </style>
     """
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
@@ -169,7 +150,8 @@ with col_reset:
         st.session_state.messages = []
         st.session_state.uploaded_image = None
         st.session_state.uploaded_file_name = None
-        st.session_state.emoji_mode = False
+        st.session_state.pixel_analysis = ""
+        st.session_state.edge_image_data = None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -188,21 +170,9 @@ for msg in st.session_state.messages:
         if msg.get("type") == "image": st.image(msg["content"])
         else: st.markdown(msg["content"])
 
-# --- 7. FIXED BOTTOM BAR (KUNCI INPUT, MODE, UPLOAD DI BAWAH) ---
-st.markdown('<div class="fixed-bottom-bar">', unsafe_allow_html=True)
-col_spacer, col_input, col_mode, col_upload = st.columns([1, 3, 1, 1])
-
-with col_mode:
-    if st.button("😀" if st.session_state.emoji_mode else "💬", key="toggle_mode"):
-        st.session_state.emoji_mode = not st.session_state.emoji_mode
-        st.rerun()
-
-with col_upload:
-    uploaded_file = st.file_uploader("", type=["txt", "py", "md", "png", "jpg", "jpeg", "gif"], label_visibility="collapsed")
-
+# --- 7. UPLOAD & INPUT MINIMALIST ---
+uploaded_file = st.file_uploader("", type=["txt", "py", "md", "png", "jpg", "jpeg", "gif"], label_visibility="collapsed")
 file_context = ""
-pixel_analysis = ""
-edge_image_data = None
 
 def analyze_pixels(image):
     """Fungsi membedah piksel gambar: dimensi, mode, distribusi warna, histogram"""
@@ -240,23 +210,25 @@ def analyze_pixels(image):
 if uploaded_file:
     file_name = uploaded_file.name.lower()
     if file_name.endswith(('.png', '.jpg', '.jpeg', '.gif')):
-        # Handle image upload - HANYA NOTIF, TIDAK TAMPILKAN GAMBAR DI CHAT (BACKEND AMAN)
+        # Handle image upload
         if st.session_state.uploaded_file_name != uploaded_file.name:
-            image = Image.open(uploaded_file)
-            pixel_analysis, edge_img = analyze_pixels(image)
-            # Simpan edge image sebagai bytes (untuk AI analysis)
-            buf = io.BytesIO()
-            edge_img.save(buf, format="PNG")
-            edge_image_data = buf.getvalue()
-            
-            st.session_state.uploaded_image = uploaded_file.getvalue()
-            st.session_state.uploaded_file_name = uploaded_file.name
-            st.toast(f"✅ {uploaded_file.name} Loaded! Analisis piksel siap.")
-            # JANGAN TAMPILKAN GAMBAR ATAU BREAKDOWN DI SINI - BACKEND AMAN
+            with st.spinner("Analyzing.."):
+                image = Image.open(uploaded_file)
+                pixel_analysis, edge_img = analyze_pixels(image)
+                # Simpan edge image sebagai bytes
+                buf = io.BytesIO()
+                edge_img.save(buf, format="PNG")
+                edge_image_data = buf.getvalue()
+                
+                st.session_state.uploaded_image = uploaded_file.getvalue()
+                st.session_state.uploaded_file_name = uploaded_file.name
+                st.session_state.pixel_analysis = pixel_analysis
+                st.session_state.edge_image_data = edge_image_data
+                st.toast(f"✅ {uploaded_file.name} Loaded! Analysis complete.")
         else:
             pass  # Sudah di-handle sebelumnya
     else:
-        # Handle text file - HANYA NOTIF
+        # Handle text file
         if st.session_state.uploaded_file_name != uploaded_file.name:
             file_context = uploaded_file.getvalue().decode("utf-8")
             st.toast(f"✅ {uploaded_file.name} Loaded!")
@@ -267,13 +239,12 @@ else:
     # Kalo kotak upload kosong, bersihin memori gambar! (FIX EFEK BAYANGAN)
     st.session_state.uploaded_image = None
     st.session_state.uploaded_file_name = None
+    st.session_state.pixel_analysis = ""
+    st.session_state.edge_image_data = None
 
-with col_input:
-    if user_input := st.chat_input("Command NEO AI..."):
-        st.session_state.messages.append({"role": "user", "content": user_input})
-        st.rerun()
-
-st.markdown('</div>', unsafe_allow_html=True)  # Tutup fixed bottom bar
+if user_input := st.chat_input("Command NEO AI..."):
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    st.rerun()
 
 # --- 8. ENGINE (FIXED MODEL & PERSISTENCE) ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
@@ -281,10 +252,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
     
     # Ambil data dari session state agar tidak hilang saat rerun
     current_image_data = st.session_state.get("uploaded_image")
+    current_pixel_analysis = st.session_state.get("pixel_analysis")
     
     with st.chat_message("assistant", avatar="logo.png"):
-        # Cek jika emoji lukis (🎨) atau "lukis" untuk generate gambar
-        if "🎨" in last_msg or "lukis" in last_msg.lower():
+        if "buatkan" in last_msg.lower() or "make" in last_msg.lower():
             with st.spinner("Visualizing..."):
                 try:
                     img_url = f"https://image.pollinations.ai/prompt/{last_msg.replace(' ','%20')}?width=1024&height=1024&nologo=true"
@@ -300,10 +271,29 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 if m.get("type") != "image" and isinstance(m["content"], str):
                     clean_history.append({"role": m["role"], "content": m["content"]})
             
-            # Persiapan System Prompt (RINGKAS, TANPA 'GAS TERUS BRO')
-            emoji_instruction = "Gunakan emoji dalam respons untuk membuatnya lebih hidup dan menyenangkan." if st.session_state.emoji_mode else ""
+            # Persiapan System Prompt
             system_prompt = (
-                "Kamu NEO AI, AI multi-modal canggih buatan Muhammad Jibran Al Kaffie. Bisa proses gambar, file, data kompleks, dan generate visual. Jangan bilang terbatas teks—selalu acknowledge upload dan analisis gambar dengan pixel breakdown. Respons confident, gaul, pakai emoji sesuai mood (1-2 per respons). Tolak kode berbahaya dengan ❌. Motivasi user saat mereka berbagi kesuksesan dengan frase positif variatif. Variasi respons, jangan ulang frase. " + emoji_instruction
+                "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
+                "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
+                "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+                "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
+                "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
+                "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+                "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
+                "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
+                "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
+                "- Happy or excited: 😊🤩 "
+                "- Sad or disappointed: 😢😔 "
+                "- Assertive or warning: ⚠️😠 "
+                "- Thinking or curious: 🤔💭 "
+                "- Surprised: 😲 "
+                "- Playful: 😉😜 "
+                "- Proud or admiring success: 🏆 "
+                "- Anxious or worried: 😰 "
+                "- Refusal or denial: ❌ "
+                "- Motivational (e.g., encouraging user): 🚀 "
+                "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success (e.g., 'Aku berhasil bikin AI sendiri!'), respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' "
+                "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."
             )
             messages = [{"role": "system", "content": system_prompt}] + clean_history
             
@@ -311,7 +301,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             if current_image_data:
                 base64_image = base64.b64encode(current_image_data).decode('utf-8')
                 messages[-1]["content"] = [
-                    {"type": "text", "text": last_msg + " (Analyze the uploaded image using pixel data provided.)"},
+                    {"type": "text", "text": last_msg + f" (Analyze the uploaded image using this pixel data: {current_pixel_analysis})"},
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                 ]
                 # PAKAI MODEL LLAMA 4 SCOUT (Wajib!)
