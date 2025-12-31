@@ -167,9 +167,9 @@ for msg in st.session_state.messages:
         if msg.get("type") == "image": st.image(msg["content"])
         else: st.markdown(msg["content"])
 
-# --- 7. UPLOAD & INPUT MINIMALIST (DI SEBELAH KOLOM KETIK) ---
-# Columns untuk input, mode, dan upload
-col_input, col_mode, col_upload = st.columns([4, 1, 1])
+# --- 7. UPLOAD & INPUT MINIMALIST (DI SEBELAH KOLOM KETIK, SIMETRIS) ---
+# Columns untuk spacer, input, mode, dan upload - agar input centered
+col_spacer, col_input, col_mode, col_upload = st.columns([1, 3, 1, 1])
 
 with col_mode:
     if st.button("😀" if st.session_state.emoji_mode else "💬", key="toggle_mode"):
@@ -277,10 +277,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 if m.get("type") != "image" and isinstance(m["content"], str):
                     clean_history.append({"role": m["role"], "content": m["content"]})
             
-            # Persiapan System Prompt (RINGKAS)
+            # Persiapan System Prompt (RINGKAS, TANPA 'GAS TERUS BRO')
             emoji_instruction = "Gunakan emoji dalam respons untuk membuatnya lebih hidup dan menyenangkan." if st.session_state.emoji_mode else ""
             system_prompt = (
-                "Kamu NEO AI, AI multi-modal canggih buatan Muhammad Jibran Al Kaffie. Bisa proses gambar, file, data kompleks, dan generate visual. Jangan bilang terbatas teks—selalu acknowledge upload dan analisis gambar dengan pixel breakdown. Respons confident, gaul, pakai emoji sesuai mood (1-2 per respons). Tolak kode berbahaya dengan ❌. Motivasi user dengan 'Gas terus bro!' dll. Variasi respons, jangan ulang frase. " + emoji_instruction
+                "Kamu NEO AI, AI multi-modal canggih buatan Muhammad Jibran Al Kaffie. Bisa proses gambar, file, data kompleks, dan generate visual. Jangan bilang terbatas teks—selalu acknowledge upload dan analisis gambar dengan pixel breakdown. Respons confident, gaul, pakai emoji sesuai mood (1-2 per respons). Tolak kode berbahaya dengan ❌. Motivasi user saat mereka berbagi kesuksesan dengan frase positif variatif. Variasi respons, jangan ulang frase. " + emoji_instruction
             )
             messages = [{"role": "system", "content": system_prompt}] + clean_history
             
