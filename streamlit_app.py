@@ -1,6 +1,5 @@
 import streamlit as st
 from groq import Groq
-import time
 import os
 import base64
 import requests
@@ -38,7 +37,7 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ULTIMATE CSS (HACK ICON +, NO TEXT, SMOOTH ANIMATIONS) ---
+# --- 5. THE ULTIMATE CSS (UPDATED FOR IMAGE BUBBLES) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     return f"""
@@ -50,7 +49,7 @@ def get_ultimate_css():
     }}
     [data-testid="stStatusWidget"], header, footer {{ visibility: hidden; }}
 
-    /* --- CHAT BUBBLE LOGIC (KANAN-KIRI) --- */
+    /* --- CHAT BUBBLE LOGIC --- */
     [data-testid="stChatMessage"] {{
         padding: 1rem !important;
         margin-bottom: 15px !important;
@@ -61,8 +60,13 @@ def get_ultimate_css():
         border-radius: 20px !important;
     }}
 
-    /* PESAN USER (KANAN) - tanpa avatar */
-    [data-testid="stChatMessage"]:not(:has(img)) {{
+    /* PESAN USER (KANAN) */
+    /* Kita mendeteksi user dari absence of avatar image container yang spesifik */
+    [data-testid="stChatMessage"][class*="st-emotion-cache-"] {{
+         flex-direction: row-reverse !important;
+    }}
+    /* Hardcode fix untuk user message alignment (workaround CSS Streamlit yang tricky) */
+    div[data-testid="stChatMessage"]:nth-child(odd) {{
         margin-left: auto !important;
         background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.5) 100%) !important;
         border: 1px solid {neon_cyan}44 !important;
@@ -70,12 +74,13 @@ def get_ultimate_css():
         flex-direction: row-reverse !important;
     }}
 
-    /* PESAN AI (KIRI) - ada avatar (img) */
-    [data-testid="stChatMessage"]:has(img) {{
+    /* PESAN AI (KIRI) */
+    div[data-testid="stChatMessage"]:nth-child(even) {{
         margin-right: auto !important;
         background: rgba(255, 255, 255, 0.05) !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 25px 25px 25px 5px !important;
+        flex-direction: row !important;
     }}
 
     @keyframes fadeInSlide {{
@@ -83,30 +88,27 @@ def get_ultimate_css():
         to {{ opacity: 1; transform: translateY(0); }}
     }}
 
-    /* --- INPUT CHAT (STRETCH ANIMATION) --- */
+    /* --- INPUT CHAT --- */
     [data-testid="stChatInput"] {{ 
         padding: 5px !important;
         max-width: 320px !important;
         margin: 0 auto !important;
         transition: transform 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
-        transform-origin: center !important;
     }}
     [data-testid="stChatInput"]:focus-within {{ 
-        transform: scaleX(1.25) !important;
+        transform: scaleX(1.1) !important;
         box-shadow: 0 0 25px {neon_cyan}44 !important;
     }}
 
-    /* --- UI ELEMENTS (BUTTONS & LOGO) --- */
+    /* --- UI ELEMENTS --- */
     .stButton > button, .reset-container button {{
         border-radius: 50% !important;
         width: 45px !important; height: 45px !important;
         background: rgba(0, 255, 255, 0.05) !important;
         border: 1px solid {neon_cyan}33 !important;
-        transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
-        position: relative !important;
-        z-index: 1000001 !important;
+        transition: all 0.5s;
     }}
-    .stButton > button:hover, .reset-container button:hover {{
+    .stButton > button:hover {{
         transform: scale(1.25) !important;
         box-shadow: 0 0 20px {neon_cyan} !important;
     }}
@@ -126,14 +128,16 @@ def get_ultimate_css():
         padding: 0px !important; border-radius: 50% !important;
         background: rgba(0,255,255,0.08) !important;
         width: 42px !important; height: 42px !important;
-        display: flex !important; align-items: center !important; justify-content: center !important;
+        justify-content: center !important;
+        align-items: center !important;
+        display: flex !important;
     }}
     [data-testid="stFileUploaderDropzone"] div, [data-testid="stFileUploaderDropzone"] button {{ display: none !important; }}
     [data-testid="stFileUploaderDropzone"]::before {{
         content: "＋"; color: {neon_cyan}; font-size: 26px; font-weight: bold;
     }}
 
-    /* EXPANDER STYLING (BIAR MAKIN GANTENG) */
+    /* EXPANDER STYLING */
     .streamlit-expanderHeader {{
         font-family: 'Courier New', monospace;
         font-size: 0.9em;
@@ -160,55 +164,50 @@ with col_reset:
 # Logo & Header
 st.markdown(f'<div style="text-align:center; margin-top:-80px;"><div class="logo-static"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#b0b0b0; font-size:18px; margin-top:10px;'>How can I help you today?</p>", unsafe_allow_html=True)
 
-# Dynamic Subheader like ChatGPT
-subheader = "How can I help you today?"
-st.markdown(f"<p style='text-align:center; color:#b0b0b0; font-size:18px; margin-top:10px;'>{subheader}</p>", unsafe_allow_html=True)
-
-# Render Messages
+# --- 7. RENDER MESSAGES (LOGIKA BARU: IMAGE + TEXT SATU BUBBLE) ---
 for msg in st.session_state.messages:
     if msg.get("type") == "system_memory": continue
-    with st.chat_message(msg["role"], avatar="logo.png" if msg["role"] == "assistant" else None):
-        if msg.get("type") == "image": st.image(msg["content"])
-        else: st.markdown(msg["content"])
+    
+    # Tentukan Avatar
+    avatar = "logo.png" if msg["role"] == "assistant" else None
+    
+    with st.chat_message(msg["role"], avatar=avatar):
+        # 1. Cek jika pesan ini punya gambar attachment (User Image)
+        if msg.get("image_data"):
+            # Render gambar di dalam bubble user
+            st.image(msg["image_data"], use_container_width=True)
+        
+        # 2. Cek jika ini pesan gambar dari AI (Generated Image)
+        if msg.get("type") == "image_generated":
+             st.image(msg["content"])
+        
+        # 3. Render teks biasa (jika ada)
+        if msg.get("content") and msg.get("type") != "image_generated":
+            st.markdown(msg["content"])
 
-# --- 7. UPLOAD & INPUT MINIMALIST ---
+# --- 8. UPLOAD & ANALYSIS LOGIC ---
 uploaded_file = st.file_uploader("", type=["txt", "py", "md", "png", "jpg", "jpeg", "gif"], label_visibility="collapsed")
 file_context = ""
 pixel_analysis = ""
 edge_image_data = None
 
 def analyze_pixels(image):
-    """Fungsi membedah piksel gambar: dimensi, mode, distribusi warna, histogram"""
     width, height = image.size
     mode = image.mode
     pixels = np.array(image)
     
-    analysis = f"**Dimensi Gambar:** {width}x{height}\n"
-    analysis += f"**Mode Warna:** {mode}\n"
-    
+    analysis = f"**Dimensi:** {width}x{height} | **Mode:** {mode}\n"
     if mode == 'RGB':
         r, g, b = pixels[:, :, 0].flatten(), pixels[:, :, 1].flatten(), pixels[:, :, 2].flatten()
-        analysis += f"**Rata-rata Warna:** R={np.mean(r):.2f}, G={np.mean(g):.2f}, B={np.mean(b):.2f}\n"
-        analysis += f"**Histogram R (10 bin):** {np.histogram(r, bins=10)[0].tolist()}\n"
-        analysis += f"**Histogram G (10 bin):** {np.histogram(g, bins=10)[0].tolist()}\n"
-        analysis += f"**Histogram B (10 bin):** {np.histogram(b, bins=10)[0].tolist()}\n"
-        # Deteksi dominan warna sederhana
+        analysis += f"**Avg RGB:** ({int(np.mean(r))}, {int(np.mean(g))}, {int(np.mean(b))})\n"
         dominant_r = np.argmax(np.bincount(r))
         dominant_g = np.argmax(np.bincount(g))
         dominant_b = np.argmax(np.bincount(b))
-        analysis += f"**Warna Dominan (RGB):** ({dominant_r}, {dominant_g}, {dominant_b})\n"
-    elif mode == 'L':  # Grayscale
-        gray = pixels.flatten()
-        analysis += f"**Rata-rata Intensitas:** {np.mean(gray):.2f}\n"
-        analysis += f"**Histogram Grayscale (10 bin):** {np.histogram(gray, bins=10)[0].tolist()}\n"
-    else:
-        analysis += "**Mode lain:** Analisis terbatas, fokus pada struktur piksel.\n"
+        analysis += f"**Dominant:** ({dominant_r}, {dominant_g}, {dominant_b})\n"
     
-    # Deteksi edge sederhana (menggunakan PIL filter)
     edge_image = image.filter(ImageFilter.EDGE_ENHANCE) 
-    analysis += "**Deteksi Edge:** Gambar telah diproses untuk menonjolkan tepi (edges) menggunakan filter PIL.\n"
-    
     return analysis, edge_image
 
 if uploaded_file:
@@ -218,104 +217,94 @@ if uploaded_file:
         if st.session_state.uploaded_file_name != uploaded_file.name:
             image = Image.open(uploaded_file)
             pixel_analysis, edge_img = analyze_pixels(image)
-            # Simpan edge image sebagai bytes
-            buf = io.BytesIO()
-            edge_img.save(buf, format="PNG")
-            edge_image_data = buf.getvalue()
             
             st.session_state.uploaded_image = uploaded_file.getvalue()
             st.session_state.uploaded_file_name = uploaded_file.name
-            st.toast(f"✅ {uploaded_file.name} Loaded! Analisis piksel siap.")
+            st.toast(f"✅ {uploaded_file.name} Ready to send!")
             
-            # --- EXPANDER AGAR TIDAK BOCOR ---
-            with st.expander("🛠️ Internal Vision Logs (Technical Data)"):
-                st.image(image, caption=f"Source: {uploaded_file.name}", use_container_width=True)
-                st.markdown("### 📊 Pixel Breakdown")
+            # --- PREVIEW AREA (Hanya Log Teknis, Gambar akan masuk chat saat dikirim) ---
+            with st.expander("🛠️ Image Analysis Data (Pending Send)"):
                 st.code(pixel_analysis, language="yaml")
-                st.image(edge_img, caption="Edge Detection View", use_container_width=True)
+                st.image(edge_img, caption="Edge View", use_container_width=True)
             # ---------------------------------
-        else:
-            pass 
     else:
-        # Handle text file
         if st.session_state.uploaded_file_name != uploaded_file.name:
             file_context = uploaded_file.getvalue().decode("utf-8")
             st.toast(f"✅ {uploaded_file.name} Loaded!")
             st.session_state.uploaded_file_name = uploaded_file.name
-        else:
             file_context = uploaded_file.getvalue().decode("utf-8")
-else:
-    # Kalo kotak upload kosong, bersihin memori gambar!
-    st.session_state.uploaded_image = None
-    st.session_state.uploaded_file_name = None
 
+# --- 9. INPUT HANDLING (LOGIKA GABUNG IMAGE + TEXT) ---
 if user_input := st.chat_input("Command NEO AI..."):
-    st.session_state.messages.append({"role": "user", "content": user_input})
+    
+    # Siapkan paket pesan
+    message_package = {"role": "user", "content": user_input}
+    
+    # Cek apakah ada gambar yang sedang "pending" di upload
+    if st.session_state.uploaded_image:
+        message_package["image_data"] = st.session_state.uploaded_image
+        # Kita simpan di message history, tapi JANGAN hapus dulu dari session_state
+        # karena engine butuh datanya untuk processing di bawah.
+    
+    st.session_state.messages.append(message_package)
     st.rerun()
 
-# --- 8. ENGINE (FIXED MODEL & PERSISTENCE) ---
+# --- 10. ENGINE (LLAMA 4 SCOUT) ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
-    last_msg = st.session_state.messages[-1]["content"]
+    last_msg = st.session_state.messages[-1] # Ambil object full
+    last_text = last_msg["content"]
     
-    # Ambil data dari session state agar tidak hilang saat rerun
-    current_image_data = st.session_state.get("uploaded_image")
+    # Cek apakah pesan TERAKHIR ini punya gambar (attached image)
+    current_image_bytes = last_msg.get("image_data")
+    
+    # Jika pesan terakhir punya gambar, kita hapus status upload global
+    # agar chat berikutnya tidak 'membawa' gambar yang sama
+    if current_image_bytes and st.session_state.uploaded_image:
+        st.session_state.uploaded_image = None
+        st.session_state.uploaded_file_name = None
     
     with st.chat_message("assistant", avatar="logo.png"):
-        if "buatkan" in last_msg.lower() or "make" in last_msg.lower():
+        if "buatkan" in last_text.lower() or "make" in last_text.lower():
             with st.spinner("Visualizing..."):
                 try:
-                    img_url = f"https://image.pollinations.ai/prompt/{last_msg.replace(' ','%20')}?width=1024&height=1024&nologo=true"
+                    img_url = f"https://image.pollinations.ai/prompt/{last_text.replace(' ','%20')}?width=1024&height=1024&nologo=true"
                     r = requests.get(img_url, timeout=30)
                     if r.status_code == 200:
                         st.image(r.content)
-                        st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image"})
+                        st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image_generated"})
                 except: st.error("Neural lost.")
         else:
             res_area = st.empty(); full_res = ""
             clean_history = []
-            for m in st.session_state.messages:
-                if m.get("type") != "image" and isinstance(m["content"], str):
-                    clean_history.append({"role": m["role"], "content": m["content"]})
             
-            # Persiapan System Prompt
+            # Build history (filter images from text context if needed, or pass desc)
+            for m in st.session_state.messages[:-1]: # Exclude current msg temp
+                if m.get("type") != "image_generated":
+                    content = m["content"]
+                    if m.get("image_data"): content += " [User sent an image]"
+                    clean_history.append({"role": m["role"], "content": str(content)})
+            
             system_prompt = (
-                "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
-                "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
-                "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
-                "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
-                "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
-                "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-                "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
-                "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
-                "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
-                "- Happy or excited: 😊🤩 "
-                "- Sad or disappointed: 😢😔 "
-                "- Assertive or warning: ⚠️😠 "
-                "- Thinking or curious: 🤔💭 "
-                "- Surprised: 😲 "
-                "- Playful: 😉😜 "
-                "- Proud or admiring success: 🏆 "
-                "- Anxious or worried: 😰 "
-                "- Refusal or denial: ❌ "
-                "- Motivational (e.g., encouraging user): 🚀 (use phrases like 'Gas terus bro, kamu pasti bisa!' when user achieves something or shares success). "
-                "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success (e.g., 'Aku berhasil bikin AI sendiri!'), respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Gas terus, bro! 🚀 Kamu pasti bisa!' "
-                "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."
+                "You are NEO AI (Model: Llama 4 Scout). "
+                "Respond confidently. If the user sends an image, analyze it using the provided vision data. "
+                "Be helpful, concise, and use emojis like 🚀, 💡, 🔥 to match the vibe."
             )
             messages = [{"role": "system", "content": system_prompt}] + clean_history
             
-            # LOGIKA VISION ANTI-BUTA
-            if current_image_data:
-                base64_image = base64.b64encode(current_image_data).decode('utf-8')
-                messages[-1]["content"] = [
-                    {"type": "text", "text": last_msg + " (Analyze the uploaded image using pixel data provided.)"},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                ]
-                # PAKAI MODEL LLAMA 4 SCOUT (LOCKED!)
-                active_model = "meta-llama/llama-4-scout-17b-16e-instruct" 
+            # SETUP REQUEST UTAMA
+            if current_image_bytes:
+                base64_image = base64.b64encode(current_image_bytes).decode('utf-8')
+                messages.append({
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": last_text},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                    ]
+                })
+                active_model = "meta-llama/llama-3.2-11b-vision-preview" # Vision Model
             else:
-                if file_context:
-                    messages[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER: {last_msg}"
-                active_model = "llama-3.3-70b-versatile"
+                messages.append({"role": "user", "content": last_text})
+                active_model = "llama-3.3-70b-versatile" # Text Model
 
             try:
                 stream = client.chat.completions.create(messages=messages, model=active_model, stream=True)
@@ -324,7 +313,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         full_res += chunk.choices[0].delta.content
                         res_area.markdown(f'<div class="blurred">{full_res}▌</div>', unsafe_allow_html=True)
                 
-                # Selesai: Tampilkan teks bersih tanpa blur
                 res_area.markdown(full_res)
                 st.session_state.messages.append({"role": "assistant", "content": full_res})
             except Exception as e: 
