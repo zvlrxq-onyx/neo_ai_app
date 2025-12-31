@@ -227,13 +227,13 @@ if uploaded_file:
             st.session_state.uploaded_file_name = uploaded_file.name
             st.toast(f"✅ {uploaded_file.name} Loaded! Analisis piksel siap.")
             
-            # --- BAGIAN BARU: DIBUNGKUS EXPANDER ---
+            # --- EXPANDER AGAR TIDAK BOCOR ---
             with st.expander("🛠️ Internal Vision Logs (Technical Data)"):
                 st.image(image, caption=f"Source: {uploaded_file.name}", use_container_width=True)
                 st.markdown("### 📊 Pixel Breakdown")
-                st.code(pixel_analysis, language="yaml") # Pake st.code biar angkanya rapi ala hacker
+                st.code(pixel_analysis, language="yaml")
                 st.image(edge_img, caption="Edge Detection View", use_container_width=True)
-            # ----------------------------------------
+            # ---------------------------------
         else:
             pass 
     else:
@@ -310,8 +310,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     {"type": "text", "text": last_msg + " (Analyze the uploaded image using pixel data provided.)"},
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                 ]
-                # PAKAI MODEL LLAMA 4 SCOUT (Wajib!)
-                active_model = "meta-llama/llama-3.2-11b-vision-preview" # Update ke model vision stabil
+                # PAKAI MODEL LLAMA 4 SCOUT (LOCKED!)
+                active_model = "meta-llama/llama-4-scout-17b-16e-instruct" 
             else:
                 if file_context:
                     messages[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER: {last_msg}"
