@@ -37,7 +37,7 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ULTIMATE CSS (UPDATED FOR IMAGE BUBBLES) ---
+# --- 5. THE ULTIMATE CSS (HACK ICON +, NO TEXT, SMOOTH ANIMATIONS) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     return f"""
@@ -49,7 +49,7 @@ def get_ultimate_css():
     }}
     [data-testid="stStatusWidget"], header, footer {{ visibility: hidden; }}
 
-    /* --- CHAT BUBBLE LOGIC --- */
+    /* --- CHAT BUBBLE LOGIC (SMOOTH & SEAMLESS) --- */
     [data-testid="stChatMessage"] {{
         padding: 1rem !important;
         margin-bottom: 15px !important;
@@ -61,11 +61,6 @@ def get_ultimate_css():
     }}
 
     /* PESAN USER (KANAN) */
-    /* Kita mendeteksi user dari absence of avatar image container yang spesifik */
-    [data-testid="stChatMessage"][class*="st-emotion-cache-"] {{
-         flex-direction: row-reverse !important;
-    }}
-    /* Hardcode fix untuk user message alignment (workaround CSS Streamlit yang tricky) */
     div[data-testid="stChatMessage"]:nth-child(odd) {{
         margin-left: auto !important;
         background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.5) 100%) !important;
@@ -137,7 +132,7 @@ def get_ultimate_css():
         content: "＋"; color: {neon_cyan}; font-size: 26px; font-weight: bold;
     }}
 
-    /* EXPANDER STYLING */
+    /* EXPANDER STYLING (THE MECHANIC ROOM) */
     .streamlit-expanderHeader {{
         font-family: 'Courier New', monospace;
         font-size: 0.9em;
@@ -164,134 +159,105 @@ with col_reset:
 # Logo & Header
 st.markdown(f'<div style="text-align:center; margin-top:-80px;"><div class="logo-static"></div></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:8px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#b0b0b0; font-size:18px; margin-top:10px;'>How can I help you today?</p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#b0b0b0; font-size:18px; margin-top:10px;'>Ready to scan. What's on your mind?</p>", unsafe_allow_html=True)
 
-# --- 7. RENDER MESSAGES (LOGIKA BARU: IMAGE + TEXT SATU BUBBLE) ---
+# --- 7. RENDER MESSAGES (IMAGE + PROMPT SATU BUBBLE) ---
 for msg in st.session_state.messages:
     if msg.get("type") == "system_memory": continue
-    
-    # Tentukan Avatar
     avatar = "logo.png" if msg["role"] == "assistant" else None
     
     with st.chat_message(msg["role"], avatar=avatar):
-        # 1. Cek jika pesan ini punya gambar attachment (User Image)
+        # Tampilkan Gambar User (Jika ada attachment)
         if msg.get("image_data"):
-            # Render gambar di dalam bubble user
             st.image(msg["image_data"], use_container_width=True)
         
-        # 2. Cek jika ini pesan gambar dari AI (Generated Image)
+        # Tampilkan Gambar AI (Jika hasil 'buatkan')
         if msg.get("type") == "image_generated":
              st.image(msg["content"])
         
-        # 3. Render teks biasa (jika ada)
+        # Tampilkan Teks
         if msg.get("content") and msg.get("type") != "image_generated":
             st.markdown(msg["content"])
 
-# --- 8. UPLOAD & ANALYSIS LOGIC ---
+# --- 8. UPLOAD & ANALYSIS ---
 uploaded_file = st.file_uploader("", type=["txt", "py", "md", "png", "jpg", "jpeg", "gif"], label_visibility="collapsed")
 file_context = ""
 pixel_analysis = ""
-edge_image_data = None
 
 def analyze_pixels(image):
     width, height = image.size
     mode = image.mode
     pixels = np.array(image)
-    
-    analysis = f"**Dimensi:** {width}x{height} | **Mode:** {mode}\n"
+    analysis = f"**DIMENSIONS:** {width}x{height} | **MODE:** {mode}\n"
     if mode == 'RGB':
         r, g, b = pixels[:, :, 0].flatten(), pixels[:, :, 1].flatten(), pixels[:, :, 2].flatten()
-        analysis += f"**Avg RGB:** ({int(np.mean(r))}, {int(np.mean(g))}, {int(np.mean(b))})\n"
-        dominant_r = np.argmax(np.bincount(r))
-        dominant_g = np.argmax(np.bincount(g))
-        dominant_b = np.argmax(np.bincount(b))
-        analysis += f"**Dominant:** ({dominant_r}, {dominant_g}, {dominant_b})\n"
-    
+        analysis += f"**AVG COLOR:** ({int(np.mean(r))}, {int(np.mean(g))}, {int(np.mean(b))})\n"
     edge_image = image.filter(ImageFilter.EDGE_ENHANCE) 
     return analysis, edge_image
 
 if uploaded_file:
     file_name = uploaded_file.name.lower()
     if file_name.endswith(('.png', '.jpg', '.jpeg', '.gif')):
-        # Handle image upload
         if st.session_state.uploaded_file_name != uploaded_file.name:
             image = Image.open(uploaded_file)
             pixel_analysis, edge_img = analyze_pixels(image)
-            
             st.session_state.uploaded_image = uploaded_file.getvalue()
             st.session_state.uploaded_file_name = uploaded_file.name
-            st.toast(f"✅ {uploaded_file.name} Ready to send!")
+            st.toast(f"✅ {uploaded_file.name} Loaded!")
             
-            # --- PREVIEW AREA (Hanya Log Teknis, Gambar akan masuk chat saat dikirim) ---
-            with st.expander("🛠️ Image Analysis Data (Pending Send)"):
+            with st.expander("🛠️ Internal Vision Logs"):
                 st.code(pixel_analysis, language="yaml")
-                st.image(edge_img, caption="Edge View", use_container_width=True)
-            # ---------------------------------
+                st.image(edge_img, caption="Edge Enhancement", use_container_width=True)
     else:
         if st.session_state.uploaded_file_name != uploaded_file.name:
             file_context = uploaded_file.getvalue().decode("utf-8")
-            st.toast(f"✅ {uploaded_file.name} Loaded!")
             st.session_state.uploaded_file_name = uploaded_file.name
-            file_context = uploaded_file.getvalue().decode("utf-8")
+            st.toast(f"✅ {uploaded_file.name} Loaded!")
 
-# --- 9. INPUT HANDLING (LOGIKA GABUNG IMAGE + TEXT) ---
+# --- 9. INPUT HANDLING ---
 if user_input := st.chat_input("Command NEO AI..."):
-    
-    # Siapkan paket pesan
     message_package = {"role": "user", "content": user_input}
-    
-    # Cek apakah ada gambar yang sedang "pending" di upload
     if st.session_state.uploaded_image:
         message_package["image_data"] = st.session_state.uploaded_image
-        # Kita simpan di message history, tapi JANGAN hapus dulu dari session_state
-        # karena engine butuh datanya untuk processing di bawah.
     
     st.session_state.messages.append(message_package)
     st.rerun()
 
-# --- 10. ENGINE (LLAMA 4 SCOUT) ---
+# --- 10. ENGINE (LOCKED TO LLAMA 4 SCOUT) ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
-    last_msg = st.session_state.messages[-1] # Ambil object full
-    last_text = last_msg["content"]
+    last_msg_obj = st.session_state.messages[-1]
+    last_text = last_msg_obj["content"]
+    current_image_bytes = last_msg_obj.get("image_data")
     
-    # Cek apakah pesan TERAKHIR ini punya gambar (attached image)
-    current_image_bytes = last_msg.get("image_data")
-    
-    # Jika pesan terakhir punya gambar, kita hapus status upload global
-    # agar chat berikutnya tidak 'membawa' gambar yang sama
-    if current_image_bytes and st.session_state.uploaded_image:
+    # Reset status upload global setelah gambar masuk ke balon chat
+    if current_image_bytes:
         st.session_state.uploaded_image = None
         st.session_state.uploaded_file_name = None
     
     with st.chat_message("assistant", avatar="logo.png"):
-        if "buatkan" in last_text.lower() or "make" in last_text.lower():
-            with st.spinner("Visualizing..."):
+        if any(word in last_text.lower() for word in ["buatkan", "make", "generate"]):
+            with st.spinner("Neural visualizing..."):
                 try:
                     img_url = f"https://image.pollinations.ai/prompt/{last_text.replace(' ','%20')}?width=1024&height=1024&nologo=true"
                     r = requests.get(img_url, timeout=30)
                     if r.status_code == 200:
                         st.image(r.content)
                         st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image_generated"})
-                except: st.error("Neural lost.")
+                except: st.error("Neural link lost.")
         else:
             res_area = st.empty(); full_res = ""
             clean_history = []
-            
-            # Build history (filter images from text context if needed, or pass desc)
-            for m in st.session_state.messages[:-1]: # Exclude current msg temp
+            for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image_generated":
                     content = m["content"]
-                    if m.get("image_data"): content += " [User sent an image]"
+                    if m.get("image_data"): content += " [User attached an image]"
                     clean_history.append({"role": m["role"], "content": str(content)})
             
-            system_prompt = (
-                "You are NEO AI (Model: Llama 4 Scout). "
-                "Respond confidently. If the user sends an image, analyze it using the provided vision data. "
-                "Be helpful, concise, and use emojis like 🚀, 💡, 🔥 to match the vibe."
-            )
-            messages = [{"role": "system", "content": system_prompt}] + clean_history
+            # --- MODEL KUNCI: LLAMA 4 SCOUT ---
+            active_model = "meta-llama/llama-4-scout-17b-16e-instruct"
             
-            # SETUP REQUEST UTAMA
+            messages = [{"role": "system", "content": "You are NEO AI (Llama 4 Scout). A supreme multi-modal AI."}] + clean_history
+            
             if current_image_bytes:
                 base64_image = base64.b64encode(current_image_bytes).decode('utf-8')
                 messages.append({
@@ -301,10 +267,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                     ]
                 })
-                active_model = "meta-llama/llama-3.2-11b-vision-preview" # Vision Model
             else:
                 messages.append({"role": "user", "content": last_text})
-                active_model = "llama-3.3-70b-versatile" # Text Model
 
             try:
                 stream = client.chat.completions.create(messages=messages, model=active_model, stream=True)
