@@ -40,7 +40,7 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ULTIMATE CSS (HACK ICON +, NO TEXT, SMOOTH ANIMATIONS) ---
+# --- 5. THE ULTIMATE CSS (HACK ICON +, NO TEXT, SMOOTH ANIMATIONS, FIXED BOTTOM BAR) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     return f"""
@@ -136,6 +136,27 @@ def get_ultimate_css():
     }}
 
     .blurred {{ filter: blur(1.5px); transition: filter 0.5s ease; }}
+
+    /* --- FIXED BOTTOM BAR FOR INPUT, MODE, UPLOAD --- */
+    .fixed-bottom-bar {{
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        background-color: #050505 !important;
+        padding: 10px 0 !important;
+        border-top: 1px solid {neon_cyan}22 !important;
+        z-index: 999999 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 10px !important;
+    }}
+    .fixed-bottom-bar .stColumn {{
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }}
     </style>
     """
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
@@ -167,8 +188,8 @@ for msg in st.session_state.messages:
         if msg.get("type") == "image": st.image(msg["content"])
         else: st.markdown(msg["content"])
 
-# --- 7. UPLOAD & INPUT MINIMALIST (DI SEBELAH KOLOM KETIK, SIMETRIS) ---
-# Columns untuk spacer, input, mode, dan upload - agar input centered
+# --- 7. FIXED BOTTOM BAR (KUNCI INPUT, MODE, UPLOAD DI BAWAH) ---
+st.markdown('<div class="fixed-bottom-bar">', unsafe_allow_html=True)
 col_spacer, col_input, col_mode, col_upload = st.columns([1, 3, 1, 1])
 
 with col_mode:
@@ -219,7 +240,7 @@ def analyze_pixels(image):
 if uploaded_file:
     file_name = uploaded_file.name.lower()
     if file_name.endswith(('.png', '.jpg', '.jpeg', '.gif')):
-        # Handle image upload - HANYA NOTIF, TIDAK TAMPILKAN GAMBAR DI CHAT
+        # Handle image upload - HANYA NOTIF, TIDAK TAMPILKAN GAMBAR DI CHAT (BACKEND AMAN)
         if st.session_state.uploaded_file_name != uploaded_file.name:
             image = Image.open(uploaded_file)
             pixel_analysis, edge_img = analyze_pixels(image)
@@ -251,6 +272,8 @@ with col_input:
     if user_input := st.chat_input("Command NEO AI..."):
         st.session_state.messages.append({"role": "user", "content": user_input})
         st.rerun()
+
+st.markdown('</div>', unsafe_allow_html=True)  # Tutup fixed bottom bar
 
 # --- 8. ENGINE (FIXED MODEL & PERSISTENCE) ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
@@ -312,3 +335,4 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 st.error(f"Engine failed: {e}")
                 
     st.rerun()
+```
