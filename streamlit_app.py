@@ -4,7 +4,7 @@ import time
 import os
 import base64
 import requests
-from PIL import Image, ImageFilter  # Tambahin ImageFilter di sini
+from PIL import Image, ImageFilter
 import io
 import numpy as np
 
@@ -133,6 +133,14 @@ def get_ultimate_css():
         content: "＋"; color: {neon_cyan}; font-size: 26px; font-weight: bold;
     }}
 
+    /* EXPANDER STYLING (BIAR MAKIN GANTENG) */
+    .streamlit-expanderHeader {{
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+        color: #888;
+        background-color: transparent !important;
+    }}
+    
     .blurred {{ filter: blur(1.5px); transition: filter 0.5s ease; }}
     </style>
     """
@@ -197,8 +205,8 @@ def analyze_pixels(image):
     else:
         analysis += "**Mode lain:** Analisis terbatas, fokus pada struktur piksel.\n"
     
-    # Tambahan: Deteksi edge sederhana (menggunakan PIL filter)
-    edge_image = image.filter(ImageFilter.EDGE_ENHANCE)  # SESUDAH (BENAR): edge_image = image.filter(ImageFilter.EDGE_ENHANCE)
+    # Deteksi edge sederhana (menggunakan PIL filter)
+    edge_image = image.filter(ImageFilter.EDGE_ENHANCE) 
     analysis += "**Deteksi Edge:** Gambar telah diproses untuk menonjolkan tepi (edges) menggunakan filter PIL.\n"
     
     return analysis, edge_image
@@ -218,13 +226,16 @@ if uploaded_file:
             st.session_state.uploaded_image = uploaded_file.getvalue()
             st.session_state.uploaded_file_name = uploaded_file.name
             st.toast(f"✅ {uploaded_file.name} Loaded! Analisis piksel siap.")
-            # Display image
-            st.image(image, caption=f"Uploaded: {uploaded_file.name}")
-            st.markdown("### 🔍 Breakdown Piksel Manual:")
-            st.markdown(pixel_analysis)
-            st.image(edge_img, caption="Gambar dengan Edge Enhanced")
+            
+            # --- BAGIAN BARU: DIBUNGKUS EXPANDER ---
+            with st.expander("🛠️ Internal Vision Logs (Technical Data)"):
+                st.image(image, caption=f"Source: {uploaded_file.name}", use_container_width=True)
+                st.markdown("### 📊 Pixel Breakdown")
+                st.code(pixel_analysis, language="yaml") # Pake st.code biar angkanya rapi ala hacker
+                st.image(edge_img, caption="Edge Detection View", use_container_width=True)
+            # ----------------------------------------
         else:
-            pass  # Sudah di-handle sebelumnya
+            pass 
     else:
         # Handle text file
         if st.session_state.uploaded_file_name != uploaded_file.name:
@@ -234,7 +245,7 @@ if uploaded_file:
         else:
             file_context = uploaded_file.getvalue().decode("utf-8")
 else:
-    # Kalo kotak upload kosong, bersihin memori gambar! (FIX EFEK BAYANGAN)
+    # Kalo kotak upload kosong, bersihin memori gambar!
     st.session_state.uploaded_image = None
     st.session_state.uploaded_file_name = None
 
@@ -300,7 +311,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                 ]
                 # PAKAI MODEL LLAMA 4 SCOUT (Wajib!)
-                active_model = "meta-llama/llama-4-scout-17b-16e-instruct"
+                active_model = "meta-llama/llama-3.2-11b-vision-preview" # Update ke model vision stabil
             else:
                 if file_context:
                     messages[-1]["content"] = f"CONTEXT:\n{file_context}\n\nUSER: {last_msg}"
