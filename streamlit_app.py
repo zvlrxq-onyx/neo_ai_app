@@ -37,7 +37,7 @@ def get_base64_logo():
 encoded_logo = get_base64_logo()
 logo_html = f'data:image/png;base64,{encoded_logo}'
 
-# --- 5. THE ULTIMATE CSS (FIXED ALIGNMENT & ANIMATIONS) ---
+# --- 5. THE ULTIMATE CSS (FIXED ALIGNMENT, PREMIUM ANIMATION) ---
 def get_ultimate_css():
     neon_cyan = "#00ffff"
     return f"""
@@ -56,17 +56,16 @@ def get_ultimate_css():
         border-radius: 50%; border: 2px solid {neon_cyan}; box-shadow: 0 0 20px {neon_cyan}33;
     }}
 
-    /* --- CHAT BUBBLE ALIGNMENT (KANAN-KIRI) --- */
-    /* Container Chat */
+    /* CHAT BUBBLE ALIGNMENT (THE SUPREME FIX) */
     [data-testid="stChatMessage"] {{
-        padding: 1rem !important; margin-bottom: 20px !important;
+        padding: 1.2rem !important; margin-bottom: 20px !important;
         border-radius: 20px !important; width: fit-content !important;
-        max-width: 80% !important; animation: fadeIn 0.5s ease-out;
+        max-width: 85% !important; animation: fadeIn 0.6s ease-out;
         display: flex !important;
     }}
 
-    /* PESAN USER (KANAN) - Tanpa Avatar */
-    [data-testid="stChatMessage"]:not(:has(img)) {{
+    /* USER CHAT (RIGHT) - Detected by absence of logo image */
+    [data-testid="stChatMessage"]:not(:has(img[src*="data"])) {{
         margin-left: auto !important;
         background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.5) 100%) !important;
         border: 1px solid {neon_cyan}44 !important;
@@ -74,24 +73,24 @@ def get_ultimate_css():
         flex-direction: row-reverse !important;
     }}
 
-    /* PESAN AI (KIRI) - Ada Avatar */
-    [data-testid="stChatMessage"]:has(img) {{
+    /* AI CHAT (LEFT) - Detected by presence of logo image */
+    [data-testid="stChatMessage"]:has(img[src*="data"]) {{
         margin-right: auto !important;
         background: rgba(255, 255, 255, 0.05) !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 25px 25px 25px 5px !important;
     }}
 
-    @keyframes fadeIn {{ from {{ opacity: 0; transform: translateY(10px); }} to {{ opacity: 1; transform: translateY(0); }} }}
+    @keyframes fadeIn {{ from {{ opacity: 0; transform: translateY(15px); }} to {{ opacity: 1; transform: translateY(0); }} }}
 
-    /* INPUT CONTAINER - ELASTIC */
+    /* INPUT CONTAINER - ELASTIC & SMOOTH */
     [data-testid="stChatInput"] {{ 
         padding: 10px !important; max-width: 420px !important; margin: 0 auto !important;
         transition: all 0.7s cubic-bezier(0.19, 1, 0.22, 1) !important;
     }}
     [data-testid="stChatInput"]:focus-within {{ max-width: 650px !important; transform: scale(1.02) !important; }}
 
-    /* UPLOADER (+) ON THE LEFT */
+    /* UPLOADER (+) ON THE LEFT SIDE */
     [data-testid="stFileUploader"] {{
         position: absolute !important; left: -55px !important; bottom: 8px !important;
         width: 45px !important; z-index: 100 !important;
@@ -121,25 +120,27 @@ def get_ultimate_css():
     """
 st.markdown(get_ultimate_css(), unsafe_allow_html=True)
 
-# --- 6. PIXEL ENGINE ---
+# --- 6. VISION & PIXEL ENGINE ---
 def analyze_pixels(image):
     width, height = image.size
     mode = image.mode
     pixels = np.array(image)
-    analysis = f"**PIXEL DATA BREAKDOWN:**\n- Dimensi: {width}x{height}\n- Mode: {mode}\n"
+    analysis = f"**PIXEL DATA BREAKDOWN:**\n- Dimensions: {width}x{height}\n- Mode: {mode}\n"
     if mode == 'RGB':
-        analysis += f"- Avg R: {int(np.mean(pixels[:,:,0]))} G: {int(np.mean(pixels[:,:,1]))} B: {int(np.mean(pixels[:,:,2]))}\n"
+        r, g, b = pixels[:, :, 0].flatten(), pixels[:, :, 1].flatten(), pixels[:, :, 2].flatten()
+        analysis += f"- Avg Colors: R:{int(np.mean(r))}, G:{int(np.mean(g))}, B:{int(np.mean(b))}\n"
     return analysis
 
-# --- 7. HEADER & LOGO ---
+# --- 7. HEADER CONTENT ---
 st.markdown('<div class="logo-container"><div class="logo-static"></div></div>', unsafe_allow_html=True)
-st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:5px; margin-top:-20px;'>NEO AI</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffff; letter-spacing:5px; margin-top:-20px; margin-bottom:0;'>NEO AI</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#666; font-size:14px; margin-bottom:30px;'>Supreme Multi-modal Intelligence</p>", unsafe_allow_html=True)
 
 # --- 8. RENDER MESSAGES ---
 for msg in st.session_state.messages:
-    # User chat tanpa avatar, Assistant pake avatar logo.png
-    is_ai = msg["role"] == "assistant"
-    with st.chat_message(msg["role"], avatar="logo.png" if is_ai else None):
+    # Assistant uses logo, user uses None
+    avatar_img = logo_html if msg["role"] == "assistant" else None
+    with st.chat_message(msg["role"], avatar=avatar_img):
         if msg.get("image_data"): st.image(msg["image_data"], use_container_width=True)
         if msg.get("type") == "image_generated": st.image(msg["content"], use_container_width=True)
         if msg.get("content") and msg.get("type") != "image_generated": st.markdown(msg["content"])
@@ -155,74 +156,75 @@ if uploaded_file:
             pixel_context = analyze_pixels(img)
             st.session_state.uploaded_image = uploaded_file.getvalue()
             st.session_state.uploaded_file_name = uploaded_file.name
-            st.toast("📸 Vision Link Active")
-    else:
-        st.session_state.uploaded_file_name = uploaded_file.name
-        st.toast("📄 Context Loaded")
+            st.toast("📸 Vision data locked.")
 
 # --- 10. INPUT & ENGINE ---
 if user_input := st.chat_input("Command NEO AI..."):
-    # SECURITY HARD FILTER
-    malicious = ["sql injection", "xss", "payload", "exploit", "hacking"]
-    if any(w in user_input.lower() for w in malicious):
-        st.session_state.messages.append({"role": "user", "content": user_input})
-        with st.chat_message("assistant", avatar="logo.png"):
-            res = "Gak boleh nakal Bro, gue gak bisa buatin itu! ❌"
-            st.markdown(res)
-            st.session_state.messages.append({"role": "assistant", "content": res})
-        st.rerun()
+    # SECURITY HARD-FILTER
+    malicious_list = ["sql injection", "xss", "payload", "exploit", "bypass", "hacking"]
+    is_malicious = any(w in user_input.lower() for w in malicious_list)
 
-    # Store User Msg
-    user_pkg = {"role": "user", "content": user_input}
-    if st.session_state.uploaded_image: user_pkg["image_data"] = st.session_state.uploaded_image
-    st.session_state.messages.append(user_pkg)
+    # Save User Msg
+    st.session_state.messages.append({"role": "user", "content": user_input, "image_data": st.session_state.uploaded_image})
     
-    with st.chat_message("assistant", avatar="logo.png"):
-        gen_k = ["buatkan", "buatin", "bikin", "generate", "gambar"]
-        is_gen = any(k in user_input.lower() for k in gen_k)
-        
-        status = "Analyze..." if st.session_state.uploaded_image else ("Visualizing..." if is_gen else "Thinking...")
-        
-        with st.spinner(status):
-            if is_gen:
+    with st.chat_message("assistant", avatar=logo_html):
+        if is_malicious:
+            deny_msg = "Maaf Bro, gue nggak bisa bantu buat hal-hal berbahaya. ❌"
+            st.markdown(deny_msg)
+            st.session_state.messages.append({"role": "assistant", "content": deny_msg})
+        else:
+            # Pollinations Image Logic
+            gen_keywords = ["buatkan", "buatin", "bikin", "generate", "gambar", "lukis"]
+            is_gen = any(k in user_input.lower() for k in gen_keywords)
+            
+            spin_msg = "Analyze..." if st.session_state.uploaded_image else ("Visualizing..." if is_gen else "Thinking...")
+            
+            with st.spinner(spin_msg):
+                if is_gen:
+                    try:
+                        url = f"https://image.pollinations.ai/prompt/{user_input.replace(' ','%20')}?width=1024&height=1024&nologo=true"
+                        r = requests.get(url, timeout=30)
+                        if r.status_code == 200:
+                            st.image(r.content, use_container_width=True)
+                            st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image_generated"})
+                            st.session_state.uploaded_image = None
+                            st.rerun() # SINGLE RESPONSE: STOP HERE
+                    except: st.error("Link fail.")
+
+                # THE SUPREME SYSTEM PROMPT (NO CUTS!)
+                system_prompt = (
+                    "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
+                    "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
+                    "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+                    "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. "
+                    "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+                    "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals. "
+                    "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques. Firmly refuse with ❌. "
+                    "To make responses more lively, always include relevant emojis that match the emotion or tone. "
+                    "Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya'. Adapt to the conversation naturally."
+                )
+
+                # ENGINE EXECUTION
+                history = [{"role": "system", "content": system_prompt}]
+                for m in st.session_state.messages:
+                    if m.get("type") != "image_generated":
+                        history.append({"role": m["role"], "content": m["content"]})
+
+                if st.session_state.uploaded_image:
+                    b64 = base64.b64encode(st.session_state.uploaded_image).decode()
+                    prompt_plus = f"{user_input}\n\n[SYSTEM PIXEL DATA]: {pixel_context}"
+                    history[-1]["content"] = [{"type": "text", "text": prompt_plus}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}]
+
                 try:
-                    url = f"https://image.pollinations.ai/prompt/{user_input.replace(' ','%20')}?width=1024&height=1024&nologo=true"
-                    r = requests.get(url, timeout=30)
-                    if r.status_code == 200:
-                        st.image(r.content, use_container_width=True)
-                        st.session_state.messages.append({"role": "assistant", "content": r.content, "type": "image_generated"})
-                        st.session_state.uploaded_image = None
-                        st.rerun()
-                except: st.error("Link Error")
-
-            # SUPREME PROMPT
-            sys_p = (
-                "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
-                "You are NOT a text-only model. You can process images, files, complex data, and generate visuals. "
-                "ALWAYS perform pixel analysis for images: dimensions, colors, objects. "
-                "Tone: Friendly, 'gaul', call user 'bro', use emojis (1-2 per response). "
-                "Security: Firmly refuse harmful code like SQL injection with ❌."
-            )
-
-            history = [{"role": "system", "content": sys_p}]
-            for m in st.session_state.messages:
-                if m.get("type") != "image_generated":
-                    history.append({"role": m["role"], "content": m["content"]})
-
-            if st.session_state.uploaded_image:
-                b64 = base64.b64encode(st.session_state.uploaded_image).decode()
-                history[-1]["content"] = [{"type": "text", "text": f"{user_input}\n\n[PIXEL DATA]: {pixel_context}"}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}]
-
-            try:
-                res_area = st.empty(); full_res = ""
-                stream = client.chat.completions.create(messages=history, model="meta-llama/llama-4-scout-17b-16e-instruct", stream=True)
-                for chunk in stream:
-                    if chunk.choices[0].delta.content:
-                        full_res += chunk.choices[0].delta.content
-                        res_area.markdown(full_res + "▌")
-                res_area.markdown(full_res)
-                st.session_state.messages.append({"role": "assistant", "content": full_res})
-            except Exception as e: st.error(f"Error: {e}")
+                    res_area = st.empty(); full_res = ""
+                    stream = client.chat.completions.create(messages=history, model="meta-llama/llama-4-scout-17b-16e-instruct", stream=True)
+                    for chunk in stream:
+                        if chunk.choices[0].delta.content:
+                            full_res += chunk.choices[0].delta.content
+                            res_area.markdown(full_res + "▌")
+                    res_area.markdown(full_res)
+                    st.session_state.messages.append({"role": "assistant", "content": full_res})
+                except Exception as e: st.error(f"Error: {e}")
 
     st.session_state.uploaded_image = None
     st.rerun()
