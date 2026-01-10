@@ -1,7 +1,8 @@
-streamlit
+fastapi
+uvicorn
+python-multipart
 groq
-google-genai
+httpx
 pillow
-requests
+numpy
 python-dotenv
-FastAPI
