@@ -214,7 +214,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             if st.session_state.uploaded_image:
                 b64 = base64.b64encode(st.session_state.uploaded_image).decode()
                 resp = client_groq.chat.completions.create(
-                    model="llama-3.2-11b-vision-preview", # ID paling valid untuk vision di Groq saat ini
+                    model="meta-llama/llama-4-scout-17b-16e-instruct", # ID paling valid untuk vision di Groq saat ini
                     messages=[{"role": "user", "content": [{"type":"text","text":user_msg},{"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{b64}"}}]}]
                 )
                 res = resp.choices[0].message.content
