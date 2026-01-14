@@ -6,3 +6,4 @@ httpx
 pillow
 numpy
 python-dotenv
+huggingface_hub
