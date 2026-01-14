@@ -157,14 +157,15 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     messages=[{"role": "user", "content": [{"type":"text","text":query},{"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{b64}"}}]}]
                 )
                 res = chat.choices[0].message.content
-                else: res = "⚠️ Upload gambar dulu bro kalau mau pake Vision Scout 
-            
-            elif engine == "DeepSeek":
-    chat = client_groq.chat.completions.create(
-        model="qwen-2.5-72b-instruct",  # LOGIC + CODING KUAT
-        messages=[{"role": "user", "content": query}]
-    )
-    res = chat.choices[0].message.content
+            else: 
+                res = "⚠️ Upload gambar dulu bro kalau mau pake Vision Scout!"
+
+        elif engine == "DeepSeek":
+            chat = client_groq.chat.completions.create(
+                model="qwen-2.5-72b-instruct",  # LOGIC + CODING KUAT
+                messages=[{"role": "user", "content": query}]
+            )
+            res = chat.choices[0].message.content
 
         elif engine == "Gemma":
             res = client_hf.chat_completion(model="google/gemma-2-9b-it", messages=[{"role":"user","content":query}]).choices[0].message.content
