@@ -94,6 +94,11 @@ st.markdown(f"""
     /* Efek Halus (Smooth Transitions) */
     .chat-bubble {{ transition: all 0.3s ease; }}
     .chat-bubble:hover {{ transform: scale(1.02); }}
+    
+    /* Efek Smooth pada Semua Tombol */
+    .stButton button {{ transition: all 0.3s ease; }}
+    .stButton button:hover {{ transform: scale(1.05); }}
+    .stButton button:active {{ transform: scale(0.95); }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -101,7 +106,12 @@ st.markdown(f"""
 def clean_text(text):
     """Fungsi Satpam: Bersihin sampah HTML dari output AI"""
     if not isinstance(text, str): return str(text)
-    return text.replace("</div>", "").replace("<div>", "").replace("<br>", "\n")
+    # Perkuat pembersihan: hapus semua tag HTML dan entitas
+    import re
+    text = re.sub(r'<[^>]+>', '', text)  # Hapus semua tag HTML
+    text = text.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&').replace('&quot;', '"').replace('&#39;', "'")
+    text = text.replace("</div>", "").replace("<div>", "").replace("<br>", "\n").replace("<p>", "").replace("</p>", "")
+    return text.strip()
 
 def render_chat_bubble(role, content):
     content = clean_text(content) # BERSIHIN DULU SEBELUM RENDER
@@ -218,23 +228,55 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         user_msg = st.session_state.messages[-1]["content"]
         res = ""
         
+        # System Prompt
+        system_prompt = (
+            "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
+            "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
+            "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+            "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
+            "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
+            "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+            "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
+            "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
+            "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
+            "- Happy or excited: 😊🤩 "
+            "- Sad or disappointed: 😢😔 "
+            "- Assertive or warning: ⚠️😠 "
+            "- Thinking or curious: 🤔💭 "
+            "- Surprised: 😲 "
+            "- Playful: 😉😜 "
+            "- Proud or admiring success: 🏆 "
+            "- Anxious or worried: 😰 "
+            "- Refusal or denial: ❌ "
+            "- Motivational (e.g., encouraging user): 🚀 "
+            "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success (e.g., 'Aku berhasil bikin AI sendiri!'), respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' "
+            "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."
+        )
+        
         # --- LOGIC PEMILIHAN MODEL (Hapus DeepSeek) ---
         if engine == "Scout":
             if st.session_state.uploaded_image:
                 b64 = base64.b64encode(st.session_state.uploaded_image).decode()
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": [{"type":"text","text":user_msg},{"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{b64}"}}]}
+                ]
                 resp = client_groq.chat.completions.create(
-                    model="meta-llama/llama-4-scout-17b-16e-instruct", # ID paling valid untuk vision di Groq saat ini
-                    messages=[{"role": "user", "content": [{"type":"text","text":user_msg},{"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{b64}"}}]}]
+                    model="meta-llama/llama-4-scout-17b-16e-instruct",
+                    messages=messages
                 )
                 res = resp.choices[0].message.content
             else: 
                 res = "⚠️ Tolong upload foto dulu bro kalo mau pake mode Vision (Tombol + di kiri bawah)."
         
         elif engine == "Gemma":
-            # Pakai Inference Client HF
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_msg}
+            ]
             chat_response = client_hf.chat_completion(
                 model="google/gemma-2-9b-it", 
-                messages=[{"role":"user","content":user_msg}], 
+                messages=messages, 
                 max_tokens=800
             )
             res = chat_response.choices[0].message.content
@@ -245,7 +287,11 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             res = None # Gambar udah di-append langsung
             
         else: # Llama 3.3 (Default/Power)
-            resp = client_groq.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":user_msg}])
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_msg}
+            ]
+            resp = client_groq.chat.completions.create(model="llama-3.3-70b-versatile", messages=messages)
             res = resp.choices[0].message.content
 
         # Save Response AI
