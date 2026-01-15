@@ -6,6 +6,7 @@ import re
 from PIL import Image
 import io
 import urllib.parse
+import time
 
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(page_title="NEO AI", page_icon="🌐", layout="wide")
@@ -58,6 +59,9 @@ if "uploaded_image" not in st.session_state:
 
 if "show_system_info" not in st.session_state:
     st.session_state.show_system_info = False
+
+if "show_upload_notif" not in st.session_state:
+    st.session_state.show_upload_notif = False
 
 # --- 3. API KEYS ---
 try:
@@ -421,8 +425,12 @@ for msg in st.session_state.messages:
 up = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed")
 if up: 
     st.session_state.uploaded_image = up.getvalue()
-    # Notifikasi Upload Berhasil
-    st.markdown("""
+    st.session_state.show_upload_notif = True
+
+# Notifikasi Upload (Auto-hilang dalam 3 detik)
+if st.session_state.show_upload_notif:
+    notif_placeholder = st.empty()
+    notif_placeholder.markdown("""
     <div style="position: fixed; top: 20px; right: 20px; background: linear-gradient(135deg, #00ffff22, #00ffff44); 
                 padding: 15px 20px; border-radius: 10px; border: 1px solid #00ffff; z-index: 9999;
                 box-shadow: 0 4px 15px rgba(0,255,255,0.3); animation: slideIn 0.3s ease;">
@@ -441,6 +449,11 @@ if up:
         }
     </style>
     """, unsafe_allow_html=True)
+    
+    # Tunggu 3 detik, terus hilangkan notifikasi
+    time.sleep(3)
+    notif_placeholder.empty()
+    st.session_state.show_upload_notif = False
 
 # Chat Input
 if prompt := st.chat_input("Message NEO AI..."):
