@@ -3,7 +3,7 @@ from groq import Groq
 from huggingface_hub import InferenceClient
 import os, base64, requests, json
 import re
-from PIL import Image
+from PIL import Image, ImageFilter
 import io
 
 # --- 1. CONFIG & SYSTEM SETUP ---
