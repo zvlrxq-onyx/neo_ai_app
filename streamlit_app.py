@@ -19,7 +19,6 @@ if not os.path.exists(DB_FOLDER):
 
 def get_user_db_file(username):
     """Generate unique database file path untuk setiap user"""
-    # Hash username untuk keamanan extra (opsional tapi recommended)
     user_hash = hashlib.md5(username.encode()).hexdigest()
     return os.path.join(DB_FOLDER, f"user_{user_hash}.json")
 
@@ -147,6 +146,17 @@ st.markdown(f"""
     [data-testid="stChatInput"] {{ margin-left: 60px !important; width: calc(100% - 80px) !important; }}
     
     .sidebar-logo {{ display: block; margin: auto; width: 80px; height: 80px; border-radius: 50%; border: 2px solid #00ffff; object-fit: cover; margin-bottom: 10px; }}
+    
+    /* Logo Berputar di Tengah - NO GLOW, ONLY ROTATE */
+    .rotating-logo {{
+        animation: rotate 8s linear infinite;
+        border-radius: 50%;
+        border: 2px solid #00ffff;
+    }}
+    @keyframes rotate {{
+        from {{ transform: rotate(0deg); }}
+        to {{ transform: rotate(360deg); }}
+    }}
     
     /* Typing Animation */
     .typing {{ display: flex; align-items: center; gap: 5px; padding: 5px 0; }}
@@ -289,7 +299,7 @@ with st.sidebar:
     if st.button("📋 System Info", use_container_width=True):
         st.session_state.show_system_info = not st.session_state.show_system_info
     
-    # System Info Content
+    # System Info Content - FULL VERSION LENGKAP
     if st.session_state.show_system_info:
         st.markdown("""
         <div style="background: linear-gradient(135deg, #001a1a 0%, #002b2b 100%); 
@@ -298,26 +308,141 @@ with st.sidebar:
             <h3 style="color: #00ffff; text-align: center; margin-bottom: 5px;">🌐 Azura AI System</h3>
             <p style="color: #888; text-align: center; font-size: 13px; margin-bottom: 3px;">Advanced Multi-Modal AI Assistant</p>
             <p style="color: #00ffff; text-align: center; font-size: 11px;">Created by Muhammad Jibran Al Kaffie</p>
-            <p style="color: #00ff00; text-align: center; font-size: 12px; margin-top: 10px;">🔒 Privacy Protected - User Isolated Database</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # About Creator
+        st.markdown("""
+        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
+                    border-left: 4px solid #00ffff; margin: 15px 0;">
+            <h4 style="color: #00ffff; margin: 0 0 10px 0;">👨‍💻 About the Creator</h4>
+            <p style="color: #b0b0b0; line-height: 1.7; margin: 0;">
+                Azura AI dikembangkan oleh <strong style="color: #00ffff;">Muhammad Jibran Al Kaffie</strong>, 
+                seorang developer passionate yang fokus pada AI dan teknologi cutting-edge. 
+                Dengan visi menciptakan AI assistant yang powerful namun user-friendly, Azura AI hadir sebagai 
+                solusi multi-modal yang menggabungkan berbagai teknologi terbaik dari Groq, HuggingFace, dan Pollinations.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # About Azura AI
+        st.markdown("""
+        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
+                    border-left: 4px solid #00ffff; margin: 15px 0;">
+            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🧠 Tentang Azura AI</h4>
+            <p style="color: #b0b0b0; line-height: 1.7; margin: 0;">
+                Azura AI adalah AI assistant multi-modal yang dirancang untuk menangani berbagai tugas kompleks: 
+                dari analisis gambar pixel-deep, coding & problem solving, creative writing, hingga generasi visual artwork. 
+                Dibangun dengan arsitektur modular yang menggabungkan 4 engine AI berbeda untuk performa optimal di setiap use case.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown('<h4 style="color: #00ffff; margin: 20px 0 10px 0;">⚙️ Technology Stack</h4>', unsafe_allow_html=True)
+        
+        # Engine 1
+        with st.expander("🔍 Engine 1: Azura-Lens 1.7 (Vision)", expanded=False):
+            st.markdown("""
+            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
+                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
+                    <strong style="color: #00ffff;">Model:</strong> Meta Llama 4 Scout 17B 16E Instruct<br>
+                    <strong style="color: #00ffff;">Provider:</strong> Groq API (Ultra-fast inference)<br>
+                    <strong style="color: #00ffff;">Kemampuan:</strong> Analisis gambar pixel-deep dengan deteksi objek, warna, komposisi, edges, dan spatial relationships. 
+                    Menggunakan pixel data analysis untuk hasil yang lebih akurat.<br>
+                    <strong style="color: #00ffff;">Use Case:</strong> Computer vision, image analysis, OCR, object detection, visual QA
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Engine 2
+        with st.expander("⚡ Engine 2: Azura 1.5 (Power)", expanded=False):
+            st.markdown("""
+            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
+                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
+                    <strong style="color: #00ffff;">Model:</strong> Meta Llama 3.3 70B Versatile<br>
+                    <strong style="color: #00ffff;">Provider:</strong> Groq API (Lightning-fast processing)<br>
+                    <strong style="color: #00ffff;">Kemampuan:</strong> Model berukuran 70 billion parameters untuk tugas-tugas kompleks yang membutuhkan reasoning tinggi, 
+                    multi-step problem solving, dan deep understanding.<br>
+                    <strong style="color: #00ffff;">Use Case:</strong> Advanced coding, data analysis, mathematical reasoning, complex research, technical writing
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Engine 3
+        with st.expander("✨ Engine 3: Azura-Prime (Creative)", expanded=False):
+            st.markdown("""
+            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
+                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
+                    <strong style="color: #00ffff;">Model:</strong> Qwen 2.5 7B Instruct<br>
+                    <strong style="color: #00ffff;">Provider:</strong> HuggingFace Inference API<br>
+                    <strong style="color: #00ffff;">Kemampuan:</strong> Model yang dioptimalkan untuk creative tasks dengan 7B parameters. 
+                    Excellent untuk storytelling, content generation, dan brainstorming dengan temperature tinggi untuk kreativitas maksimal.<br>
+                    <strong style="color: #00ffff;">Use Case:</strong> Creative writing, storytelling, brainstorming, content creation, marketing copy
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Engine 4
+        with st.expander("🎨 Engine 4: Azura-Art (Draw)", expanded=False):
+            st.markdown("""
+            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
+                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
+                    <strong style="color: #00ffff;">Model:</strong> Pollinations AI Image Generation<br>
+                    <strong style="color: #00ffff;">Provider:</strong> Pollinations.ai API<br>
+                    <strong style="color: #00ffff;">Kemampuan:</strong> Text-to-image generation dengan kualitas tinggi. Mengubah deskripsi text menjadi visual artwork 
+                    dalam berbagai style: realistic, artistic, anime, abstract, dan lainnya.<br>
+                    <strong style="color: #00ffff;">Use Case:</strong> Visual design, concept art, illustrations, moodboards, creative visualization
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Security Features
+        st.markdown("""
+        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
+                    border-left: 4px solid #00ffff; margin: 20px 0;">
+            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🛡️ Security & Features</h4>
+            <p style="color: #b0b0b0; line-height: 1.8; margin: 0;">
+                <strong>• Anti-Jailbreak Protection:</strong> System prompt yang robust dengan deteksi bypass attempts<br>
+                <strong>• HTML Injection Prevention:</strong> Clean text function untuk sanitasi output<br>
+                <strong>• User Isolation:</strong> Database terpisah per-user dengan MD5 hashing<br>
+                <strong>• Persistent Storage:</strong> Chat history tersimpan dalam JSON database lokal per-user<br>
+                <strong>• Real-time Pixel Analysis:</strong> Image processing dengan PIL untuk metadata extraction<br>
+                <strong>• Multi-Modal Handling:</strong> Support untuk text, image input/output, dan file upload<br>
+                <strong>• Session Management:</strong> Multiple chat sessions dengan rename & delete capability<br>
+                <strong>• Privacy Protected:</strong> User A tidak dapat mengakses chat history User B
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Technical Architecture
+        st.markdown("""
+        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
+                    border-left: 4px solid #00ffff; margin: 20px 0;">
+            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🚀 Technical Architecture</h4>
+            <p style="color: #b0b0b0; line-height: 1.8; margin: 0; font-family: monospace;">
+                <strong>Frontend:</strong> Streamlit (Python web framework)<br>
+                <strong>Styling:</strong> Custom CSS dengan smooth animations & transitions<br>
+                <strong>State Management:</strong> Streamlit session state + JSON file persistence<br>
+                <strong>API Integration:</strong> Groq SDK, HuggingFace InferenceClient, Pollinations REST API<br>
+                <strong>Image Processing:</strong> PIL (Python Imaging Library) untuk pixel analysis<br>
+                <strong>Data Format:</strong> JSON untuk chat history, Base64 encoding untuk images<br>
+                <strong>Security:</strong> MD5 hashing untuk username, isolated database per-user
+            </p>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown("""
-        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
-                    border-left: 4px solid #00ffff; margin: 15px 0;">
-            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🔐 Privacy & Security</h4>
-            <p style="color: #b0b0b0; line-height: 1.7; margin: 0;">
-                <strong style="color: #00ff00;">• User Isolation:</strong> Setiap user punya database terpisah dengan hash MD5<br>
-                <strong style="color: #00ff00;">• Secure Storage:</strong> Chat history disimpan per-user di folder azura_users_db/<br>
-                <strong style="color: #00ff00;">• No Data Leak:</strong> User A tidak bisa akses chat User B<br>
-                <strong style="color: #00ff00;">• Session Management:</strong> Login system untuk identifikasi user unik
-            </p>
+        <div style="background: linear-gradient(135deg, #001a1a, #003333); padding: 20px; 
+                    border-radius: 10px; border: 1px solid #00ffff; margin: 20px 0; text-align: center;">
+            <p style="color: #00ffff; font-size: 15px; margin: 5px 0; font-weight: bold;">🌟 Built with passion for AI innovation</p>
+            <p style="color: #888; font-size: 12px; margin: 5px 0;">Azura AI v6.0 • 2026 • Muhammad Jibran Al Kaffie</p>
         </div>
         """, unsafe_allow_html=True)
 
 # --- 9. MAIN RENDER ---
 if logo_url:
-    st.markdown(f'<div style="text-align:center; margin-bottom:20px;"><img src="{logo_url}" width="130" style="border-radius:50%; border:2px solid #00ffff;"></div>', unsafe_allow_html=True)
+    # Logo Berputar di Tengah - NO GLOW, ONLY ROTATE
+    st.markdown(f'<div style="text-align:center; margin-bottom:20px;"><img src="{logo_url}" width="130" class="rotating-logo"></div>', unsafe_allow_html=True)
     st.markdown("<div style='text-align:center; color:#00ffff; font-size:18px; margin-bottom:20px;'>How can I help you today?</div>", unsafe_allow_html=True)
 
 # Render Chat
@@ -371,8 +496,8 @@ if prompt := st.chat_input("Message Azura AI..."):
     
     st.session_state.all_chats[session_title] = st.session_state.messages
     save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-    
-    st.rerun()
+
+        st.rerun()
 
 # --- 10. AI PROCESSING ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
