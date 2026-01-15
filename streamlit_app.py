@@ -273,60 +273,101 @@ with st.sidebar:
     info_class = "show" if st.session_state.show_system_info else ""
     st.markdown(f"""
     <div class="system-info-container {info_class}">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h3 style="color: #00ffff; margin: 0;">🌐 NEO AI System</h3>
-            <p style="color: #888; font-size: 12px; margin-top: 5px;">Created by Muhammad Jibran Al Kaffie</p>
+        <div style="text-align: center; margin-bottom: 25px;">
+            <h3 style="color: #00ffff; margin: 0; font-size: 22px;">🌐 NEO AI System</h3>
+            <p style="color: #888; font-size: 13px; margin-top: 8px;">Advanced Multi-Modal AI Assistant</p>
+            <p style="color: #00ffff; font-size: 11px; margin-top: 5px;">Created by Muhammad Jibran Al Kaffie</p>
         </div>
         
+        <div style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #00ffff11, #00ffff22); border-radius: 10px; border: 1px solid #00ffff44;">
+            <div style="color: #00ffff; font-weight: bold; margin-bottom: 10px; font-size: 16px;">👨‍💻 About the Creator</div>
+            <div style="color: #b0b0b0; font-size: 13px; line-height: 1.7;">
+                NEO AI dikembangkan oleh <strong style="color: #00ffff;">Muhammad Jibran Al Kaffie</strong>, seorang developer passionate yang fokus pada AI dan teknologi cutting-edge. 
+                Dengan visi menciptakan AI assistant yang powerful namun user-friendly, NEO AI hadir sebagai solusi multi-modal yang menggabungkan berbagai teknologi terbaik dari Groq, HuggingFace, dan Pollinations.
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 15px; padding: 12px; background: #00ffff08; border-radius: 8px; border-left: 3px solid #00ffff;">
+            <div style="color: #00ffff; font-weight: bold; margin-bottom: 8px; font-size: 15px;">🧠 Tentang NEO AI</div>
+            <div style="color: #b0b0b0; font-size: 13px; line-height: 1.6;">
+                NEO AI adalah AI assistant multi-modal yang dirancang untuk menangani berbagai tugas kompleks: dari analisis gambar pixel-deep, coding & problem solving, creative writing, hingga generasi visual artwork. 
+                Dibangun dengan arsitektur modular yang menggabungkan 4 engine AI berbeda untuk performa optimal di setiap use case.
+            </div>
+        </div>
+        
+        <div style="color: #00ffff; font-weight: bold; margin: 20px 0 12px 0; font-size: 16px;">⚙️ Technology Stack</div>
+        
         <div class="info-card">
-            <div class="info-title">🔍 Azura-Lens 1.7 (Vision)</div>
+            <div class="info-title">🔍 Engine 1: Azura-Lens 1.7 (Vision)</div>
             <div class="info-desc">
-                Mode analisis gambar pixel-deep menggunakan Llama 4 Scout 17B. 
-                Mampu mendeteksi objek, warna, komposisi, dan detail visual dengan akurasi tinggi. 
-                Upload gambar untuk analisis mendalam! 📸
+                <strong style="color: #00ffff;">Model:</strong> Meta Llama 4 Scout 17B 16E Instruct<br>
+                <strong style="color: #00ffff;">Provider:</strong> Groq API (Ultra-fast inference)<br>
+                <strong style="color: #00ffff;">Kemampuan:</strong> Analisis gambar pixel-deep dengan deteksi objek, warna, komposisi, edges, dan spatial relationships. 
+                Menggunakan pixel data analysis untuk hasil yang lebih akurat.<br>
+                <strong style="color: #00ffff;">Use Case:</strong> Computer vision, image analysis, OCR, object detection, visual QA
             </div>
         </div>
         
         <div class="info-card">
-            <div class="info-title">⚡ Azura 1.5 (Power)</div>
+            <div class="info-title">⚡ Engine 2: Azura 1.5 (Power)</div>
             <div class="info-desc">
-                Mode umum dengan Llama 3.3 70B untuk tugas-tugas kompleks seperti coding, 
-                analisis data, problem solving, dan reasoning yang membutuhkan kekuatan komputasi tinggi. 
-                Cocok untuk tugas-tugas berat! 💪
+                <strong style="color: #00ffff;">Model:</strong> Meta Llama 3.3 70B Versatile<br>
+                <strong style="color: #00ffff;">Provider:</strong> Groq API (Lightning-fast processing)<br>
+                <strong style="color: #00ffff;">Kemampuan:</strong> Model berukuran 70 billion parameters untuk tugas-tugas kompleks yang membutuhkan reasoning tinggi, 
+                multi-step problem solving, dan deep understanding.<br>
+                <strong style="color: #00ffff;">Use Case:</strong> Advanced coding, data analysis, mathematical reasoning, complex research, technical writing
             </div>
         </div>
         
         <div class="info-card">
-            <div class="info-title">✨ Azura-Prime (Creative)</div>
+            <div class="info-title">✨ Engine 3: Azura-Prime (Creative)</div>
             <div class="info-desc">
-                Mode kreatif dengan HuggingFace Qwen 2.5 7B Instruct untuk menghasilkan konten inovatif, 
-                storytelling, brainstorming ide, dan eksplorasi kreatif. 
-                Perfect untuk content creation! 🎨
+                <strong style="color: #00ffff;">Model:</strong> Qwen 2.5 7B Instruct<br>
+                <strong style="color: #00ffff;">Provider:</strong> HuggingFace Inference API<br>
+                <strong style="color: #00ffff;">Kemampuan:</strong> Model yang dioptimalkan untuk creative tasks dengan 7B parameters. 
+                Excellent untuk storytelling, content generation, dan brainstorming dengan temperature tinggi untuk kreativitas maksimal.<br>
+                <strong style="color: #00ffff;">Use Case:</strong> Creative writing, storytelling, brainstorming, content creation, marketing copy
             </div>
         </div>
         
         <div class="info-card">
-            <div class="info-title">🎨 Azura-Art (Draw)</div>
+            <div class="info-title">🎨 Engine 4: Azura-Art (Draw)</div>
             <div class="info-desc">
-                Mode generasi gambar dengan Pollinations AI. 
-                Ubah text prompt menjadi visual artwork berkualitas tinggi. 
-                Deskripsikan, dan AI akan menggambarnya! 🖼️
+                <strong style="color: #00ffff;">Model:</strong> Pollinations AI Image Generation<br>
+                <strong style="color: #00ffff;">Provider:</strong> Pollinations.ai API<br>
+                <strong style="color: #00ffff;">Kemampuan:</strong> Text-to-image generation dengan kualitas tinggi. Mengubah deskripsi text menjadi visual artwork 
+                dalam berbagai style: realistic, artistic, anime, abstract, dan lainnya.<br>
+                <strong style="color: #00ffff;">Use Case:</strong> Visual design, concept art, illustrations, moodboards, creative visualization
             </div>
         </div>
         
         <div style="margin-top: 20px; padding: 15px; background: #00ffff11; border-radius: 8px; border: 1px solid #00ffff33;">
-            <div style="color: #00ffff; font-weight: bold; margin-bottom: 10px;">🛡️ Security Features</div>
-            <div style="color: #b0b0b0; font-size: 13px; line-height: 1.6;">
-                • Anti-jailbreak protection<br>
-                • HTML injection prevention<br>
-                • Secure conversation storage<br>
-                • Real-time pixel analysis for images<br>
-                • Multi-modal content handling
+            <div style="color: #00ffff; font-weight: bold; margin-bottom: 10px; font-size: 15px;">🛡️ Security & Features</div>
+            <div style="color: #b0b0b0; font-size: 13px; line-height: 1.7;">
+                <strong>• Anti-Jailbreak Protection:</strong> System prompt yang robust dengan deteksi bypass attempts<br>
+                <strong>• HTML Injection Prevention:</strong> Clean text function untuk sanitasi output<br>
+                <strong>• Persistent Storage:</strong> Chat history tersimpan dalam JSON database lokal<br>
+                <strong>• Real-time Pixel Analysis:</strong> Image processing dengan PIL untuk metadata extraction<br>
+                <strong>• Multi-Modal Handling:</strong> Support untuk text, image input/output, dan file upload<br>
+                <strong>• Session Management:</strong> Multiple chat sessions dengan rename & delete capability
             </div>
         </div>
         
-        <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #00ffff22;">
-            <p style="color: #00ffff; font-size: 14px; margin: 0;">🚀 Gunakan dengan bijak, bro!</p>
+        <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #001a1a, #003333); border-radius: 8px; border: 1px solid #00ffff;">
+            <div style="color: #00ffff; font-weight: bold; margin-bottom: 10px; font-size: 15px;">🚀 Technical Architecture</div>
+            <div style="color: #b0b0b0; font-size: 13px; line-height: 1.7;">
+                <strong>Frontend:</strong> Streamlit (Python web framework)<br>
+                <strong>Styling:</strong> Custom CSS dengan smooth animations & transitions<br>
+                <strong>State Management:</strong> Streamlit session state + JSON file persistence<br>
+                <strong>API Integration:</strong> Groq SDK, HuggingFace InferenceClient, Pollinations REST API<br>
+                <strong>Image Processing:</strong> PIL (Python Imaging Library) untuk pixel analysis<br>
+                <strong>Data Format:</strong> JSON untuk chat history, Base64 encoding untuk images
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 25px; padding-top: 20px; border-top: 2px solid #00ffff22;">
+            <p style="color: #00ffff; font-size: 15px; margin: 0; font-weight: bold;">🌟 Built with passion for AI innovation</p>
+            <p style="color: #888; font-size: 12px; margin-top: 8px;">NEO AI v1.0 • 2025 • Muhammad Jibran Al Kaffie</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
