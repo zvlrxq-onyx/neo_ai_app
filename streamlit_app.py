@@ -83,7 +83,7 @@ def get_base64_img(file_path):
 logo_data = get_base64_img('logo.png')
 logo_url = f"data:image/png;base64,{logo_data}" if logo_data else ""
 user_data = get_base64_img('user.png')
-user_img = f"data:image/png;base64,{user_data}" if user_data else "https://ui-avatars.com/api/?name=User&background=00ffff&color=000"
+user_img = "https://img.freepik.com/premium-vector/user-icon-icon_1076610-59410.jpg"
 
 # --- 5. CSS (UI CLEAN & RESPONSIVE) ---
 st.markdown(f"""
