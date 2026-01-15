@@ -347,6 +347,26 @@ for msg in st.session_state.messages:
 up = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed")
 if up: 
     st.session_state.uploaded_image = up.getvalue()
+    # Notifikasi Upload Berhasil
+    st.markdown("""
+    <div style="position: fixed; top: 20px; right: 20px; background: linear-gradient(135deg, #00ffff22, #00ffff44); 
+                padding: 15px 20px; border-radius: 10px; border: 1px solid #00ffff; z-index: 9999;
+                box-shadow: 0 4px 15px rgba(0,255,255,0.3); animation: slideIn 0.3s ease;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">✅</span>
+            <div>
+                <div style="color: #00ffff; font-weight: bold; font-size: 14px;">Image Uploaded!</div>
+                <div style="color: #b0b0b0; font-size: 12px;">Ready for analysis, bro! 🔍</div>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 # Chat Input
 if prompt := st.chat_input("Message NEO AI..."):
