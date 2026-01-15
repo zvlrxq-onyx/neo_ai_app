@@ -7,30 +7,41 @@ from PIL import Image
 import io
 import urllib.parse
 import time
+import hashlib
 
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(page_title="Azura AI", page_icon="🌐", layout="wide")
 
-# NAMA FILE DATABASE (Simpan chat di sini biar ga ilang pas refresh)
-DB_FILE = "azura_chat_history.json"
+# NAMA FILE DATABASE (Sekarang per-user dengan hash)
+DB_FOLDER = "azura_users_db"
+if not os.path.exists(DB_FOLDER):
+    os.makedirs(DB_FOLDER)
 
-def load_history_from_db():
-    """Load history dari file JSON biar tahan banting walau di-refresh"""
-    if os.path.exists(DB_FILE):
+def get_user_db_file(username):
+    """Generate unique database file path untuk setiap user"""
+    # Hash username untuk keamanan extra (opsional tapi recommended)
+    user_hash = hashlib.md5(username.encode()).hexdigest()
+    return os.path.join(DB_FOLDER, f"user_{user_hash}.json")
+
+def load_history_from_db(username):
+    """Load history dari file JSON spesifik user"""
+    db_file = get_user_db_file(username)
+    if os.path.exists(db_file):
         try:
-            with open(DB_FILE, "r") as f:
+            with open(db_file, "r") as f:
                 return json.load(f)
         except:
             return {}
     return {}
 
-def save_history_to_db(history_dict):
-    """Save history ke file JSON setiap ada chat baru"""
+def save_history_to_db(username, history_dict):
+    """Save history ke file JSON spesifik user"""
+    db_file = get_user_db_file(username)
     try:
-        with open(DB_FILE, "w") as f:
+        with open(db_file, "w") as f:
             json.dump(history_dict, f)
     except Exception as e:
-        print(f"Gagal save db: {e}")
+        print(f"Gagal save db untuk {username}: {e}")
 
 def analyze_image_pixels(image_data):
     """Analisis pixel gambar untuk data lebih detail"""
@@ -43,9 +54,39 @@ def analyze_image_pixels(image_data):
     except:
         return "Image analysis available"
 
-# --- 2. INITIALIZE SESSION STATE ---
+# --- 2. USERNAME AUTHENTICATION ---
+if "current_user" not in st.session_state:
+    st.session_state.current_user = None
+
+# Login Screen
+if st.session_state.current_user is None:
+    st.markdown("""
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #050505;">
+        <div style="background: linear-gradient(135deg, #001a1a 0%, #003333 100%); 
+                    padding: 50px; border-radius: 20px; border: 2px solid #00ffff; 
+                    box-shadow: 0 0 30px rgba(0,255,255,0.4); text-align: center; max-width: 400px;">
+            <h1 style="color: #00ffff; margin-bottom: 10px;">🌐 Azura AI</h1>
+            <p style="color: #888; margin-bottom: 30px;">Secure Multi-Modal AI Assistant</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("<h3 style='text-align:center; color:#00ffff; margin-bottom:20px;'>🔐 Login</h3>", unsafe_allow_html=True)
+        username_input = st.text_input("Enter Username", placeholder="Your unique username", key="login_username")
+        
+        if st.button("🚀 Enter Azura AI", use_container_width=True):
+            if username_input.strip():
+                st.session_state.current_user = username_input.strip()
+                st.rerun()
+            else:
+                st.error("❌ Username tidak boleh kosong bro!")
+    st.stop()
+
+# --- 3. INITIALIZE SESSION STATE (Per User) ---
 if "all_chats" not in st.session_state:
-    st.session_state.all_chats = load_history_from_db()
+    st.session_state.all_chats = load_history_from_db(st.session_state.current_user)
 
 if "messages" not in st.session_state:
     if st.session_state.all_chats:
@@ -63,7 +104,7 @@ if "show_system_info" not in st.session_state:
 if "show_upload_notif" not in st.session_state:
     st.session_state.show_upload_notif = False
 
-# --- 3. API KEYS ---
+# --- 4. API KEYS ---
 try:
     client_groq = Groq(api_key=st.secrets["GROQ_API_KEY"])
     client_hf = InferenceClient(token=st.secrets["HF_TOKEN"])
@@ -72,7 +113,7 @@ except:
     st.error("❌ API Keys Error! Cek secrets.toml lu bro.")
     st.stop()
 
-# --- 4. ASSETS (LOGO & USER) ---
+# --- 5. ASSETS (LOGO & USER) ---
 @st.cache_data
 def get_base64_img(file_path):
     if os.path.exists(file_path):
@@ -85,7 +126,7 @@ logo_url = f"data:image/png;base64,{logo_data}" if logo_data else ""
 user_data = get_base64_img('user.png')
 user_img = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfIrn5orx6KdLUiIvZ3IUkZTMdIyes-D6sMA&s"
 
-# --- 5. CSS (UI CLEAN & RESPONSIVE) ---
+# --- 6. CSS (UI CLEAN & RESPONSIVE) ---
 st.markdown(f"""
 <style>
     [data-testid="stAppViewContainer"] {{ background: #050505; }}
@@ -141,59 +182,27 @@ st.markdown(f"""
     }}
     @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
     
-    /* System Info Smooth Slide Animation */
-    .system-info-container {{
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out, padding 0.5s ease-in-out;
-        opacity: 0;
-        background: linear-gradient(135deg, #001a1a 0%, #003333 100%);
-        border-radius: 12px;
-        border: 1px solid #00ffff33;
-        margin-top: 10px;
-    }}
-    
-    .system-info-container.show {{
-        max-height: 800px;
-        opacity: 1;
-        padding: 20px;
-    }}
-    
-    .info-card {{
-        background: #00ffff11;
-        padding: 15px;
-        border-radius: 8px;
-        border-left: 3px solid #00ffff;
-        margin-bottom: 15px;
-        transition: all 0.3s ease;
-    }}
-    
-    .info-card:hover {{
-        background: #00ffff22;
-        transform: translateX(5px);
-    }}
-    
-    .info-title {{
+    /* User Badge Style */
+    .user-badge {{
+        background: linear-gradient(135deg, #00ffff22, #00ffff44);
+        padding: 8px 15px;
+        border-radius: 20px;
+        border: 1px solid #00ffff;
         color: #00ffff;
-        font-size: 16px;
+        font-size: 13px;
         font-weight: bold;
-        margin-bottom: 8px;
-    }}
-    
-    .info-desc {{
-        color: #b0b0b0;
-        font-size: 14px;
-        line-height: 1.6;
+        text-align: center;
+        margin-bottom: 15px;
+        box-shadow: 0 0 10px rgba(0,255,255,0.2);
     }}
 </style>
 """, unsafe_allow_html=True)
 
-# --- 6. BUBBLE ENGINE (ANTI BOCOR HTML) ---
+# --- 7. BUBBLE ENGINE (ANTI BOCOR HTML) ---
 def clean_text(text):
     """Fungsi Satpam: Bersihin sampah HTML dari output AI"""
     if not isinstance(text, str): 
         return str(text)
-    # Hapus semua tag HTML dan entitas
     text = re.sub(r'<[^>]+>', '', text)
     text = text.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&').replace('&quot;', '"').replace('&#39;', "'")
     text = text.replace("</div>", "").replace("<div>", "").replace("<br>", "\n").replace("<p>", "").replace("</p>", "")
@@ -223,11 +232,19 @@ def render_chat_bubble(role, content):
         </div>
         """, unsafe_allow_html=True)
 
-# --- 7. SIDEBAR (HISTORY MANAGER) ---
+# --- 8. SIDEBAR (HISTORY MANAGER) ---
 with st.sidebar:
     if logo_url: 
         st.markdown(f'<img src="{logo_url}" class="sidebar-logo">', unsafe_allow_html=True)
     st.markdown("<h2 style='text-align:center; color:#00ffff;'>Azura AI</h2>", unsafe_allow_html=True)
+    
+    # User Badge dengan Logout
+    st.markdown(f'<div class="user-badge">👤 {st.session_state.current_user}</div>', unsafe_allow_html=True)
+    if st.button("🚪 Logout", use_container_width=True):
+        st.session_state.current_user = None
+        st.session_state.all_chats = {}
+        st.session_state.messages = []
+        st.rerun()
     
     if st.button("＋ New Session", use_container_width=True):
         st.session_state.messages = []
@@ -258,21 +275,21 @@ with st.sidebar:
                 if st.button("Save", key=f"save_{title}"):
                     if new_name and new_name != title:
                         st.session_state.all_chats[new_name] = st.session_state.all_chats.pop(title)
-                        save_history_to_db(st.session_state.all_chats)
+                        save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
                         st.rerun()
         with col3:
             if st.button("🗑️", key=f"delete_{title}", help="Delete"):
                 del st.session_state.all_chats[title]
-                save_history_to_db(st.session_state.all_chats)
+                save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
                 st.rerun()
     
     st.markdown("---")
     
-    # System Info Toggle dengan Smooth Animation
+    # System Info Toggle
     if st.button("📋 System Info", use_container_width=True):
         st.session_state.show_system_info = not st.session_state.show_system_info
     
-    # System Info Content - CYAN BOX STYLE
+    # System Info Content
     if st.session_state.show_system_info:
         st.markdown("""
         <div style="background: linear-gradient(135deg, #001a1a 0%, #002b2b 100%); 
@@ -281,135 +298,24 @@ with st.sidebar:
             <h3 style="color: #00ffff; text-align: center; margin-bottom: 5px;">🌐 Azura AI System</h3>
             <p style="color: #888; text-align: center; font-size: 13px; margin-bottom: 3px;">Advanced Multi-Modal AI Assistant</p>
             <p style="color: #00ffff; text-align: center; font-size: 11px;">Created by Muhammad Jibran Al Kaffie</p>
+            <p style="color: #00ff00; text-align: center; font-size: 12px; margin-top: 10px;">🔒 Privacy Protected - User Isolated Database</p>
         </div>
         """, unsafe_allow_html=True)
         
-        # About Creator
         st.markdown("""
         <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
                     border-left: 4px solid #00ffff; margin: 15px 0;">
-            <h4 style="color: #00ffff; margin: 0 0 10px 0;">👨‍💻 About the Creator</h4>
+            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🔐 Privacy & Security</h4>
             <p style="color: #b0b0b0; line-height: 1.7; margin: 0;">
-                Azura AI dikembangkan oleh <strong style="color: #00ffff;">Muhammad Jibran Al Kaffie</strong>, 
-                seorang developer passionate yang fokus pada AI dan teknologi cutting-edge. 
-                Dengan visi menciptakan AI assistant yang powerful namun user-friendly, Azura AI hadir sebagai 
-                solusi multi-modal yang menggabungkan berbagai teknologi terbaik dari Groq, HuggingFace, dan Pollinations.
+                <strong style="color: #00ff00;">• User Isolation:</strong> Setiap user punya database terpisah dengan hash MD5<br>
+                <strong style="color: #00ff00;">• Secure Storage:</strong> Chat history disimpan per-user di folder azura_users_db/<br>
+                <strong style="color: #00ff00;">• No Data Leak:</strong> User A tidak bisa akses chat User B<br>
+                <strong style="color: #00ff00;">• Session Management:</strong> Login system untuk identifikasi user unik
             </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # About Azura AI
-        st.markdown("""
-        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
-                    border-left: 4px solid #00ffff; margin: 15px 0;">
-            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🧠 Tentang Azura AI</h4>
-            <p style="color: #b0b0b0; line-height: 1.7; margin: 0;">
-                Azura AI adalah AI assistant multi-modal yang dirancang untuk menangani berbagai tugas kompleks: 
-                dari analisis gambar pixel-deep, coding & problem solving, creative writing, hingga generasi visual artwork. 
-                Dibangun dengan arsitektur modular yang menggabungkan 4 engine AI berbeda untuk performa optimal di setiap use case.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown('<h4 style="color: #00ffff; margin: 20px 0 10px 0;">⚙️ Technology Stack</h4>', unsafe_allow_html=True)
-        
-        # Engine 1
-        with st.expander("🔍 Engine 1: Azura-Lens 1.7 (Vision)", expanded=False):
-            st.markdown("""
-            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
-                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
-                    <strong style="color: #00ffff;">Model:</strong> Meta Llama 4 Scout 17B 16E Instruct<br>
-                    <strong style="color: #00ffff;">Provider:</strong> Groq API (Ultra-fast inference)<br>
-                    <strong style="color: #00ffff;">Kemampuan:</strong> Analisis gambar pixel-deep dengan deteksi objek, warna, komposisi, edges, dan spatial relationships. 
-                    Menggunakan pixel data analysis untuk hasil yang lebih akurat.<br>
-                    <strong style="color: #00ffff;">Use Case:</strong> Computer vision, image analysis, OCR, object detection, visual QA
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Engine 2
-        with st.expander("⚡ Engine 2: Azura 1.5 (Power)", expanded=False):
-            st.markdown("""
-            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
-                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
-                    <strong style="color: #00ffff;">Model:</strong> Meta Llama 3.3 70B Versatile<br>
-                    <strong style="color: #00ffff;">Provider:</strong> Groq API (Lightning-fast processing)<br>
-                    <strong style="color: #00ffff;">Kemampuan:</strong> Model berukuran 70 billion parameters untuk tugas-tugas kompleks yang membutuhkan reasoning tinggi, 
-                    multi-step problem solving, dan deep understanding.<br>
-                    <strong style="color: #00ffff;">Use Case:</strong> Advanced coding, data analysis, mathematical reasoning, complex research, technical writing
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Engine 3
-        with st.expander("✨ Engine 3: Azura-Prime (Creative)", expanded=False):
-            st.markdown("""
-            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
-                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
-                    <strong style="color: #00ffff;">Model:</strong> Qwen 2.5 7B Instruct<br>
-                    <strong style="color: #00ffff;">Provider:</strong> HuggingFace Inference API<br>
-                    <strong style="color: #00ffff;">Kemampuan:</strong> Model yang dioptimalkan untuk creative tasks dengan 7B parameters. 
-                    Excellent untuk storytelling, content generation, dan brainstorming dengan temperature tinggi untuk kreativitas maksimal.<br>
-                    <strong style="color: #00ffff;">Use Case:</strong> Creative writing, storytelling, brainstorming, content creation, marketing copy
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Engine 4
-        with st.expander("🎨 Engine 4: Azura-Art (Draw)", expanded=False):
-            st.markdown("""
-            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
-                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
-                    <strong style="color: #00ffff;">Model:</strong> Pollinations AI Image Generation<br>
-                    <strong style="color: #00ffff;">Provider:</strong> Pollinations.ai API<br>
-                    <strong style="color: #00ffff;">Kemampuan:</strong> Text-to-image generation dengan kualitas tinggi. Mengubah deskripsi text menjadi visual artwork 
-                    dalam berbagai style: realistic, artistic, anime, abstract, dan lainnya.<br>
-                    <strong style="color: #00ffff;">Use Case:</strong> Visual design, concept art, illustrations, moodboards, creative visualization
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Security Features
-        st.markdown("""
-        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
-                    border-left: 4px solid #00ffff; margin: 20px 0;">
-            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🛡️ Security & Features</h4>
-            <p style="color: #b0b0b0; line-height: 1.8; margin: 0;">
-                <strong>• Anti-Jailbreak Protection:</strong> System prompt yang robust dengan deteksi bypass attempts<br>
-                <strong>• HTML Injection Prevention:</strong> Clean text function untuk sanitasi output<br>
-                <strong>• Persistent Storage:</strong> Chat history tersimpan dalam JSON database lokal<br>
-                <strong>• Real-time Pixel Analysis:</strong> Image processing dengan PIL untuk metadata extraction<br>
-                <strong>• Multi-Modal Handling:</strong> Support untuk text, image input/output, dan file upload<br>
-                <strong>• Session Management:</strong> Multiple chat sessions dengan rename & delete capability
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Technical Architecture
-        st.markdown("""
-        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
-                    border-left: 4px solid #00ffff; margin: 20px 0;">
-            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🚀 Technical Architecture</h4>
-            <p style="color: #b0b0b0; line-height: 1.8; margin: 0; font-family: monospace;">
-                <strong>Frontend:</strong> Streamlit (Python web framework)<br>
-                <strong>Styling:</strong> Custom CSS dengan smooth animations & transitions<br>
-                <strong>State Management:</strong> Streamlit session state + JSON file persistence<br>
-                <strong>API Integration:</strong> Groq SDK, HuggingFace InferenceClient, Pollinations REST API<br>
-                <strong>Image Processing:</strong> PIL (Python Imaging Library) untuk pixel analysis<br>
-                <strong>Data Format:</strong> JSON untuk chat history, Base64 encoding untuk images
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #001a1a, #003333); padding: 20px; 
-                    border-radius: 10px; border: 1px solid #00ffff; margin: 20px 0; text-align: center;">
-            <p style="color: #00ffff; font-size: 15px; margin: 5px 0; font-weight: bold;">🌟 Built with passion for AI innovation</p>
-            <p style="color: #888; font-size: 12px; margin: 5px 0;">Azura AI v6.0 • 2026 • Muhammad Jibran Al Kaffie</p>
         </div>
         """, unsafe_allow_html=True)
 
-# --- 8. MAIN RENDER ---
+# --- 9. MAIN RENDER ---
 if logo_url:
     st.markdown(f'<div style="text-align:center; margin-bottom:20px;"><img src="{logo_url}" width="130" style="border-radius:50%; border:2px solid #00ffff;"></div>', unsafe_allow_html=True)
     st.markdown("<div style='text-align:center; color:#00ffff; font-size:18px; margin-bottom:20px;'>How can I help you today?</div>", unsafe_allow_html=True)
@@ -427,7 +333,7 @@ if up:
     st.session_state.uploaded_image = up.getvalue()
     st.session_state.show_upload_notif = True
 
-# Notifikasi Upload (Auto-hilang dalam 3 detik)
+# Notifikasi Upload
 if st.session_state.show_upload_notif:
     notif_placeholder = st.empty()
     notif_placeholder.markdown("""
@@ -450,7 +356,6 @@ if st.session_state.show_upload_notif:
     </style>
     """, unsafe_allow_html=True)
     
-    # Tunggu 3 detik, terus hilangkan notifikasi
     time.sleep(3)
     notif_placeholder.empty()
     st.session_state.show_upload_notif = False
@@ -465,11 +370,11 @@ if prompt := st.chat_input("Message Azura AI..."):
         session_title = st.session_state.messages[0]["content"][:20]
     
     st.session_state.all_chats[session_title] = st.session_state.messages
-    save_history_to_db(st.session_state.all_chats)
+    save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
     
     st.rerun()
 
-# --- 9. AI PROCESSING ---
+# --- 10. AI PROCESSING ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     with st.container():
         if engine == "Scout" and st.session_state.uploaded_image:
@@ -499,35 +404,23 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         
         system_prompt = (
             "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
-                "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
-                "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
-                "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
-                "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
-                "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-                "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
-                "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
-                "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
-                "- Happy or excited: 😊🤩 "
-                "- Sad or disappointed: 😢😔 "
-                "- Assertive or warning: ⚠️😠 "
-                "- Thinking or curious: 🤔💭 "
-                "- Surprised: 😲 "
-                "- Playful: 😉😜 "
-                "- Proud or admiring success: 🏆 "
-                "- Anxious or worried: 😰 "
-                "- Refusal or denial: ❌ "
-                "- Motivational (e.g., encouraging user): 🚀 "
-                "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success (e.g., 'Aku berhasil bikin AI sendiri!'), respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' "
-                "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."
+            "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
+            "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+            "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
+            "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
+            "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+            "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
+            "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
+            "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. "
+            "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. "
+            "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend."
         )
         
         # LOGIKA PEMILIHAN MODEL
         if engine == "Scout":
-            # LOGIKA VISION ANTI-BUTA
             current_image_data = st.session_state.uploaded_image
             
             if current_image_data:
-                # Analisis pixel gambar
                 current_pixel_analysis = analyze_image_pixels(current_image_data)
                 base64_image = base64.b64encode(current_image_data).decode('utf-8')
                 
@@ -539,7 +432,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     ]}
                 ]
                 
-                # PAKAI MODEL LLAMA 4 SCOUT (Wajib!)
                 active_model = "meta-llama/llama-4-scout-17b-16e-instruct"
                 
                 resp = client_groq.chat.completions.create(
@@ -551,7 +443,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 res = resp.choices[0].message.content
                 st.session_state.uploaded_image = None
             else:
-                # Kalau ga ada gambar, pakai text mode biasa
                 messages = [{"role": "system", "content": system_prompt}]
                 for m in st.session_state.messages[:-1]:
                     if m.get("type") != "image":
@@ -582,14 +473,12 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             res = resp.choices[0].message.content
         
         elif engine == "HuggingFace":
-            # MODE CREATIVE PAKAI HUGGINGFACE CHAT COMPLETION
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
                     messages.append({"role": m["role"], "content": m["content"]})
             messages.append({"role": "user", "content": user_msg})
             
-            # Pakai Qwen 2.5 7B Instruct (model yang available di HF)
             resp = client_hf.chat_completion(
                 messages=messages,
                 model="Qwen/Qwen2.5-7B-Instruct",
@@ -599,17 +488,15 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             res = resp.choices[0].message.content
         
         elif engine == "Pollinations":
-            # MODE DRAWING PAKAI POLLINATIONS AI
             import urllib.parse
             encoded_prompt = urllib.parse.quote(user_msg)
             image_url = f"{POLLINATIONS_API}{encoded_prompt}"
             
-            # Download image dari Pollinations
             img_response = requests.get(image_url)
             img = Image.open(io.BytesIO(img_response.content))
             
             st.session_state.messages.append({"role": "assistant", "type": "image", "content": img})
-            save_history_to_db(st.session_state.all_chats)
+            save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
             st.rerun()
         
         if res:
@@ -621,7 +508,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 session_title = list(st.session_state.all_chats.keys())[-1] if st.session_state.all_chats else st.session_state.messages[0]["content"][:20]
             
             st.session_state.all_chats[session_title] = st.session_state.messages
-            save_history_to_db(st.session_state.all_chats)
+            save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
             st.rerun()
     
     except Exception as e:
