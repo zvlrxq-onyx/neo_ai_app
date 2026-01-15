@@ -12,7 +12,7 @@ import hashlib
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(page_title="Azura AI", page_icon="🌐", layout="wide")
 
-# NAMA FILE DATABASE (Sekarang per-user dengan hash)
+# NAMA FILE DATABASE (Per-user dengan hash)
 DB_FOLDER = "azura_users_db"
 if not os.path.exists(DB_FOLDER):
     os.makedirs(DB_FOLDER)
@@ -27,9 +27,14 @@ def load_history_from_db(username):
     db_file = get_user_db_file(username)
     if os.path.exists(db_file):
         try:
-            with open(db_file, "r") as f:
-                return json.load(f)
-        except:
+            with open(db_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                # Pastikan return dict, bukan list atau tipe lain
+                if isinstance(data, dict):
+                    return data
+                return {}
+        except Exception as e:
+            print(f"Error loading DB for {username}: {e}")
             return {}
     return {}
 
@@ -37,8 +42,8 @@ def save_history_to_db(username, history_dict):
     """Save history ke file JSON spesifik user"""
     db_file = get_user_db_file(username)
     try:
-        with open(db_file, "w") as f:
-            json.dump(history_dict, f)
+        with open(db_file, "w", encoding="utf-8") as f:
+            json.dump(history_dict, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"Gagal save db untuk {username}: {e}")
 
@@ -54,6 +59,7 @@ def analyze_image_pixels(image_data):
         return "Image analysis available"
 
 # --- 2. USERNAME AUTHENTICATION ---
+# PERBAIKAN: Initialize current_user di awal sebelum cek login
 if "current_user" not in st.session_state:
     st.session_state.current_user = None
 
@@ -78,21 +84,34 @@ if st.session_state.current_user is None:
         if st.button("🚀 Enter Azura AI", use_container_width=True):
             if username_input.strip():
                 st.session_state.current_user = username_input.strip()
+                # PERBAIKAN: Clear state lain untuk force reload
+                if "all_chats" in st.session_state:
+                    del st.session_state.all_chats
+                if "messages" in st.session_state:
+                    del st.session_state.messages
                 st.rerun()
             else:
                 st.error("❌ Username tidak boleh kosong bro!")
     st.stop()
 
 # --- 3. INITIALIZE SESSION STATE (Per User) ---
+# PERBAIKAN: Load history dulu sebelum set messages
 if "all_chats" not in st.session_state:
     st.session_state.all_chats = load_history_from_db(st.session_state.current_user)
 
+# PERBAIKAN: Logic messages initialization yang lebih clean
 if "messages" not in st.session_state:
     if st.session_state.all_chats:
+        # Ambil chat terakhir dari history
         last_key = list(st.session_state.all_chats.keys())[-1]
-        st.session_state.messages = st.session_state.all_chats[last_key]
+        st.session_state.messages = st.session_state.all_chats[last_key].copy()
     else:
+        # Kalau belum ada history, mulai chat baru
         st.session_state.messages = []
+
+# PERBAIKAN: Tambah flag untuk track apakah baru login
+if "just_logged_in" not in st.session_state:
+    st.session_state.just_logged_in = True
 
 if "uploaded_image" not in st.session_state:
     st.session_state.uploaded_image = None
@@ -102,6 +121,13 @@ if "show_system_info" not in st.session_state:
 
 if "show_upload_notif" not in st.session_state:
     st.session_state.show_upload_notif = False
+
+# PERBAIKAN: Tambah current_session_key untuk track chat aktif
+if "current_session_key" not in st.session_state:
+    if st.session_state.all_chats:
+        st.session_state.current_session_key = list(st.session_state.all_chats.keys())[-1]
+    else:
+        st.session_state.current_session_key = None
 
 # --- 4. API KEYS ---
 try:
@@ -147,7 +173,7 @@ st.markdown(f"""
     
     .sidebar-logo {{ display: block; margin: auto; width: 80px; height: 80px; border-radius: 50%; border: 2px solid #00ffff; object-fit: cover; margin-bottom: 10px; }}
     
-    /* Logo Berputar di Tengah - NO GLOW, ONLY ROTATE */
+    /* Logo Berputar di Tengah */
     .rotating-logo {{
         animation: rotate 8s linear infinite;
         border-radius: 50%;
@@ -165,11 +191,10 @@ st.markdown(f"""
     .dot:nth-child(3) {{ animation-delay: 0.4s; }}
     @keyframes blink {{ 0%, 80%, 100% {{ opacity: 0; }} 40% {{ opacity: 1; }} }}
     
-    /* Efek Halus (Smooth Transitions) */
+    /* Efek Halus */
     .chat-bubble {{ transition: all 0.3s ease; }}
     .chat-bubble:hover {{ transform: scale(1.02); }}
     
-    /* Efek Smooth pada Semua Tombol dengan Glow */
     .stButton button {{ transition: all 0.3s ease; }}
     .stButton button:hover {{ transform: scale(1.05); box-shadow: 0 0 15px #00ffff; }}
     .stButton button:active {{ transform: scale(0.95); }}
@@ -251,14 +276,15 @@ with st.sidebar:
     # User Badge dengan Logout
     st.markdown(f'<div class="user-badge">👤 {st.session_state.current_user}</div>', unsafe_allow_html=True)
     if st.button("🚪 Logout", use_container_width=True):
-        st.session_state.current_user = None
-        st.session_state.all_chats = {}
-        st.session_state.messages = []
+        # PERBAIKAN: Clear semua state sebelum logout
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
         st.rerun()
     
     if st.button("＋ New Session", use_container_width=True):
         st.session_state.messages = []
         st.session_state.uploaded_image = None
+        st.session_state.current_session_key = None
         st.rerun()
         
     st.markdown("---")
@@ -273,25 +299,40 @@ with st.sidebar:
     engine = engine_map[selected_engine_name]
 
     st.markdown("### 🕒 Saved History")
-    for title in list(st.session_state.all_chats.keys())[::-1]:
-        col1, col2, col3 = st.columns([3, 1, 1])
-        with col1:
-            if st.button(f"💬 {title}", key=f"load_{title}", use_container_width=True):
-                st.session_state.messages = st.session_state.all_chats[title]
-                st.rerun()
-        with col2:
-            if st.button("✏️", key=f"rename_{title}", help="Rename"):
-                new_name = st.text_input("New name", value=title, key=f"input_{title}")
-                if st.button("Save", key=f"save_{title}"):
-                    if new_name and new_name != title:
-                        st.session_state.all_chats[new_name] = st.session_state.all_chats.pop(title)
-                        save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-                        st.rerun()
-        with col3:
-            if st.button("🗑️", key=f"delete_{title}", help="Delete"):
-                del st.session_state.all_chats[title]
-                save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-                st.rerun()
+    
+    # PERBAIKAN: Sort chats by timestamp (latest first) dan tampilkan dengan better UI
+    chat_keys = list(st.session_state.all_chats.keys())[::-1]  # Reverse untuk latest first
+    
+    if chat_keys:
+        for title in chat_keys:
+            col1, col2, col3 = st.columns([3, 1, 1])
+            with col1:
+                # PERBAIKAN: Highlight chat yang sedang aktif
+                button_style = "💬" if title != st.session_state.current_session_key else "✅"
+                if st.button(f"{button_style} {title}", key=f"load_{title}", use_container_width=True):
+                    st.session_state.messages = st.session_state.all_chats[title].copy()
+                    st.session_state.current_session_key = title
+                    st.rerun()
+            with col2:
+                if st.button("✏️", key=f"rename_{title}", help="Rename"):
+                    new_name = st.text_input("New name", value=title, key=f"input_{title}")
+                    if st.button("Save", key=f"save_{title}"):
+                        if new_name and new_name != title:
+                            st.session_state.all_chats[new_name] = st.session_state.all_chats.pop(title)
+                            if st.session_state.current_session_key == title:
+                                st.session_state.current_session_key = new_name
+                            save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
+                            st.rerun()
+            with col3:
+                if st.button("🗑️", key=f"delete_{title}", help="Delete"):
+                    del st.session_state.all_chats[title]
+                    if st.session_state.current_session_key == title:
+                        st.session_state.current_session_key = None
+                        st.session_state.messages = []
+                    save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
+                    st.rerun()
+    else:
+        st.info("Belum ada history nih bro! 📝")
     
     st.markdown("---")
     
@@ -299,7 +340,7 @@ with st.sidebar:
     if st.button("📋 System Info", use_container_width=True):
         st.session_state.show_system_info = not st.session_state.show_system_info
     
-    # System Info Content - FULL VERSION LENGKAP
+    # System Info Content - FULL VERSION
     if st.session_state.show_system_info:
         st.markdown("""
         <div style="background: linear-gradient(135deg, #001a1a 0%, #002b2b 100%); 
@@ -311,138 +352,27 @@ with st.sidebar:
         </div>
         """, unsafe_allow_html=True)
         
-        # About Creator
         st.markdown("""
         <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
                     border-left: 4px solid #00ffff; margin: 15px 0;">
-            <h4 style="color: #00ffff; margin: 0 0 10px 0;">👨‍💻 About the Creator</h4>
+            <h4 style="color: #00ffff; margin: 0 0 10px 0;">✨ Features</h4>
             <p style="color: #b0b0b0; line-height: 1.7; margin: 0;">
-                Azura AI dikembangkan oleh <strong style="color: #00ffff;">Muhammad Jibran Al Kaffie</strong>, 
-                seorang developer passionate yang fokus pada AI dan teknologi cutting-edge. 
-                Dengan visi menciptakan AI assistant yang powerful namun user-friendly, Azura AI hadir sebagai 
-                solusi multi-modal yang menggabungkan berbagai teknologi terbaik dari Groq, HuggingFace, dan Pollinations.
+                • Persistent chat history per user<br>
+                • Multi-modal AI (text, vision, image gen)<br>
+                • Secure user isolation with MD5<br>
+                • Real-time pixel analysis<br>
+                • Session management & rename
             </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # About Azura AI
-        st.markdown("""
-        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
-                    border-left: 4px solid #00ffff; margin: 15px 0;">
-            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🧠 Tentang Azura AI</h4>
-            <p style="color: #b0b0b0; line-height: 1.7; margin: 0;">
-                Azura AI adalah AI assistant multi-modal yang dirancang untuk menangani berbagai tugas kompleks: 
-                dari analisis gambar pixel-deep, coding & problem solving, creative writing, hingga generasi visual artwork. 
-                Dibangun dengan arsitektur modular yang menggabungkan 4 engine AI berbeda untuk performa optimal di setiap use case.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown('<h4 style="color: #00ffff; margin: 20px 0 10px 0;">⚙️ Technology Stack</h4>', unsafe_allow_html=True)
-        
-        # Engine 1
-        with st.expander("🔍 Engine 1: Azura-Lens 1.7 (Vision)", expanded=False):
-            st.markdown("""
-            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
-                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
-                    <strong style="color: #00ffff;">Model:</strong> Meta Llama 4 Scout 17B 16E Instruct<br>
-                    <strong style="color: #00ffff;">Provider:</strong> Groq API (Ultra-fast inference)<br>
-                    <strong style="color: #00ffff;">Kemampuan:</strong> Analisis gambar pixel-deep dengan deteksi objek, warna, komposisi, edges, dan spatial relationships. 
-                    Menggunakan pixel data analysis untuk hasil yang lebih akurat.<br>
-                    <strong style="color: #00ffff;">Use Case:</strong> Computer vision, image analysis, OCR, object detection, visual QA
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Engine 2
-        with st.expander("⚡ Engine 2: Azura 1.5 (Power)", expanded=False):
-            st.markdown("""
-            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
-                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
-                    <strong style="color: #00ffff;">Model:</strong> Meta Llama 3.3 70B Versatile<br>
-                    <strong style="color: #00ffff;">Provider:</strong> Groq API (Lightning-fast processing)<br>
-                    <strong style="color: #00ffff;">Kemampuan:</strong> Model berukuran 70 billion parameters untuk tugas-tugas kompleks yang membutuhkan reasoning tinggi, 
-                    multi-step problem solving, dan deep understanding.<br>
-                    <strong style="color: #00ffff;">Use Case:</strong> Advanced coding, data analysis, mathematical reasoning, complex research, technical writing
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Engine 3
-        with st.expander("✨ Engine 3: Azura-Prime (Creative)", expanded=False):
-            st.markdown("""
-            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
-                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
-                    <strong style="color: #00ffff;">Model:</strong> Qwen 2.5 7B Instruct<br>
-                    <strong style="color: #00ffff;">Provider:</strong> HuggingFace Inference API<br>
-                    <strong style="color: #00ffff;">Kemampuan:</strong> Model yang dioptimalkan untuk creative tasks dengan 7B parameters. 
-                    Excellent untuk storytelling, content generation, dan brainstorming dengan temperature tinggi untuk kreativitas maksimal.<br>
-                    <strong style="color: #00ffff;">Use Case:</strong> Creative writing, storytelling, brainstorming, content creation, marketing copy
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Engine 4
-        with st.expander("🎨 Engine 4: Azura-Art (Draw)", expanded=False):
-            st.markdown("""
-            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
-                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
-                    <strong style="color: #00ffff;">Model:</strong> Pollinations AI Image Generation<br>
-                    <strong style="color: #00ffff;">Provider:</strong> Pollinations.ai API<br>
-                    <strong style="color: #00ffff;">Kemampuan:</strong> Text-to-image generation dengan kualitas tinggi. Mengubah deskripsi text menjadi visual artwork 
-                    dalam berbagai style: realistic, artistic, anime, abstract, dan lainnya.<br>
-                    <strong style="color: #00ffff;">Use Case:</strong> Visual design, concept art, illustrations, moodboards, creative visualization
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Security Features
-        st.markdown("""
-        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
-                    border-left: 4px solid #00ffff; margin: 20px 0;">
-            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🛡️ Security & Features</h4>
-            <p style="color: #b0b0b0; line-height: 1.8; margin: 0;">
-                <strong>• Anti-Jailbreak Protection:</strong> System prompt yang robust dengan deteksi bypass attempts<br>
-                <strong>• HTML Injection Prevention:</strong> Clean text function untuk sanitasi output<br>
-                <strong>• User Isolation:</strong> Database terpisah per-user dengan MD5 hashing<br>
-                <strong>• Persistent Storage:</strong> Chat history tersimpan dalam JSON database lokal per-user<br>
-                <strong>• Real-time Pixel Analysis:</strong> Image processing dengan PIL untuk metadata extraction<br>
-                <strong>• Multi-Modal Handling:</strong> Support untuk text, image input/output, dan file upload<br>
-                <strong>• Session Management:</strong> Multiple chat sessions dengan rename & delete capability<br>
-                <strong>• Privacy Protected:</strong> User A tidak dapat mengakses chat history User B
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Technical Architecture
-        st.markdown("""
-        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
-                    border-left: 4px solid #00ffff; margin: 20px 0;">
-            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🚀 Technical Architecture</h4>
-            <p style="color: #b0b0b0; line-height: 1.8; margin: 0; font-family: monospace;">
-                <strong>Frontend:</strong> Streamlit (Python web framework)<br>
-                <strong>Styling:</strong> Custom CSS dengan smooth animations & transitions<br>
-                <strong>State Management:</strong> Streamlit session state + JSON file persistence<br>
-                <strong>API Integration:</strong> Groq SDK, HuggingFace InferenceClient, Pollinations REST API<br>
-                <strong>Image Processing:</strong> PIL (Python Imaging Library) untuk pixel analysis<br>
-                <strong>Data Format:</strong> JSON untuk chat history, Base64 encoding untuk images<br>
-                <strong>Security:</strong> MD5 hashing untuk username, isolated database per-user
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #001a1a, #003333); padding: 20px; 
-                    border-radius: 10px; border: 1px solid #00ffff; margin: 20px 0; text-align: center;">
-            <p style="color: #00ffff; font-size: 15px; margin: 5px 0; font-weight: bold;">🌟 Built with passion for AI innovation</p>
-            <p style="color: #888; font-size: 12px; margin: 5px 0;">Azura AI v6.0 • 2026 • Muhammad Jibran Al Kaffie</p>
         </div>
         """, unsafe_allow_html=True)
 
 # --- 9. MAIN RENDER ---
 if logo_url:
     st.markdown(f'<div style="text-align:center; margin-bottom:20px;"><img src="{logo_url}" width="130" class="rotating-logo"></div>', unsafe_allow_html=True)
-    st.markdown("<div style='text-align:center; color:#00ffff; font-size:18px; margin-bottom:20px;'>How can I help you today?</div>", unsafe_allow_html=True)
+    
+    # PERBAIKAN: Tampilkan welcome message kalau baru login atau chat kosong
+    if not st.session_state.messages:
+        st.markdown("<div style='text-align:center; color:#00ffff; font-size:18px; margin-bottom:20px;'>How can I help you today? 👋</div>", unsafe_allow_html=True)
 
 # Render Chat
 for msg in st.session_state.messages:
@@ -488,12 +418,18 @@ if st.session_state.show_upload_notif:
 if prompt := st.chat_input("Message Azura AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     
-    if len(st.session_state.messages) == 1:
-        session_title = prompt[:20]
+    # PERBAIKAN: Generate session key yang lebih baik
+    if st.session_state.current_session_key is None:
+        # Chat baru, buat key baru
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        session_title = f"{prompt[:15]}... ({timestamp})"
+        st.session_state.current_session_key = session_title
     else:
-        session_title = st.session_state.messages[0]["content"][:20]
+        # Update chat yang sudah ada
+        session_title = st.session_state.current_session_key
     
-    st.session_state.all_chats[session_title] = st.session_state.messages
+    # PERBAIKAN: Save dengan current session key
+    st.session_state.all_chats[session_title] = st.session_state.messages.copy()
     save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
     
     st.rerun()
@@ -581,7 +517,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 )
                 res = resp.choices[0].message.content
         
-        elif engine == "Llama33":
+                elif engine == "Llama33":
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
