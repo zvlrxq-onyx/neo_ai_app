@@ -3,8 +3,9 @@ from groq import Groq
 from huggingface_hub import InferenceClient
 import os, base64, requests, json
 import re
-from PIL import Image, ImageFilter
+from PIL import Image
 import io
+import urllib.parse
 
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(page_title="NEO AI", page_icon="🌐", layout="wide")
@@ -62,6 +63,7 @@ if "show_system_info" not in st.session_state:
 try:
     client_groq = Groq(api_key=st.secrets["GROQ_API_KEY"])
     client_hf = InferenceClient(token=st.secrets["HF_TOKEN"])
+    POLLINATIONS_API = "https://image.pollinations.ai/prompt/"
 except:
     st.error("❌ API Keys Error! Cek secrets.toml lu bro.")
     st.stop()
@@ -233,8 +235,8 @@ with st.sidebar:
     engine_map = {
         "Azura-Lens 1.7 (Vision)": "Scout",
         "Azura 1.5 (Power)": "Llama33",
-        "Azura-Prime (Creative)": "Gemma",
-        "Azura-Art (Draw)": "Drawing"
+        "Azura-Prime (Creative)": "HuggingFace",
+        "Azura-Art (Draw)": "Pollinations"
     }
     selected_engine_name = st.selectbox("Pilih modelnya", list(engine_map.keys()))
     engine = engine_map[selected_engine_name]
@@ -297,7 +299,7 @@ with st.sidebar:
         <div class="info-card">
             <div class="info-title">✨ Azura-Prime (Creative)</div>
             <div class="info-desc">
-                Mode kreatif dengan Gemma2 9B untuk menghasilkan konten inovatif, 
+                Mode kreatif dengan HuggingFace Meta Llama 3.1 8B Instruct untuk menghasilkan konten inovatif, 
                 storytelling, brainstorming ide, dan eksplorasi kreatif. 
                 Perfect untuk content creation! 🎨
             </div>
@@ -306,7 +308,7 @@ with st.sidebar:
         <div class="info-card">
             <div class="info-title">🎨 Azura-Art (Draw)</div>
             <div class="info-desc">
-                Mode generasi gambar dengan FLUX.1 Schnell dari Black Forest Labs. 
+                Mode generasi gambar dengan Pollinations AI. 
                 Ubah text prompt menjadi visual artwork berkualitas tinggi. 
                 Deskripsikan, dan AI akan menggambarnya! 🖼️
             </div>
@@ -458,23 +460,41 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             )
             res = resp.choices[0].message.content
         
-        elif engine == "Gemma":
+        elif engine == "HuggingFace":
+            # MODE CREATIVE PAKAI HUGGINGFACE TEXT GENERATION
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
                     messages.append({"role": m["role"], "content": m["content"]})
             messages.append({"role": "user", "content": user_msg})
             
-            resp = client_groq.chat.completions.create(
-                model="google/gemma-2-9b-it",
-                messages=messages,
+            # Format conversation untuk HuggingFace
+            conversation_text = system_prompt + "\n\n"
+            for msg in messages[1:]:
+                role_label = "User" if msg["role"] == "user" else "Assistant"
+                conversation_text += f"{role_label}: {msg['content']}\n\n"
+            conversation_text += "Assistant: "
+            
+            # Pakai Meta Llama 3.1 8B Instruct dari HuggingFace
+            resp = client_hf.text_generation(
+                conversation_text,
+                model="meta-llama/Meta-Llama-3.1-8B-Instruct",
+                max_new_tokens=1024,
                 temperature=0.9,
-                max_tokens=1024
+                return_full_text=False
             )
-            res = resp.choices[0].message.content
+            res = resp
         
-        elif engine == "Drawing":
-            img = client_hf.text_to_image(user_msg, model="black-forest-labs/FLUX.1-schnell")
+        elif engine == "Pollinations":
+            # MODE DRAWING PAKAI POLLINATIONS AI
+            import urllib.parse
+            encoded_prompt = urllib.parse.quote(user_msg)
+            image_url = f"{POLLINATIONS_API}{encoded_prompt}"
+            
+            # Download image dari Pollinations
+            img_response = requests.get(image_url)
+            img = Image.open(io.BytesIO(img_response.content))
+            
             st.session_state.messages.append({"role": "assistant", "type": "image", "content": img})
             save_history_to_db(st.session_state.all_chats)
             st.rerun()
