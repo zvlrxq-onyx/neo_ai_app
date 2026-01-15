@@ -268,94 +268,142 @@ with st.sidebar:
     if st.button("📋 System Info", use_container_width=True):
         st.session_state.show_system_info = not st.session_state.show_system_info
     
-    # System Info Content - NATIVE STREAMLIT (No HTML!)
+    # System Info Content - CYAN BOX STYLE
     if st.session_state.show_system_info:
-        st.markdown("### 🌐 NEO AI System")
-        st.markdown("*Advanced Multi-Modal AI Assistant*")
-        st.caption("Created by Muhammad Jibran Al Kaffie")
-        
-        st.markdown("---")
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #001a1a 0%, #002b2b 100%); 
+                    padding: 25px; border-radius: 15px; border: 2px solid #00ffff; 
+                    box-shadow: 0 0 20px rgba(0,255,255,0.3); margin: 15px 0;">
+            <h3 style="color: #00ffff; text-align: center; margin-bottom: 5px;">🌐 NEO AI System</h3>
+            <p style="color: #888; text-align: center; font-size: 13px; margin-bottom: 3px;">Advanced Multi-Modal AI Assistant</p>
+            <p style="color: #00ffff; text-align: center; font-size: 11px;">Created by Muhammad Jibran Al Kaffie</p>
+        </div>
+        """, unsafe_allow_html=True)
         
         # About Creator
-        st.markdown("#### 👨‍💻 About the Creator")
-        st.info("""
-        NEO AI dikembangkan oleh **Muhammad Jibran Al Kaffie**, seorang developer passionate yang fokus pada AI dan teknologi cutting-edge. 
-        Dengan visi menciptakan AI assistant yang powerful namun user-friendly, NEO AI hadir sebagai solusi multi-modal yang menggabungkan berbagai teknologi terbaik dari Groq, HuggingFace, dan Pollinations.
-        """)
+        st.markdown("""
+        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
+                    border-left: 4px solid #00ffff; margin: 15px 0;">
+            <h4 style="color: #00ffff; margin: 0 0 10px 0;">👨‍💻 About the Creator</h4>
+            <p style="color: #b0b0b0; line-height: 1.7; margin: 0;">
+                NEO AI dikembangkan oleh <strong style="color: #00ffff;">Muhammad Jibran Al Kaffie</strong>, 
+                seorang developer passionate yang fokus pada AI dan teknologi cutting-edge. 
+                Dengan visi menciptakan AI assistant yang powerful namun user-friendly, NEO AI hadir sebagai 
+                solusi multi-modal yang menggabungkan berbagai teknologi terbaik dari Groq, HuggingFace, dan Pollinations.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
         
         # About NEO AI
-        st.markdown("#### 🧠 Tentang NEO AI")
-        st.write("""
-        NEO AI adalah AI assistant multi-modal yang dirancang untuk menangani berbagai tugas kompleks: dari analisis gambar pixel-deep, coding & problem solving, creative writing, hingga generasi visual artwork. 
-        Dibangun dengan arsitektur modular yang menggabungkan 4 engine AI berbeda untuk performa optimal di setiap use case.
-        """)
+        st.markdown("""
+        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
+                    border-left: 4px solid #00ffff; margin: 15px 0;">
+            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🧠 Tentang NEO AI</h4>
+            <p style="color: #b0b0b0; line-height: 1.7; margin: 0;">
+                NEO AI adalah AI assistant multi-modal yang dirancang untuk menangani berbagai tugas kompleks: 
+                dari analisis gambar pixel-deep, coding & problem solving, creative writing, hingga generasi visual artwork. 
+                Dibangun dengan arsitektur modular yang menggabungkan 4 engine AI berbeda untuk performa optimal di setiap use case.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        st.markdown("---")
-        st.markdown("#### ⚙️ Technology Stack")
+        st.markdown('<h4 style="color: #00ffff; margin: 20px 0 10px 0;">⚙️ Technology Stack</h4>', unsafe_allow_html=True)
         
         # Engine 1
         with st.expander("🔍 Engine 1: Azura-Lens 1.7 (Vision)", expanded=False):
             st.markdown("""
-            **Model:** Meta Llama 4 Scout 17B 16E Instruct  
-            **Provider:** Groq API (Ultra-fast inference)  
-            **Kemampuan:** Analisis gambar pixel-deep dengan deteksi objek, warna, komposisi, edges, dan spatial relationships. Menggunakan pixel data analysis untuk hasil yang lebih akurat.  
-            **Use Case:** Computer vision, image analysis, OCR, object detection, visual QA
-            """)
+            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
+                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
+                    <strong style="color: #00ffff;">Model:</strong> Meta Llama 4 Scout 17B 16E Instruct<br>
+                    <strong style="color: #00ffff;">Provider:</strong> Groq API (Ultra-fast inference)<br>
+                    <strong style="color: #00ffff;">Kemampuan:</strong> Analisis gambar pixel-deep dengan deteksi objek, warna, komposisi, edges, dan spatial relationships. 
+                    Menggunakan pixel data analysis untuk hasil yang lebih akurat.<br>
+                    <strong style="color: #00ffff;">Use Case:</strong> Computer vision, image analysis, OCR, object detection, visual QA
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
         
         # Engine 2
         with st.expander("⚡ Engine 2: Azura 1.5 (Power)", expanded=False):
             st.markdown("""
-            **Model:** Meta Llama 3.3 70B Versatile  
-            **Provider:** Groq API (Lightning-fast processing)  
-            **Kemampuan:** Model berukuran 70 billion parameters untuk tugas-tugas kompleks yang membutuhkan reasoning tinggi, multi-step problem solving, dan deep understanding.  
-            **Use Case:** Advanced coding, data analysis, mathematical reasoning, complex research, technical writing
-            """)
+            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
+                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
+                    <strong style="color: #00ffff;">Model:</strong> Meta Llama 3.3 70B Versatile<br>
+                    <strong style="color: #00ffff;">Provider:</strong> Groq API (Lightning-fast processing)<br>
+                    <strong style="color: #00ffff;">Kemampuan:</strong> Model berukuran 70 billion parameters untuk tugas-tugas kompleks yang membutuhkan reasoning tinggi, 
+                    multi-step problem solving, dan deep understanding.<br>
+                    <strong style="color: #00ffff;">Use Case:</strong> Advanced coding, data analysis, mathematical reasoning, complex research, technical writing
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
         
         # Engine 3
         with st.expander("✨ Engine 3: Azura-Prime (Creative)", expanded=False):
             st.markdown("""
-            **Model:** Qwen 2.5 7B Instruct  
-            **Provider:** HuggingFace Inference API  
-            **Kemampuan:** Model yang dioptimalkan untuk creative tasks dengan 7B parameters. Excellent untuk storytelling, content generation, dan brainstorming dengan temperature tinggi untuk kreativitas maksimal.  
-            **Use Case:** Creative writing, storytelling, brainstorming, content creation, marketing copy
-            """)
+            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
+                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
+                    <strong style="color: #00ffff;">Model:</strong> Qwen 2.5 7B Instruct<br>
+                    <strong style="color: #00ffff;">Provider:</strong> HuggingFace Inference API<br>
+                    <strong style="color: #00ffff;">Kemampuan:</strong> Model yang dioptimalkan untuk creative tasks dengan 7B parameters. 
+                    Excellent untuk storytelling, content generation, dan brainstorming dengan temperature tinggi untuk kreativitas maksimal.<br>
+                    <strong style="color: #00ffff;">Use Case:</strong> Creative writing, storytelling, brainstorming, content creation, marketing copy
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
         
         # Engine 4
         with st.expander("🎨 Engine 4: Azura-Art (Draw)", expanded=False):
             st.markdown("""
-            **Model:** Pollinations AI Image Generation  
-            **Provider:** Pollinations.ai API  
-            **Kemampuan:** Text-to-image generation dengan kualitas tinggi. Mengubah deskripsi text menjadi visual artwork dalam berbagai style: realistic, artistic, anime, abstract, dan lainnya.  
-            **Use Case:** Visual design, concept art, illustrations, moodboards, creative visualization
-            """)
-        
-        st.markdown("---")
+            <div style="background: #00ffff08; padding: 12px; border-radius: 8px;">
+                <p style="color: #e0e0e0; line-height: 1.8; margin: 0;">
+                    <strong style="color: #00ffff;">Model:</strong> Pollinations AI Image Generation<br>
+                    <strong style="color: #00ffff;">Provider:</strong> Pollinations.ai API<br>
+                    <strong style="color: #00ffff;">Kemampuan:</strong> Text-to-image generation dengan kualitas tinggi. Mengubah deskripsi text menjadi visual artwork 
+                    dalam berbagai style: realistic, artistic, anime, abstract, dan lainnya.<br>
+                    <strong style="color: #00ffff;">Use Case:</strong> Visual design, concept art, illustrations, moodboards, creative visualization
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
         
         # Security Features
-        st.markdown("#### 🛡️ Security & Features")
-        st.success("""
-        • **Anti-Jailbreak Protection:** System prompt yang robust dengan deteksi bypass attempts  
-        • **HTML Injection Prevention:** Clean text function untuk sanitasi output  
-        • **Persistent Storage:** Chat history tersimpan dalam JSON database lokal  
-        • **Real-time Pixel Analysis:** Image processing dengan PIL untuk metadata extraction  
-        • **Multi-Modal Handling:** Support untuk text, image input/output, dan file upload  
-        • **Session Management:** Multiple chat sessions dengan rename & delete capability
-        """)
+        st.markdown("""
+        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
+                    border-left: 4px solid #00ffff; margin: 20px 0;">
+            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🛡️ Security & Features</h4>
+            <p style="color: #b0b0b0; line-height: 1.8; margin: 0;">
+                <strong>• Anti-Jailbreak Protection:</strong> System prompt yang robust dengan deteksi bypass attempts<br>
+                <strong>• HTML Injection Prevention:</strong> Clean text function untuk sanitasi output<br>
+                <strong>• Persistent Storage:</strong> Chat history tersimpan dalam JSON database lokal<br>
+                <strong>• Real-time Pixel Analysis:</strong> Image processing dengan PIL untuk metadata extraction<br>
+                <strong>• Multi-Modal Handling:</strong> Support untuk text, image input/output, dan file upload<br>
+                <strong>• Session Management:</strong> Multiple chat sessions dengan rename & delete capability
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
         
         # Technical Architecture
-        st.markdown("#### 🚀 Technical Architecture")
-        st.code("""
-Frontend: Streamlit (Python web framework)
-Styling: Custom CSS dengan smooth animations & transitions
-State Management: Streamlit session state + JSON file persistence
-API Integration: Groq SDK, HuggingFace InferenceClient, Pollinations REST API
-Image Processing: PIL (Python Imaging Library) untuk pixel analysis
-Data Format: JSON untuk chat history, Base64 encoding untuk images
-        """, language=None)
+        st.markdown("""
+        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
+                    border-left: 4px solid #00ffff; margin: 20px 0;">
+            <h4 style="color: #00ffff; margin: 0 0 10px 0;">🚀 Technical Architecture</h4>
+            <p style="color: #b0b0b0; line-height: 1.8; margin: 0; font-family: monospace;">
+                <strong>Frontend:</strong> Streamlit (Python web framework)<br>
+                <strong>Styling:</strong> Custom CSS dengan smooth animations & transitions<br>
+                <strong>State Management:</strong> Streamlit session state + JSON file persistence<br>
+                <strong>API Integration:</strong> Groq SDK, HuggingFace InferenceClient, Pollinations REST API<br>
+                <strong>Image Processing:</strong> PIL (Python Imaging Library) untuk pixel analysis<br>
+                <strong>Data Format:</strong> JSON untuk chat history, Base64 encoding untuk images
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        st.markdown("---")
-        st.markdown("##### 🌟 Built with passion for AI innovation")
-        st.caption("NEO AI v1.0 • 2025 • Muhammad Jibran Al Kaffie")
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #001a1a, #003333); padding: 20px; 
+                    border-radius: 10px; border: 1px solid #00ffff; margin: 20px 0; text-align: center;">
+            <p style="color: #00ffff; font-size: 15px; margin: 5px 0; font-weight: bold;">🌟 Built with passion for AI innovation</p>
+            <p style="color: #888; font-size: 12px; margin: 5px 0;">NEO AI v1.0 • 2025 • Muhammad Jibran Al Kaffie</p>
+        </div>
+        """, unsafe_allow_html=True)
 
 # --- 8. MAIN RENDER ---
 if logo_url:
