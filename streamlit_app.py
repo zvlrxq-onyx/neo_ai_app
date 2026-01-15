@@ -461,29 +461,21 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             res = resp.choices[0].message.content
         
         elif engine == "HuggingFace":
-            # MODE CREATIVE PAKAI HUGGINGFACE TEXT GENERATION
+            # MODE CREATIVE PAKAI HUGGINGFACE CHAT COMPLETION
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
                     messages.append({"role": m["role"], "content": m["content"]})
             messages.append({"role": "user", "content": user_msg})
             
-            # Format conversation untuk HuggingFace
-            conversation_text = system_prompt + "\n\n"
-            for msg in messages[1:]:
-                role_label = "User" if msg["role"] == "user" else "Assistant"
-                conversation_text += f"{role_label}: {msg['content']}\n\n"
-            conversation_text += "Assistant: "
-            
-            # Pakai Meta Llama 3.1 8B Instruct dari HuggingFace
-            resp = client_hf.text_generation(
-                conversation_text,
+            # Pakai chat completion dari HuggingFace dengan token kamu
+            resp = client_hf.chat_completion(
+                messages=messages,
                 model="meta-llama/Meta-Llama-3.1-8B-Instruct",
-                max_new_tokens=1024,
-                temperature=0.9,
-                return_full_text=False
+                max_tokens=1024,
+                temperature=0.9
             )
-            res = resp
+            res = resp.choices[0].message.content
         
         elif engine == "Pollinations":
             # MODE DRAWING PAKAI POLLINATIONS AI
