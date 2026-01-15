@@ -299,7 +299,7 @@ with st.sidebar:
         <div class="info-card">
             <div class="info-title">✨ Azura-Prime (Creative)</div>
             <div class="info-desc">
-                Mode kreatif dengan HuggingFace Meta Llama 3.1 8B Instruct untuk menghasilkan konten inovatif, 
+                Mode kreatif dengan HuggingFace Qwen 2.5 7B Instruct untuk menghasilkan konten inovatif, 
                 storytelling, brainstorming ide, dan eksplorasi kreatif. 
                 Perfect untuk content creation! 🎨
             </div>
@@ -468,10 +468,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     messages.append({"role": m["role"], "content": m["content"]})
             messages.append({"role": "user", "content": user_msg})
             
-            # Pakai chat completion dari HuggingFace dengan token kamu
+            # Pakai Qwen 2.5 7B Instruct (model yang available di HF)
             resp = client_hf.chat_completion(
                 messages=messages,
-                model="meta-llama/Meta-Llama-3.1-8B-Instruct",
+                model="Qwen/Qwen2.5-7B-Instruct",
                 max_tokens=1024,
                 temperature=0.9
             )
