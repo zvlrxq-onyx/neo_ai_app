@@ -441,7 +441,6 @@ with st.sidebar:
 
 # --- 9. MAIN RENDER ---
 if logo_url:
-    # Logo Berputar di Tengah - NO GLOW, ONLY ROTATE
     st.markdown(f'<div style="text-align:center; margin-bottom:20px;"><img src="{logo_url}" width="130" class="rotating-logo"></div>', unsafe_allow_html=True)
     st.markdown("<div style='text-align:center; color:#00ffff; font-size:18px; margin-bottom:20px;'>How can I help you today?</div>", unsafe_allow_html=True)
 
@@ -496,8 +495,8 @@ if prompt := st.chat_input("Message Azura AI..."):
     
     st.session_state.all_chats[session_title] = st.session_state.messages
     save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-
-        st.rerun()
+    
+    st.rerun()
 
 # --- 10. AI PROCESSING ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
