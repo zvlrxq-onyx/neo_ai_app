@@ -3,7 +3,7 @@ from groq import Groq
 from huggingface_hub import InferenceClient
 import os, base64, requests, json
 import re
-from PIL import Image, ImageFilter
+from PIL import Image
 import io
 
 # --- 1. CONFIG & SYSTEM SETUP ---
@@ -120,6 +120,20 @@ st.markdown(f"""
     /* Vision Bubble Animation */
     .vision-bubble {{ animation: pulse 2s infinite; }}
     @keyframes pulse {{ 0% {{ transform: scale(1); }} 50% {{ transform: scale(1.05); }} 100% {{ transform: scale(1); }} }}
+    
+    /* Spinner Animation */
+    .spinner {{
+        border: 3px solid #00ffff22;
+        border-top: 3px solid #00ffff;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        margin-right: 10px;
+        vertical-align: middle;
+    }}
+    @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
     
     /* System Info Smooth Slide Animation */
     .system-info-container {{
@@ -355,7 +369,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff; object-fit: cover;">
                 <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
                             max-width: 85%; border-left: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                    🔍 Analyzing your image... Bro, give me a sec! 🤔
+                    <div class="spinner"></div>
+                    <span style="vertical-align: middle;">🔍 Analyzing your image... Bro, give me a sec! 🤔</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -451,7 +466,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             messages.append({"role": "user", "content": user_msg})
             
             resp = client_groq.chat.completions.create(
-                model="gemma2-9b-it",
+                model="google/gemma-2-9b-it",
                 messages=messages,
                 temperature=0.9,
                 max_tokens=1024
