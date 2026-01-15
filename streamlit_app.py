@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_cookies_manager import EncryptedCookieManager
 from groq import Groq
 from huggingface_hub import InferenceClient
 import os, base64, requests, json
@@ -11,6 +12,15 @@ import hashlib
 
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(page_title="Azura AI", page_icon="🌐", layout="wide")
+
+# Initialize cookies manager
+cookies = EncryptedCookieManager(
+    prefix="azura_ai_",
+    password="your_secret_password_here_change_this_123456789"
+)
+
+if not cookies.ready():
+    st.stop()
 
 # NAMA FILE DATABASE (Per-user dengan hash)
 DB_FOLDER = "azura_users_db"
@@ -57,9 +67,13 @@ def analyze_image_pixels(image_data):
     except:
         return "Image analysis available"
 
-# --- 2. USERNAME AUTHENTICATION ---
+# --- 2. USERNAME AUTHENTICATION WITH COOKIES ---
+# Check if user is already logged in via cookies
 if "current_user" not in st.session_state:
-    st.session_state.current_user = None
+    if "username" in cookies and cookies["username"]:
+        st.session_state.current_user = cookies["username"]
+    else:
+        st.session_state.current_user = None
 
 # Login Screen
 if st.session_state.current_user is None:
@@ -82,10 +96,8 @@ if st.session_state.current_user is None:
         if st.button("🚀 Enter Azura AI", use_container_width=True):
             if username_input.strip():
                 st.session_state.current_user = username_input.strip()
-                if "all_chats" in st.session_state:
-                    del st.session_state.all_chats
-                if "messages" in st.session_state:
-                    del st.session_state.messages
+                cookies["username"] = username_input.strip()
+                cookies.save()
                 st.rerun()
             else:
                 st.error("❌ Username tidak boleh kosong bro!")
@@ -110,9 +122,6 @@ if "current_session_key" not in st.session_state:
 
 if "uploaded_image" not in st.session_state:
     st.session_state.uploaded_image = None
-
-if "show_system_info" not in st.session_state:
-    st.session_state.show_system_info = False
 
 if "show_upload_notif" not in st.session_state:
     st.session_state.show_upload_notif = False
@@ -139,7 +148,7 @@ logo_url = f"data:image/png;base64,{logo_data}" if logo_data else ""
 user_data = get_base64_img('user.png')
 user_img = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfIrn5orx6KdLUiIvZ3IUkZTMdIyes-D6sMA&s"
 
-# --- 6. CSS (UI CLEAN & RESPONSIVE) ---
+# --- 6. CSS (UI CLEAN & RESPONSIVE + TYPING ANIMATION) ---
 st.markdown(f"""
 <style>
     [data-testid="stAppViewContainer"] {{ background: #050505; }}
@@ -158,21 +167,46 @@ st.markdown(f"""
     .sidebar-logo {{ display: block; margin: auto; width: 80px; height: 80px; border-radius: 50%; border: 2px solid #00ffff; object-fit: cover; margin-bottom: 10px; }}
     .rotating-logo {{ animation: rotate 8s linear infinite; border-radius: 50%; border: 2px solid #00ffff; }}
     @keyframes rotate {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
-    .typing {{ display: flex; align-items: center; gap: 5px; padding: 5px 0; }}
-    .dot {{ width: 7px; height: 7px; background: #00ffff; border-radius: 50%; animation: blink 1.4s infinite both; }}
-    .dot:nth-child(2) {{ animation-delay: 0.2s; }}
-    .dot:nth-child(3) {{ animation-delay: 0.4s; }}
+    
+    /* TYPING ANIMATION KAYA CHATGPT */
+    .typing-indicator {{ display: flex; align-items: center; gap: 5px; padding: 5px 0; }}
+    .typing-dot {{ width: 7px; height: 7px; background: #00ffff; border-radius: 50%; animation: blink 1.4s infinite both; }}
+    .typing-dot:nth-child(2) {{ animation-delay: 0.2s; }}
+    .typing-dot:nth-child(3) {{ animation-delay: 0.4s; }}
     @keyframes blink {{ 0%, 80%, 100% {{ opacity: 0; }} 40% {{ opacity: 1; }} }}
-    .chat-bubble {{ transition: all 0.3s ease; }}
+    
+    /* TYPEWRITER EFFECT - Kiri ke Kanan */
+    @keyframes typewriter {{
+        from {{ width: 0; }}
+        to {{ width: 100%; }}
+    }}
+    
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: translateY(10px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+    
+    .typing-text {{
+        overflow: hidden;
+        white-space: nowrap;
+        animation: typewriter 2s steps(40) 1 normal both, fadeIn 0.5s ease;
+        display: inline-block;
+    }}
+    
+    .chat-bubble {{ transition: all 0.3s ease; animation: fadeIn 0.5s ease; }}
     .chat-bubble:hover {{ transform: scale(1.02); }}
+    
     .stButton button {{ transition: all 0.3s ease; }}
     .stButton button:hover {{ transform: scale(1.05); box-shadow: 0 0 15px #00ffff; }}
     .stButton button:active {{ transform: scale(0.95); }}
+    
     .vision-bubble {{ animation: pulse 2s infinite; }}
     @keyframes pulse {{ 0% {{ transform: scale(1); }} 50% {{ transform: scale(1.05); }} 100% {{ transform: scale(1); }} }}
+    
     .spinner {{ border: 3px solid #00ffff22; border-top: 3px solid #00ffff; border-radius: 50%; width: 20px; height: 20px;
         animation: spin 1s linear infinite; display: inline-block; margin-right: 10px; vertical-align: middle; }}
     @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
+    
     .user-badge {{ background: linear-gradient(135deg, #00ffff22, #00ffff44); padding: 8px 15px; border-radius: 20px;
         border: 1px solid #00ffff; color: #00ffff; font-size: 13px; font-weight: bold; text-align: center;
         margin-bottom: 15px; box-shadow: 0 0 10px rgba(0,255,255,0.2); }}
@@ -188,8 +222,12 @@ def clean_text(text):
     text = text.replace("</div>", "").replace("<div>", "").replace("<br>", "\n").replace("<p>", "").replace("</p>", "")
     return text.strip()
 
-def render_chat_bubble(role, content):
+def render_chat_bubble(role, content, typing_effect=False):
     content = clean_text(content)
+    
+    # Untuk AI response, kasih typing effect
+    typing_class = "typing-text" if typing_effect and role == "assistant" else ""
+    
     if role == "user":
         st.markdown(f"""
         <div class="chat-bubble" style="display: flex; justify-content: flex-end; align-items: flex-start; margin-bottom: 20px;">
@@ -206,7 +244,7 @@ def render_chat_bubble(role, content):
             <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff; object-fit: cover;">
             <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
                         max-width: 85%; border-left: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                {content}
+                <div class="{typing_class}">{content}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -218,7 +256,11 @@ with st.sidebar:
     st.markdown("<h2 style='text-align:center; color:#00ffff;'>Azura AI</h2>", unsafe_allow_html=True)
     
     st.markdown(f'<div class="user-badge">👤 {st.session_state.current_user}</div>', unsafe_allow_html=True)
+    
     if st.button("🚪 Logout", use_container_width=True):
+        # Clear cookies dan session state
+        cookies["username"] = ""
+        cookies.save()
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
@@ -246,7 +288,7 @@ with st.sidebar:
     
     if chat_keys:
         for title in chat_keys:
-            col1, col2, col3 = st.columns([3, 1, 1])
+            col1, col2 = st.columns([4, 1])
             with col1:
                 button_style = "💬" if title != st.session_state.current_session_key else "✅"
                 if st.button(f"{button_style} {title}", key=f"load_{title}", use_container_width=True):
@@ -254,17 +296,7 @@ with st.sidebar:
                     st.session_state.current_session_key = title
                     st.rerun()
             with col2:
-                if st.button("✏️", key=f"rename_{title}", help="Rename"):
-                    new_name = st.text_input("New name", value=title, key=f"input_{title}")
-                    if st.button("Save", key=f"save_{title}"):
-                        if new_name and new_name != title:
-                            st.session_state.all_chats[new_name] = st.session_state.all_chats.pop(title)
-                            if st.session_state.current_session_key == title:
-                                st.session_state.current_session_key = new_name
-                            save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-                            st.rerun()
-            with col3:
-                if st.button("🗑️", key=f"delete_{title}", help="Delete"):
+                if st.button("🗑️", key=f"delete_{title}", help="Delete", use_container_width=True):
                     del st.session_state.all_chats[title]
                     if st.session_state.current_session_key == title:
                         st.session_state.current_session_key = None
@@ -273,36 +305,6 @@ with st.sidebar:
                     st.rerun()
     else:
         st.info("Belum ada history nih bro! 📝")
-    
-    st.markdown("---")
-    
-    if st.button("📋 System Info", use_container_width=True):
-        st.session_state.show_system_info = not st.session_state.show_system_info
-    
-    if st.session_state.show_system_info:
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #001a1a 0%, #002b2b 100%); 
-                    padding: 25px; border-radius: 15px; border: 2px solid #00ffff; 
-                    box-shadow: 0 0 20px rgba(0,255,255,0.3); margin: 15px 0;">
-            <h3 style="color: #00ffff; text-align: center; margin-bottom: 5px;">🌐 Azura AI System</h3>
-            <p style="color: #888; text-align: center; font-size: 13px; margin-bottom: 3px;">Advanced Multi-Modal AI Assistant</p>
-            <p style="color: #00ffff; text-align: center; font-size: 11px;">Created by Muhammad Jibran Al Kaffie</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div style="background: #00ffff11; padding: 18px; border-radius: 10px; 
-                    border-left: 4px solid #00ffff; margin: 15px 0;">
-            <h4 style="color: #00ffff; margin: 0 0 10px 0;">✨ Features</h4>
-            <p style="color: #b0b0b0; line-height: 1.7; margin: 0;">
-                • Persistent chat history per user<br>
-                • Multi-modal AI (text, vision, image gen)<br>
-                • Secure user isolation with MD5<br>
-                • Real-time pixel analysis<br>
-                • Session management & rename
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
 
 # --- 9. MAIN RENDER ---
 if logo_url:
@@ -310,11 +312,14 @@ if logo_url:
     if not st.session_state.messages:
         st.markdown("<div style='text-align:center; color:#00ffff; font-size:18px; margin-bottom:20px;'>How can I help you today? 👋</div>", unsafe_allow_html=True)
 
-for msg in st.session_state.messages:
+# Render Chat - tambah typing effect untuk pesan terakhir kalo dari AI
+for idx, msg in enumerate(st.session_state.messages):
     if msg.get("type") == "image": 
         st.image(msg["content"], width=400)
-    else: 
-        render_chat_bubble(msg["role"], msg["content"])
+    else:
+        # Kasih typing effect hanya untuk message AI yang TERAKHIR
+        is_last_ai_msg = (idx == len(st.session_state.messages) - 1) and (msg["role"] == "assistant")
+        render_chat_bubble(msg["role"], msg["content"], typing_effect=is_last_ai_msg)
 
 up = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed")
 if up: 
@@ -379,7 +384,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             <div style="display: flex; justify-content: flex-start; align-items: flex-start; margin-bottom: 20px;">
                 <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
                 <div style="background: #1a1a1a; padding: 12px 18px; border-radius: 2px 18px 18px 18px; border: 1px solid #333;">
-                    <div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                    <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
