@@ -427,7 +427,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         res = ""
         
         system_prompt = (
-            "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
+            "You are Azura AI, a supreme multi-modal AI assistant created by Muhammad Jibran Al Kaffie. "
             "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
             "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
             "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
@@ -529,3 +529,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             st.rerun()
     
     except Exception as e:
+        st.error(f"❌ Error bro: {str(e)}")
+        st.session_state.messages.append({"role": "assistant", "content": f"Sorry bro, ada error nih: {str(e)} 😰"})
+        if st.session_state.current_session_key:
+            st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
+        save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
+        st.rerun()
