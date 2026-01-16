@@ -329,6 +329,7 @@ with st.sidebar:
     st.markdown("---")
     
     engine_map = {
+        "Azura-R1 (DeepSeek Reasoning)": "DeepSeek",
         "Azura-Lens 1.7 (Vision)": "Scout",
         "Azura 1.5 (Power)": "Llama33",
         "Azura-Prime (Creative)": "HuggingFace",
@@ -461,7 +462,82 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend."
         )
         
-        if engine == "Scout":
+        if engine == "DeepSeek":
+            # Build conversation history
+            messages = [{"role": "system", "content": system_prompt}]
+            for m in st.session_state.messages[:-1]:
+                if m.get("type") != "image":
+                    messages.append({"role": m["role"], "content": m["content"]})
+            messages.append({"role": "user", "content": user_msg})
+            
+            # Streaming response with thinking support
+            thinking_content = ""
+            answer_content = ""
+            thinking_placeholder = st.empty()
+            answer_placeholder = st.empty()
+            
+            try:
+                stream = client_hf.chat_completion(
+                    messages=messages,
+                    model="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+                    max_tokens=2048,
+                    temperature=0.7,
+                    stream=True
+                )
+                
+                in_thinking = False
+                current_text = ""
+                
+                for chunk in stream:
+                    if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                        delta = chunk.choices[0].delta
+                        if hasattr(delta, 'content') and delta.content:
+                            current_text += delta.content
+                            
+                            # Parse thinking tags
+                            if "<think>" in current_text:
+                                in_thinking = True
+                                parts = current_text.split("<think>", 1)
+                                if len(parts) > 1:
+                                    current_text = parts[1]
+                            
+                            if "</think>" in current_text and in_thinking:
+                                in_thinking = False
+                                parts = current_text.split("</think>", 1)
+                                thinking_content += parts[0]
+                                current_text = parts[1] if len(parts) > 1 else ""
+                                
+                                # Display thinking in expander
+                                with thinking_placeholder.expander("🧠 Azura is thinking...", expanded=False):
+                                    st.markdown(f"*{thinking_content.strip()}*")
+                            
+                            if in_thinking:
+                                thinking_content += delta.content
+                                with thinking_placeholder.expander("🧠 Azura is thinking...", expanded=True):
+                                    st.markdown(f"*{thinking_content.strip()}*")
+                            else:
+                                answer_content += delta.content
+                                # Render streaming answer
+                                answer_placeholder.markdown(f"""
+                                <div class="chat-bubble" style="display: flex; justify-content: flex-start; align-items: flex-start; margin-bottom: 20px;">
+                                    <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff; object-fit: cover;">
+                                    <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
+                                                max-width: 85%; border-left: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.3); word-wrap: break-word;">
+                                        {clean_text(answer_content)}
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                
+                # Clean up final answer
+                res = answer_content.strip()
+                
+            except Exception as e:
+                if "Model too busy" in str(e) or "503" in str(e):
+                    res = "Waduh bro, DeepSeek lagi sibuk banget nih! 😅 Coba lagi sebentar atau ganti ke model lain dulu ya!"
+                else:
+                    raise e
+        
+        elif engine == "Scout":
             current_image_data = st.session_state.uploaded_image
             
             if current_image_data:
