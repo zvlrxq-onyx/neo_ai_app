@@ -13,16 +13,14 @@ import hashlib
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(page_title="Azura AI", page_icon="🌐", layout="wide")
 
-# Cookie Manager - FIXED VERSION
-@st.cache_resource
-def get_cookie_manager():
-    # Gunakan password untuk enkripsi cookies
-    return EncryptedCookieManager(
+# Cookie Manager - FIXED VERSION (No caching!)
+if "cookies" not in st.session_state:
+    st.session_state.cookies = EncryptedCookieManager(
         prefix="azura_ai_",
         password=os.environ.get("COOKIES_PASSWORD", "azura-secret-key-2024")
     )
 
-cookies = get_cookie_manager()
+cookies = st.session_state.cookies
 
 # NAMA FILE DATABASE (Per-user dengan hash)
 DB_FOLDER = "azura_users_db"
