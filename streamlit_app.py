@@ -1,5 +1,5 @@
 import streamlit as st
-import extra_streamlit_components as stx
+from streamlit_cookies_manager import EncryptedCookieManager
 from groq import Groq
 from huggingface_hub import InferenceClient
 import os, base64, requests, json
