@@ -1,4 +1,3 @@
-
 import streamlit as st
 from groq import Groq
 from huggingface_hub import InferenceClient
@@ -20,7 +19,7 @@ if not os.path.exists(DB_FOLDER):
 
 def get_user_db_file(username):
     """Generate unique database file path untuk setiap user"""
-    # Hash username untuk keamanan extra (opsional tapi recommended)
+    # Hash username untuk keamanan extra
     user_hash = hashlib.md5(username.encode()).hexdigest()
     return os.path.join(DB_FOLDER, f"user_{user_hash}.json")
 
@@ -50,7 +49,6 @@ def analyze_image_pixels(image_data):
         img = Image.open(io.BytesIO(image_data))
         width, height = img.size
         mode = img.mode
-        colors = img.getcolors(maxcolors=10)
         return f"Size: {width}x{height}, Mode: {mode}, Dominant colors detected"
     except:
         return "Image analysis available"
@@ -111,7 +109,7 @@ try:
     client_hf = InferenceClient(token=st.secrets["HF_TOKEN"])
     POLLINATIONS_API = "https://image.pollinations.ai/prompt/"
 except:
-    st.error("❌ API Keys Error! Cek secrets.toml lu bro.")
+    st.error("❌ API Keys Error! Pastikan secrets.toml sudah diisi (GROQ_API_KEY & HF_TOKEN).")
     st.stop()
 
 # --- 5. ASSETS (LOGO & USER) ---
@@ -124,7 +122,6 @@ def get_base64_img(file_path):
 
 logo_data = get_base64_img('logo.png')
 logo_url = f"data:image/png;base64,{logo_data}" if logo_data else ""
-user_data = get_base64_img('user.png')
 user_img = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfIrn5orx6KdLUiIvZ3IUkZTMdIyes-D6sMA&s"
 
 # --- 6. CSS (UI CLEAN & RESPONSIVE) ---
@@ -254,10 +251,11 @@ with st.sidebar:
         
     st.markdown("---")
     
+    # Map engine, sekarang 'HuggingFace' mengarah ke DeepSeek R1
     engine_map = {
         "Azura-Lens 1.7 (Vision)": "Scout",
         "Azura 1.5 (Power)": "Llama33",
-        "Azura-Prime (Creative)": "HuggingFace",
+        "Azura-DeepSeek R1 (Thinking)": "HuggingFace",
         "Azura-Art (Draw)": "Pollinations"
     }
     selected_engine_name = st.selectbox("Pilih modelnya", list(engine_map.keys()))
@@ -390,14 +388,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             </div>
             """, unsafe_allow_html=True)
         else:
-            st.markdown(f"""
-            <div style="display: flex; justify-content: flex-start; align-items: flex-start; margin-bottom: 20px;">
-                <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
-                <div style="background: #1a1a1a; padding: 12px 18px; border-radius: 2px 18px 18px 18px; border: 1px solid #333;">
-                    <div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            # Placeholder "Typing..." standar
+            pass
     
     try:
         user_msg = st.session_state.messages[-1]["content"]
@@ -417,7 +409,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend."
         )
         
-        # LOGIKA PEMILIHAN MODEL
+        # --- LOGIKA PEMILIHAN MODEL ---
         if engine == "Scout":
             current_image_data = st.session_state.uploaded_image
             
@@ -433,7 +425,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     ]}
                 ]
                 
-                active_model = "meta-llama/llama-4-scout-17b-16e-instruct"
+                active_model = "meta-llama/llama-4-scout-17b-16e-instruct" # Update model vision jika perlu
                 
                 resp = client_groq.chat.completions.create(
                     model=active_model,
@@ -474,20 +466,72 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             res = resp.choices[0].message.content
         
         elif engine == "HuggingFace":
+            # --- DEEPSEEK R1 (DISTILL-LLAMA-70B) INTEGRATION ---
+            MODEL_ID = "deepseek-ai/DeepSeek-R1-Distill-Llama-70B"
+            
+            # Persiapkan pesan
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
                     messages.append({"role": m["role"], "content": m["content"]})
             messages.append({"role": "user", "content": user_msg})
             
-            resp = client_hf.chat_completion(
-                messages=messages,
-                model="Qwen/Qwen2.5-7B-Instruct",
-                max_tokens=1024,
-                temperature=0.9
-            )
-            res = resp.choices[0].message.content
-        
+            # Placeholder UI
+            status_box = st.status("🧠 Azura is thinking...", expanded=True)
+            answer_box = st.empty()
+            
+            full_buffer = ""
+            final_answer = ""
+            thinking_complete = False
+            
+            try:
+                # Memulai Stream dari Hugging Face
+                stream = client_hf.chat_completion(
+                    model=MODEL_ID,
+                    messages=messages,
+                    max_tokens=4000,
+                    temperature=0.6,
+                    stream=True
+                )
+                
+                for chunk in stream:
+                    token = chunk.choices[0].delta.content
+                    if token:
+                        full_buffer += token
+                        
+                        # Cek apakah tag penutup </think> sudah muncul
+                        if "</think>" in full_buffer and not thinking_complete:
+                            thinking_complete = True
+                            # Update status jadi selesai
+                            status_box.update(label="💡 Insight Generated!", state="complete", expanded=False)
+                        
+                        if not thinking_complete:
+                            # Tampilkan proses berpikir (bersihkan tag pembuka <think>)
+                            thought_text = full_buffer.replace("<think>", "").strip()
+                            status_box.markdown(thought_text)
+                        else:
+                            # Ambil bagian setelah </think>
+                            parts = full_buffer.split("</think>")
+                            if len(parts) > 1:
+                                final_answer = parts[1]
+                                # Tampilkan jawaban utama dengan efek kursor
+                                answer_box.markdown(final_answer + "▌")
+
+                # Final render tanpa kursor
+                answer_box.markdown(final_answer if final_answer else "Error: No response generated.")
+                res = final_answer # Simpan hanya jawaban akhir ke history agar bersih
+
+            except Exception as e:
+                # Handle jika model sedang loading (Error 503 umum di HF Inference)
+                if "503" in str(e):
+                    error_msg = "⚠️ Model DeepSeek-R1 lagi sibuk/loading di server Hugging Face. Coba klik kirim lagi dalam 10 detik."
+                else:
+                    error_msg = f"❌ Error API HuggingFace: {str(e)}"
+                
+                status_box.update(label="❌ Failed", state="error")
+                st.error(error_msg)
+                res = error_msg
+
         elif engine == "Pollinations":
             import urllib.parse
             encoded_prompt = urllib.parse.quote(user_msg)
