@@ -522,13 +522,36 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     ]}
                 ]
                 
-                resp = client_groq.chat.completions.create(
+                # Streaming response dengan typing animation
+                response_container = st.empty()
+                res_text = ""
+                
+                stream = client_groq.chat.completions.create(
                     model="meta-llama/llama-4-scout-17b-16e-instruct",
                     messages=messages,
                     temperature=0.7,
-                    max_tokens=1024
+                    max_tokens=1024,
+                    stream=True
                 )
-                res = resp.choices[0].message.content
+                
+                for chunk in stream:
+                    if chunk.choices[0].delta.content:
+                        res_text += chunk.choices[0].delta.content
+                        clean_res = clean_text(res_text)
+                        
+                        # Tampilkan dengan typing animation
+                        response_container.markdown(f"""
+                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
+                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
+                                        max-width: 85%; border-left: 1px solid #333; word-wrap: break-word;">
+                                <div style="white-space: pre-wrap;">{clean_res}</div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        time.sleep(0.02)
+                
+                res = res_text
                 st.session_state.uploaded_image = None
             else:
                 messages = [{"role": "system", "content": system_prompt}]
@@ -537,13 +560,36 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         messages.append({"role": m["role"], "content": m["content"]})
                 messages.append({"role": "user", "content": user_msg})
                 
-                resp = client_groq.chat.completions.create(
+                # Streaming response dengan typing animation
+                response_container = st.empty()
+                res_text = ""
+                
+                stream = client_groq.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=messages,
                     temperature=0.7,
-                    max_tokens=1024
+                    max_tokens=1024,
+                    stream=True
                 )
-                res = resp.choices[0].message.content
+                
+                for chunk in stream:
+                    if chunk.choices[0].delta.content:
+                        res_text += chunk.choices[0].delta.content
+                        clean_res = clean_text(res_text)
+                        
+                        # Tampilkan dengan typing animation
+                        response_container.markdown(f"""
+                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
+                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
+                                        max-width: 85%; border-left: 1px solid #333; word-wrap: break-word;">
+                                <div style="white-space: pre-wrap;">{clean_res}</div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        time.sleep(0.02)
+                
+                res = res_text
         
         elif engine == "Llama33":
             messages = [{"role": "system", "content": system_prompt}]
@@ -552,13 +598,36 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     messages.append({"role": m["role"], "content": m["content"]})
             messages.append({"role": "user", "content": user_msg})
             
-            resp = client_groq.chat.completions.create(
+            # Streaming response dengan typing animation
+            response_container = st.empty()
+            res_text = ""
+            
+            stream = client_groq.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=messages,
                 temperature=0.8,
-                max_tokens=1024
+                max_tokens=1024,
+                stream=True
             )
-            res = resp.choices[0].message.content
+            
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    res_text += chunk.choices[0].delta.content
+                    clean_res = clean_text(res_text)
+                    
+                    # Tampilkan dengan typing animation
+                    response_container.markdown(f"""
+                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                        <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
+                        <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
+                                    max-width: 85%; border-left: 1px solid #333; word-wrap: break-word;">
+                            <div style="white-space: pre-wrap;">{clean_res}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    time.sleep(0.02)
+            
+            res = res_text
         
         elif engine == "HuggingFace":
             messages = [{"role": "system", "content": system_prompt}]
@@ -567,13 +636,38 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     messages.append({"role": m["role"], "content": m["content"]})
             messages.append({"role": "user", "content": user_msg})
             
-            resp = client_hf.chat_completion(
+            # Streaming response dengan typing animation
+            response_container = st.empty()
+            res_text = ""
+            
+            stream = client_hf.chat_completion(
                 messages=messages,
                 model="Qwen/Qwen2.5-7B-Instruct",
                 max_tokens=1024,
-                temperature=0.9
+                temperature=0.9,
+                stream=True
             )
-            res = resp.choices[0].message.content
+            
+            for chunk in stream:
+                if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                    delta = chunk.choices[0].delta
+                    if hasattr(delta, 'content') and delta.content:
+                        res_text += delta.content
+                        clean_res = clean_text(res_text)
+                        
+                        # Tampilkan dengan typing animation
+                        response_container.markdown(f"""
+                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
+                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
+                                        max-width: 85%; border-left: 1px solid #333; word-wrap: break-word;">
+                                <div style="white-space: pre-wrap;">{clean_res}</div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        time.sleep(0.02)
+            
+            res = res_text
         
         elif engine == "Pollinations":
             encoded_prompt = urllib.parse.quote(user_msg)
