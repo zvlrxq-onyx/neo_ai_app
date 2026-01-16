@@ -22,29 +22,46 @@ DB_FOLDER = "azura_users_db"
 if not os.path.exists(DB_FOLDER):
     os.makedirs(DB_FOLDER)
 
-# File untuk simpan last logged user (fallback)
-LAST_USER_FILE = os.path.join(DB_FOLDER, "last_user.json")
+# File untuk user credentials
+USERS_FILE = os.path.join(DB_FOLDER, "users.json")
 
-def save_last_user(username):
-    """Save last logged user ke file"""
-    try:
-        with open(LAST_USER_FILE, "w") as f:
-            json.dump({"username": username, "timestamp": time.time()}, f)
-    except:
-        pass
+def load_users():
+    """Load registered users"""
+    if os.path.exists(USERS_FILE):
+        try:
+            with open(USERS_FILE, "r") as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
 
-def load_last_user():
-    """Load last logged user dari file"""
+def save_users(users_dict):
+    """Save users to file"""
     try:
-        if os.path.exists(LAST_USER_FILE):
-            with open(LAST_USER_FILE, "r") as f:
-                data = json.load(f)
-                # Check if timestamp is less than 30 days old
-                if time.time() - data.get("timestamp", 0) < 2592000:  # 30 days
-                    return data.get("username")
-    except:
-        pass
-    return None
+        with open(USERS_FILE, "w") as f:
+            json.dump(users_dict, f)
+    except Exception as e:
+        print(f"Error saving users: {e}")
+
+def hash_password(password):
+    """Hash password untuk keamanan"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def verify_user(username, password):
+    """Verify user credentials"""
+    users = load_users()
+    if username in users:
+        return users[username] == hash_password(password)
+    return False
+
+def register_user(username, password):
+    """Register new user"""
+    users = load_users()
+    if username in users:
+        return False, "Username sudah dipakai bro!"
+    users[username] = hash_password(password)
+    save_users(users)
+    return True, "Registrasi berhasil!"
 
 def get_user_db_file(username):
     """Generate unique database file path untuk setiap user"""
@@ -85,15 +102,12 @@ def analyze_image_pixels(image_data):
     except:
         return "Image analysis available"
 
-# --- 2. USERNAME AUTHENTICATION (FILE-BASED ONLY) ---
+# --- 2. USERNAME AUTHENTICATION (SECURE WITH PASSWORD) ---
 # Initialize current_user in session state
 if "current_user" not in st.session_state:
-    # Try file backup
-    last_user = load_last_user()
-    if last_user:
-        st.session_state.current_user = last_user
-    else:
-        st.session_state.current_user = None
+    st.session_state.current_user = None
+if "auth_mode" not in st.session_state:
+    st.session_state.auth_mode = "login"  # login or register
 
 # Login Screen
 if st.session_state.current_user is None:
@@ -110,22 +124,48 @@ if st.session_state.current_user is None:
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<h3 style='text-align:center; color:#00ffff; margin-bottom:20px;'>🔐 Login</h3>", unsafe_allow_html=True)
-        username_input = st.text_input("Enter Username", placeholder="Your unique username", key="login_username")
+        # Toggle between login and register
+        tab1, tab2 = st.tabs(["🔐 Login", "📝 Register"])
         
-        if st.button("🚀 Enter Azura AI", use_container_width=True):
-            if username_input.strip():
-                username = username_input.strip()
-                st.session_state.current_user = username
-                
-                # Save to file only (no cookies)
-                save_last_user(username)
-                
-                st.success("✅ Login successful!")
-                time.sleep(0.5)
-                st.rerun()
-            else:
-                st.error("❌ Username tidak boleh kosong bro!")
+        with tab1:
+            st.markdown("<h3 style='text-align:center; color:#00ffff; margin-bottom:20px;'>Login to Your Account</h3>", unsafe_allow_html=True)
+            login_username = st.text_input("Username", placeholder="Your username", key="login_user")
+            login_password = st.text_input("Password", type="password", placeholder="Your password", key="login_pass")
+            
+            if st.button("🚀 Login", use_container_width=True, key="btn_login"):
+                if login_username.strip() and login_password.strip():
+                    if verify_user(login_username.strip(), login_password.strip()):
+                        st.session_state.current_user = login_username.strip()
+                        st.success("✅ Login successful!")
+                        time.sleep(0.5)
+                        st.rerun()
+                    else:
+                        st.error("❌ Username atau password salah bro!")
+                else:
+                    st.error("❌ Isi username dan password dulu!")
+        
+        with tab2:
+            st.markdown("<h3 style='text-align:center; color:#00ffff; margin-bottom:20px;'>Create New Account</h3>", unsafe_allow_html=True)
+            reg_username = st.text_input("Username", placeholder="Choose a username", key="reg_user")
+            reg_password = st.text_input("Password", type="password", placeholder="Choose a password", key="reg_pass")
+            reg_confirm = st.text_input("Confirm Password", type="password", placeholder="Confirm your password", key="reg_confirm")
+            
+            if st.button("📝 Register", use_container_width=True, key="btn_register"):
+                if reg_username.strip() and reg_password.strip() and reg_confirm.strip():
+                    if reg_password != reg_confirm:
+                        st.error("❌ Password tidak sama bro!")
+                    elif len(reg_password) < 4:
+                        st.error("❌ Password minimal 4 karakter!")
+                    else:
+                        success, message = register_user(reg_username.strip(), reg_password.strip())
+                        if success:
+                            st.success("✅ " + message + " Silakan login!")
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error("❌ " + message)
+                else:
+                    st.error("❌ Isi semua field!")
     st.stop()
 
 # --- 3. INITIALIZE SESSION STATE (Per User) ---
@@ -246,9 +286,7 @@ with st.sidebar:
     st.markdown(f'<div class="user-badge">👤 {st.session_state.current_user}</div>', unsafe_allow_html=True)
     
     if st.button("🚪 Logout", use_container_width=True):
-        # Clear file and session state
-        if os.path.exists(LAST_USER_FILE):
-            os.remove(LAST_USER_FILE)
+        # Clear session state only (data tetep aman di database masing-masing user)
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
