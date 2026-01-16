@@ -1,5 +1,5 @@
 import streamlit as st
-from streamlit_cookies_manager import EncryptedCookieManager
+import extra_streamlit_components as stx
 from groq import Groq
 from huggingface_hub import InferenceClient
 import os, base64, requests, json
@@ -13,19 +13,41 @@ import hashlib
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(page_title="Azura AI", page_icon="🌐", layout="wide")
 
-# Initialize cookies manager
-cookies = EncryptedCookieManager(
-    prefix="azura_ai_",
-    password="your_secret_password_here_change_this_123456789"
-)
+# Cookie Manager
+@st.cache_resource
+def get_cookie_manager():
+    return stx.CookieManager()
 
-if not cookies.ready():
-    st.stop()
+cookie_manager = get_cookie_manager()
 
 # NAMA FILE DATABASE (Per-user dengan hash)
 DB_FOLDER = "azura_users_db"
 if not os.path.exists(DB_FOLDER):
     os.makedirs(DB_FOLDER)
+
+# File untuk simpan last logged user (fallback)
+LAST_USER_FILE = os.path.join(DB_FOLDER, "last_user.json")
+
+def save_last_user(username):
+    """Save last logged user ke file"""
+    try:
+        with open(LAST_USER_FILE, "w") as f:
+            json.dump({"username": username, "timestamp": time.time()}, f)
+    except:
+        pass
+
+def load_last_user():
+    """Load last logged user dari file"""
+    try:
+        if os.path.exists(LAST_USER_FILE):
+            with open(LAST_USER_FILE, "r") as f:
+                data = json.load(f)
+                # Check if timestamp is less than 7 days old
+                if time.time() - data.get("timestamp", 0) < 604800:  # 7 days
+                    return data.get("username")
+    except:
+        pass
+    return None
 
 def get_user_db_file(username):
     """Generate unique database file path untuk setiap user"""
@@ -67,13 +89,19 @@ def analyze_image_pixels(image_data):
     except:
         return "Image analysis available"
 
-# --- 2. USERNAME AUTHENTICATION WITH COOKIES ---
-# Check if user is already logged in via cookies
+# --- 2. USERNAME AUTHENTICATION WITH COOKIES + FILE FALLBACK ---
 if "current_user" not in st.session_state:
-    if "username" in cookies and cookies["username"]:
-        st.session_state.current_user = cookies["username"]
+    # Try to get from cookies first
+    cookies = cookie_manager.get_all()
+    if cookies and "azura_username" in cookies:
+        st.session_state.current_user = cookies["azura_username"]
     else:
-        st.session_state.current_user = None
+        # Fallback to file-based storage
+        last_user = load_last_user()
+        if last_user:
+            st.session_state.current_user = last_user
+        else:
+            st.session_state.current_user = None
 
 # Login Screen
 if st.session_state.current_user is None:
@@ -96,8 +124,9 @@ if st.session_state.current_user is None:
         if st.button("🚀 Enter Azura AI", use_container_width=True):
             if username_input.strip():
                 st.session_state.current_user = username_input.strip()
-                cookies["username"] = username_input.strip()
-                cookies.save()
+                # Save to cookie AND file (double protection)
+                cookie_manager.set("azura_username", username_input.strip(), expires_at=None)
+                save_last_user(username_input.strip())
                 st.rerun()
             else:
                 st.error("❌ Username tidak boleh kosong bro!")
@@ -164,8 +193,8 @@ st.markdown(f"""
     }}
     [data-testid="stFileUploader"] label {{ display: none !important; }}
     [data-testid="stChatInput"] {{ margin-left: 60px !important; width: calc(100% - 80px) !important; }}
-    .sidebar-logo {{ display: block; margin: auto; width: 80px; height: 80px; border-radius: 50%; border: 2px solid #00ffff; object-fit: cover; margin-bottom: 10px; }}
-    .rotating-logo {{ animation: rotate 8s linear infinite; border-radius: 50%; border: 2px solid #00ffff; }}
+    .sidebar-logo {{ display: block; margin: auto; width: 80px; height: 80px; border-radius: 50%; border: 1px solid #333; object-fit: cover; margin-bottom: 10px; }}
+    .rotating-logo {{ animation: rotate 8s linear infinite; border-radius: 50%; border: 1px solid #333; }}
     @keyframes rotate {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
     
     /* TYPING ANIMATION KAYA CHATGPT */
@@ -177,8 +206,8 @@ st.markdown(f"""
     
     /* TYPEWRITER EFFECT - Kiri ke Kanan */
     @keyframes typewriter {{
-        from {{ width: 0; }}
-        to {{ width: 100%; }}
+        from {{ max-width: 0; }}
+        to {{ max-width: 100%; }}
     }}
     
     @keyframes fadeIn {{
@@ -188,9 +217,11 @@ st.markdown(f"""
     
     .typing-text {{
         overflow: hidden;
-        white-space: nowrap;
-        animation: typewriter 2s steps(40) 1 normal both, fadeIn 0.5s ease;
         display: inline-block;
+        animation: typewriter 1.5s steps(50) 1 normal both, fadeIn 0.3s ease;
+        max-width: 100%;
+        white-space: pre-wrap;
+        word-wrap: break-word;
     }}
     
     .chat-bubble {{ transition: all 0.3s ease; animation: fadeIn 0.5s ease; }}
@@ -232,7 +263,7 @@ def render_chat_bubble(role, content, typing_effect=False):
         st.markdown(f"""
         <div class="chat-bubble" style="display: flex; justify-content: flex-end; align-items: flex-start; margin-bottom: 20px;">
             <div style="background: #002b2b; color: white; padding: 12px 18px; border-radius: 18px 18px 2px 18px; 
-                        max-width: 85%; border-right: 3px solid #00ffff; box-shadow: 0 4px 15px rgba(0,255,255,0.1);">
+                        max-width: 85%; border-right: 3px solid #00ffff; box-shadow: 0 4px 15px rgba(0,255,255,0.1); word-wrap: break-word;">
                 {content}
             </div>
             <img src="{user_img}" width="35" height="35" style="border-radius: 50%; margin-left: 10px; border: 1px solid #00ffff; object-fit: cover;">
@@ -243,7 +274,7 @@ def render_chat_bubble(role, content, typing_effect=False):
         <div class="chat-bubble" style="display: flex; justify-content: flex-start; align-items: flex-start; margin-bottom: 20px;">
             <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff; object-fit: cover;">
             <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                        max-width: 85%; border-left: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                        max-width: 85%; border-left: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.3); word-wrap: break-word;">
                 <div class="{typing_class}">{content}</div>
             </div>
         </div>
@@ -258,9 +289,10 @@ with st.sidebar:
     st.markdown(f'<div class="user-badge">👤 {st.session_state.current_user}</div>', unsafe_allow_html=True)
     
     if st.button("🚪 Logout", use_container_width=True):
-        # Clear cookies dan session state
-        cookies["username"] = ""
-        cookies.save()
+        # Clear cookies, file, dan session state
+        cookie_manager.delete("azura_username")
+        if os.path.exists(LAST_USER_FILE):
+            os.remove(LAST_USER_FILE)
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
@@ -290,8 +322,9 @@ with st.sidebar:
         for title in chat_keys:
             col1, col2 = st.columns([4, 1])
             with col1:
-                button_style = "💬" if title != st.session_state.current_session_key else "✅"
-                if st.button(f"{button_style} {title}", key=f"load_{title}", use_container_width=True):
+                # Highlight chat yang sedang aktif dengan warna berbeda
+                button_label = f"{'✅ ' if title == st.session_state.current_session_key else ''}{title}"
+                if st.button(button_label, key=f"load_{title}", use_container_width=True):
                     st.session_state.messages = st.session_state.all_chats[title].copy()
                     st.session_state.current_session_key = title
                     st.rerun()
@@ -355,8 +388,8 @@ if prompt := st.chat_input("Message Azura AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     if st.session_state.current_session_key is None:
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        session_title = f"{prompt[:15]}... ({timestamp})"
+        # Chat baru, buat key sederhana dari prompt (tanpa timestamp/emoji)
+        session_title = prompt[:30] + "..." if len(prompt) > 30 else prompt
         st.session_state.current_session_key = session_title
     else:
         session_title = st.session_state.current_session_key
@@ -496,9 +529,3 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             st.rerun()
     
     except Exception as e:
-        st.error(f"❌ Error bro: {str(e)}")
-        st.session_state.messages.append({"role": "assistant", "content": f"Sorry bro, ada error nih: {str(e)} 😰"})
-        if st.session_state.current_session_key:
-            st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
-        save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-        st.rerun()
