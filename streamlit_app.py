@@ -13,7 +13,6 @@ import hashlib
 st.set_page_config(page_title="Azura AI", page_icon="🌐", layout="wide")
 
 # Simple Session State (No Cookies - lebih stabil!)
-# Cookies sering bikin loading forever di beberapa environment
 if "cookies_ready" not in st.session_state:
     st.session_state.cookies_ready = True
 
@@ -103,11 +102,10 @@ def analyze_image_pixels(image_data):
         return "Image analysis available"
 
 # --- 2. USERNAME AUTHENTICATION (SECURE WITH PASSWORD) ---
-# Initialize current_user in session state
 if "current_user" not in st.session_state:
     st.session_state.current_user = None
 if "auth_mode" not in st.session_state:
-    st.session_state.auth_mode = "login"  # login or register
+    st.session_state.auth_mode = "login"
 
 # Login Screen
 if st.session_state.current_user is None:
@@ -124,7 +122,6 @@ if st.session_state.current_user is None:
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # Toggle between login and register
         tab1, tab2 = st.tabs(["🔐 Login", "📝 Register"])
         
         with tab1:
@@ -230,11 +227,16 @@ st.markdown(f"""
         box-shadow: 0 0 15px rgba(0,255,255,0.3) !important;
     }}
     [data-testid="stFileUploaderDropzone"] div {{ display: none !important; }}
+    [data-testid="stFileUploaderDropzone"] span {{ display: none !important; }}
+    [data-testid="stFileUploaderDropzone"] p {{ display: none !important; }}
+    [data-testid="stFileUploaderDropzone"] small {{ display: none !important; }}
     [data-testid="stFileUploaderDropzone"]::before {{
         content: "＋"; color: #00ffff; font-size: 26px; font-weight: bold;
         display: flex; align-items: center; justify-content: center; height: 100%;
     }}
     [data-testid="stFileUploader"] label {{ display: none !important; }}
+    [data-testid="stFileUploader"] span {{ display: none !important; }}
+    [data-testid="stFileUploader"] small {{ display: none !important; }}
     [data-testid="stChatInput"] {{ margin-left: 60px !important; width: calc(100% - 80px) !important; }}
     
     .sidebar-logo {{ display: block; margin: auto; width: 80px; height: 80px; border-radius: 50%; border: 1px solid #333; object-fit: cover; margin-bottom: 10px; }}
@@ -251,7 +253,6 @@ st.markdown(f"""
         border: 1px solid #00ffff; color: #00ffff; font-size: 13px; font-weight: bold; text-align: center;
         margin-bottom: 15px; box-shadow: 0 0 10px rgba(0,255,255,0.2); }}
     
-    /* HOVER EFFECTS UNTUK SEMUA BUTTON */
     .stButton button {{
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         border: 1px solid transparent !important;
@@ -268,7 +269,6 @@ st.markdown(f"""
         box-shadow: 0 2px 10px rgba(0,255,255,0.2) !important;
     }}
     
-    /* HOVER UNTUK SELECTBOX (MODEL SELECTOR) */
     [data-testid="stSelectbox"] {{
         transition: all 0.3s ease !important;
     }}
@@ -286,7 +286,6 @@ st.markdown(f"""
         box-shadow: 0 0 15px rgba(0,255,255,0.2) !important;
     }}
     
-    /* SMOOTH TRANSITIONS */
     * {{
         transition: transform 0.2s ease, box-shadow 0.2s ease !important;
     }}
@@ -334,7 +333,6 @@ with st.sidebar:
     st.markdown(f'<div class="user-badge">👤 {st.session_state.current_user}</div>', unsafe_allow_html=True)
     
     if st.button("🚪 Logout", use_container_width=True):
-        # Clear session state only (data tetep aman di database masing-masing user)
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
@@ -435,11 +433,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         messages.append({"role": m["role"], "content": m["content"]})
                 messages.append({"role": "user", "content": user_msg})
                 
-                # Single container untuk thinking & answer
                 response_container = st.empty()
                 
                 try:
-                    # Streaming response
                     stream = client_hf.chat_completion(
                         messages=messages,
                         model="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
@@ -460,12 +456,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                             if hasattr(delta, 'content') and delta.content:
                                 buffer += delta.content
                                 
-                                # Detect <think> tag
                                 if "<think>" in buffer:
                                     in_think_tag = True
                                     buffer = buffer.replace("<think>", "")
                                 
-                                # Detect </think> tag
                                 if "</think>" in buffer:
                                     in_think_tag = False
                                     thinking_closed = True
@@ -474,11 +468,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                     buffer = parts[1] if len(parts) > 1 else ""
                                     continue
                                 
-                                # Route text ke thinking atau answer
                                 if in_think_tag:
                                     thinking_text += delta.content
                                     
-                                    # Display HANYA thinking saat masih dalam tag
                                     response_container.markdown(f"""
                                     <div style="background: #0a0a0a; padding: 15px; border-radius: 10px; border-left: 3px solid #00ffff; margin-bottom: 15px;">
                                         <div style="color: #00ffff; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
@@ -493,10 +485,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                     </div>
                                     """, unsafe_allow_html=True)
                                 else:
-                                    # Setelah thinking selesai, tampilkan answer
                                     answer_text += delta.content
                                     
-                                    # Tampilkan thinking (collapsed) + answer (streaming)
+                                    clean_answer = clean_text(answer_text)
+                                    
                                     full_html = ""
                                     
                                     if thinking_closed and thinking_text:
@@ -514,14 +506,12 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                         <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
                                         <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
                                                     max-width: 85%; border-left: 1px solid #333; word-wrap: break-word;">
-                                            <div style="white-space: pre-wrap;">{clean_text(answer_text)}</div>
+                                            <div style="white-space: pre-wrap;">{clean_answer}</div>
                                         </div>
                                     </div>
                                     """
                                     
                                     response_container.markdown(full_html, unsafe_allow_html=True)
-                                    
-                                    # Delay untuk efek typing
                                     time.sleep(0.01)
                     
                     res = answer_text.strip() if answer_text else thinking_text.strip()
