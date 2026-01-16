@@ -14,13 +14,16 @@ import hashlib
 st.set_page_config(page_title="Azura AI", page_icon="🌐", layout="wide")
 
 # Cookie Manager - FIXED VERSION (No caching!)
-if "cookies" not in st.session_state:
-    st.session_state.cookies = EncryptedCookieManager(
-        prefix="azura_ai_",
-        password=os.environ.get("COOKIES_PASSWORD", "azura-secret-key-2024")
-    )
-
-cookies = st.session_state.cookies
+try:
+    if "cookies" not in st.session_state:
+        st.session_state.cookies = EncryptedCookieManager(
+            prefix="azura_ai_",
+            password=os.environ.get("COOKIES_PASSWORD", "azura-secret-key-2024")
+        )
+    cookies = st.session_state.cookies
+except Exception as e:
+    st.error(f"Cookie Manager Error: {e}")
+    st.stop()
 
 # NAMA FILE DATABASE (Per-user dengan hash)
 DB_FOLDER = "azura_users_db"
@@ -44,7 +47,7 @@ def load_last_user():
         if os.path.exists(LAST_USER_FILE):
             with open(LAST_USER_FILE, "r") as f:
                 data = json.load(f)
-                # Check if timestamp is less than 30 days old (increased from 7)
+                # Check if timestamp is less than 30 days old
                 if time.time() - data.get("timestamp", 0) < 2592000:  # 30 days
                     return data.get("username")
     except:
@@ -86,14 +89,14 @@ def analyze_image_pixels(image_data):
         img = Image.open(io.BytesIO(image_data))
         width, height = img.size
         mode = img.mode
-        colors = img.getcolors(maxcolors=10)
-        return f"Size: {width}x{height}, Mode: {mode}, Dominant colors detected"
+        return f"Size: {width}x{height}, Mode: {mode}"
     except:
         return "Image analysis available"
 
-# --- 2. USERNAME AUTHENTICATION WITH COOKIES + FILE FALLBACK (FIXED) ---
+# --- 2. USERNAME AUTHENTICATION WITH COOKIES + FILE FALLBACK ---
 # Wait for cookies to be ready
 if not cookies.ready():
+    st.info("⏳ Loading Azura AI...")
     st.stop()
 
 # Initialize current_user in session state
@@ -103,14 +106,12 @@ if "current_user" not in st.session_state:
     
     if saved_username:
         st.session_state.current_user = saved_username
-        # Update file backup
         save_last_user(saved_username)
     else:
         # Priority 2: Try file backup
         last_user = load_last_user()
         if last_user:
             st.session_state.current_user = last_user
-            # Restore to cookies
             cookies["username"] = last_user
             cookies.save()
         else:
@@ -139,12 +140,12 @@ if st.session_state.current_user is None:
                 username = username_input.strip()
                 st.session_state.current_user = username
                 
-                # Save to BOTH cookie AND file (double protection)
+                # Save to BOTH cookie AND file
                 cookies["username"] = username
                 cookies.save()
                 save_last_user(username)
                 
-                st.success("✅ Login successful! Redirecting...")
+                st.success("✅ Login successful!")
                 time.sleep(0.5)
                 st.rerun()
             else:
@@ -179,8 +180,9 @@ try:
     client_groq = Groq(api_key=st.secrets["GROQ_API_KEY"])
     client_hf = InferenceClient(token=st.secrets["HF_TOKEN"])
     POLLINATIONS_API = "https://image.pollinations.ai/prompt/"
-except:
-    st.error("❌ API Keys Error! Cek secrets.toml lu bro.")
+except Exception as e:
+    st.error(f"❌ API Keys Error: {e}")
+    st.info("Cek secrets.toml lu bro!")
     st.stop()
 
 # --- 5. ASSETS (LOGO & USER) ---
@@ -193,10 +195,9 @@ def get_base64_img(file_path):
 
 logo_data = get_base64_img('logo.png')
 logo_url = f"data:image/png;base64,{logo_data}" if logo_data else ""
-user_data = get_base64_img('user.png')
 user_img = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfIrn5orx6KdLUiIvZ3IUkZTMdIyes-D6sMA&s"
 
-# --- 6. CSS (UI CLEAN & RESPONSIVE + TYPING ANIMATION) ---
+# --- 6. CSS ---
 st.markdown(f"""
 <style>
     [data-testid="stAppViewContainer"] {{ background: #050505; }}
@@ -216,46 +217,11 @@ st.markdown(f"""
     .rotating-logo {{ animation: rotate 8s linear infinite; border-radius: 50%; border: 1px solid #333; }}
     @keyframes rotate {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
     
-    /* TYPING ANIMATION KAYA CHATGPT */
     .typing-indicator {{ display: flex; align-items: center; gap: 5px; padding: 5px 0; }}
     .typing-dot {{ width: 7px; height: 7px; background: #00ffff; border-radius: 50%; animation: blink 1.4s infinite both; }}
     .typing-dot:nth-child(2) {{ animation-delay: 0.2s; }}
     .typing-dot:nth-child(3) {{ animation-delay: 0.4s; }}
     @keyframes blink {{ 0%, 80%, 100% {{ opacity: 0; }} 40% {{ opacity: 1; }} }}
-    
-    /* TYPEWRITER EFFECT - Kiri ke Kanan */
-    @keyframes typewriter {{
-        from {{ max-width: 0; }}
-        to {{ max-width: 100%; }}
-    }}
-    
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: translateY(10px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
-    }}
-    
-    .typing-text {{
-        overflow: hidden;
-        display: inline-block;
-        animation: typewriter 1.5s steps(50) 1 normal both, fadeIn 0.3s ease;
-        max-width: 100%;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-    }}
-    
-    .chat-bubble {{ transition: all 0.3s ease; animation: fadeIn 0.5s ease; }}
-    .chat-bubble:hover {{ transform: scale(1.02); }}
-    
-    .stButton button {{ transition: all 0.3s ease; }}
-    .stButton button:hover {{ transform: scale(1.05); box-shadow: 0 0 15px #00ffff; }}
-    .stButton button:active {{ transform: scale(0.95); }}
-    
-    .vision-bubble {{ animation: pulse 2s infinite; }}
-    @keyframes pulse {{ 0% {{ transform: scale(1); }} 50% {{ transform: scale(1.05); }} 100% {{ transform: scale(1); }} }}
-    
-    .spinner {{ border: 3px solid #00ffff22; border-top: 3px solid #00ffff; border-radius: 50%; width: 20px; height: 20px;
-        animation: spin 1s linear infinite; display: inline-block; margin-right: 10px; vertical-align: middle; }}
-    @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
     
     .user-badge {{ background: linear-gradient(135deg, #00ffff22, #00ffff44); padding: 8px 15px; border-radius: 20px;
         border: 1px solid #00ffff; color: #00ffff; font-size: 13px; font-weight: bold; text-align: center;
@@ -268,33 +234,29 @@ def clean_text(text):
     if not isinstance(text, str): 
         return str(text)
     text = re.sub(r'<[^>]+>', '', text)
-    text = text.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&').replace('&quot;', '"').replace('&#39;', "'")
-    text = text.replace("</div>", "").replace("<div>", "").replace("<br>", "\n").replace("<p>", "").replace("</p>", "")
+    text = text.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&')
     return text.strip()
 
-def render_chat_bubble(role, content, typing_effect=False):
+def render_chat_bubble(role, content):
     content = clean_text(content)
-    
-    # Untuk AI response, kasih typing effect
-    typing_class = "typing-text" if typing_effect and role == "assistant" else ""
     
     if role == "user":
         st.markdown(f"""
-        <div class="chat-bubble" style="display: flex; justify-content: flex-end; align-items: flex-start; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
             <div style="background: #002b2b; color: white; padding: 12px 18px; border-radius: 18px 18px 2px 18px; 
-                        max-width: 85%; border-right: 3px solid #00ffff; box-shadow: 0 4px 15px rgba(0,255,255,0.1); word-wrap: break-word;">
+                        max-width: 85%; border-right: 3px solid #00ffff; word-wrap: break-word;">
                 {content}
             </div>
-            <img src="{user_img}" width="35" height="35" style="border-radius: 50%; margin-left: 10px; border: 1px solid #00ffff; object-fit: cover;">
+            <img src="{user_img}" width="35" height="35" style="border-radius: 50%; margin-left: 10px; border: 1px solid #00ffff;">
         </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown(f"""
-        <div class="chat-bubble" style="display: flex; justify-content: flex-start; align-items: flex-start; margin-bottom: 20px;">
-            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff; object-fit: cover;">
+        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
             <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                        max-width: 85%; border-left: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.3); word-wrap: break-word;">
-                <div class="{typing_class}">{content}</div>
+                        max-width: 85%; border-left: 1px solid #333; word-wrap: break-word;">
+                {content}
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -308,16 +270,12 @@ with st.sidebar:
     st.markdown(f'<div class="user-badge">👤 {st.session_state.current_user}</div>', unsafe_allow_html=True)
     
     if st.button("🚪 Logout", use_container_width=True):
-        # Clear cookies, file, dan session state
         cookies["username"] = ""
         cookies.save()
-        
         if os.path.exists(LAST_USER_FILE):
             os.remove(LAST_USER_FILE)
-        
         for key in list(st.session_state.keys()):
             del st.session_state[key]
-        
         st.rerun()
     
     if st.button("＋ New Session", use_container_width=True):
@@ -346,14 +304,13 @@ with st.sidebar:
         for title in chat_keys:
             col1, col2 = st.columns([4, 1])
             with col1:
-                # Highlight chat yang sedang aktif dengan warna berbeda
                 button_label = f"{'✅ ' if title == st.session_state.current_session_key else ''}{title}"
                 if st.button(button_label, key=f"load_{title}", use_container_width=True):
                     st.session_state.messages = st.session_state.all_chats[title].copy()
                     st.session_state.current_session_key = title
                     st.rerun()
             with col2:
-                if st.button("🗑️", key=f"delete_{title}", help="Delete", use_container_width=True):
+                if st.button("🗑️", key=f"delete_{title}", use_container_width=True):
                     del st.session_state.all_chats[title]
                     if st.session_state.current_session_key == title:
                         st.session_state.current_session_key = None
@@ -367,52 +324,26 @@ with st.sidebar:
 if logo_url:
     st.markdown(f'<div style="text-align:center; margin-bottom:20px;"><img src="{logo_url}" width="130" class="rotating-logo"></div>', unsafe_allow_html=True)
     if not st.session_state.messages:
-        st.markdown("<div style='text-align:center; color:#00ffff; font-size:18px; margin-bottom:20px;'>How can I help you today? 👋</div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align:center; color:#00ffff; font-size:18px;'>How can I help you today? 👋</div>", unsafe_allow_html=True)
 
-# Render Chat - tambah typing effect untuk pesan terakhir kalo dari AI
-for idx, msg in enumerate(st.session_state.messages):
+# Render Chat
+for msg in st.session_state.messages:
     if msg.get("type") == "image": 
         st.image(msg["content"], width=400)
     else:
-        # Kasih typing effect hanya untuk message AI yang TERAKHIR
-        is_last_ai_msg = (idx == len(st.session_state.messages) - 1) and (msg["role"] == "assistant")
-        render_chat_bubble(msg["role"], msg["content"], typing_effect=is_last_ai_msg)
+        render_chat_bubble(msg["role"], msg["content"])
 
+# File Upload
 up = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed")
 if up: 
     st.session_state.uploaded_image = up.getvalue()
-    st.session_state.show_upload_notif = True
+    st.toast("✅ Image uploaded!", icon="📷")
 
-if st.session_state.show_upload_notif:
-    notif_placeholder = st.empty()
-    notif_placeholder.markdown("""
-    <div style="position: fixed; top: 20px; right: 20px; background: linear-gradient(135deg, #00ffff22, #00ffff44); 
-                padding: 15px 20px; border-radius: 10px; border: 1px solid #00ffff; z-index: 9999;
-                box-shadow: 0 4px 15px rgba(0,255,255,0.3); animation: slideIn 0.3s ease;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 20px;">✅</span>
-            <div>
-                <div style="color: #00ffff; font-weight: bold; font-size: 14px;">Image Uploaded!</div>
-                <div style="color: #b0b0b0; font-size: 12px;">Ready for analysis, bro! 🔍</div>
-            </div>
-        </div>
-    </div>
-    <style>
-        @keyframes slideIn {
-            from { transform: translateX(400px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    time.sleep(3)
-    notif_placeholder.empty()
-    st.session_state.show_upload_notif = False
-
+# Chat Input
 if prompt := st.chat_input("Message Azura AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     if st.session_state.current_session_key is None:
-        # Chat baru, buat key sederhana dari prompt (tanpa timestamp/emoji)
         session_title = prompt[:30] + "..." if len(prompt) > 30 else prompt
         st.session_state.current_session_key = session_title
     else:
@@ -424,143 +355,95 @@ if prompt := st.chat_input("Message Azura AI..."):
 
 # --- 10. AI PROCESSING ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
-    with st.container():
-        if engine == "Scout" and st.session_state.uploaded_image:
-            st.markdown(f"""
-            <div class="vision-bubble" style="display: flex; justify-content: flex-start; align-items: flex-start; margin-bottom: 20px;">
-                <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff; object-fit: cover;">
-                <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                            max-width: 85%; border-left: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                    <div class="spinner"></div>
-                    <span style="vertical-align: middle;">🔍 Analyzing your image... Bro, give me a sec! 🤔</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-            <div style="display: flex; justify-content: flex-start; align-items: flex-start; margin-bottom: 20px;">
-                <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
-                <div style="background: #1a1a1a; padding: 12px 18px; border-radius: 2px 18px 18px 18px; border: 1px solid #333;">
-                    <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    try:
-        user_msg = st.session_state.messages[-1]["content"]
-        res = ""
-        
-        system_prompt = (
-            "You are Azura AI, a supreme multi-modal AI assistant created by Muhammad Jibran Al Kaffie. "
-            "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
-            "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
-            "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
-            "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-            "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
-            "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. "
-            "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. "
-            "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend."
-        )
-        
-        if engine == "DeepSeek":
-            # Build conversation history
-            messages = [{"role": "system", "content": system_prompt}]
-            for m in st.session_state.messages[:-1]:
-                if m.get("type") != "image":
-                    messages.append({"role": m["role"], "content": m["content"]})
-            messages.append({"role": "user", "content": user_msg})
+    with st.spinner("🤔 Azura is thinking..."):
+        try:
+            user_msg = st.session_state.messages[-1]["content"]
+            res = ""
             
-            # Streaming response with thinking support
-            thinking_content = ""
-            answer_content = ""
-            thinking_placeholder = st.empty()
-            answer_placeholder = st.empty()
+            system_prompt = (
+                "You are Azura AI, created by Muhammad Jibran Al Kaffie. "
+                "Respond with intelligence and confidence. Use casual 'gaul' language. "
+                "Include emojis sparingly (1-2 per response). "
+                "Never provide malicious code examples."
+            )
             
-            try:
-                stream = client_hf.chat_completion(
-                    messages=messages,
-                    model="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
-                    max_tokens=2048,
-                    temperature=0.7,
-                    stream=True
-                )
+            if engine == "DeepSeek":
+                messages = [{"role": "system", "content": system_prompt}]
+                for m in st.session_state.messages[:-1]:
+                    if m.get("type") != "image":
+                        messages.append({"role": m["role"], "content": m["content"]})
+                messages.append({"role": "user", "content": user_msg})
                 
-                in_thinking = False
-                current_text = ""
-                
-                for chunk in stream:
-                    if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
-                        delta = chunk.choices[0].delta
-                        if hasattr(delta, 'content') and delta.content:
-                            current_text += delta.content
+                try:
+                    resp = client_hf.chat_completion(
+                        messages=messages,
+                        model="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+                        max_tokens=2048,
+                        temperature=0.7,
+                        stream=False
+                    )
+                    full_response = resp.choices[0].message.content
+                    
+                    # Parse thinking tags
+                    if "<think>" in full_response and "</think>" in full_response:
+                        thinking_match = re.search(r'<think>(.*?)</think>', full_response, re.DOTALL)
+                        if thinking_match:
+                            thinking = thinking_match.group(1).strip()
+                            answer = re.sub(r'<think>.*?</think>', '', full_response, flags=re.DOTALL).strip()
                             
-                            # Parse thinking tags
-                            if "<think>" in current_text:
-                                in_thinking = True
-                                parts = current_text.split("<think>", 1)
-                                if len(parts) > 1:
-                                    current_text = parts[1]
-                            
-                            if "</think>" in current_text and in_thinking:
-                                in_thinking = False
-                                parts = current_text.split("</think>", 1)
-                                thinking_content += parts[0]
-                                current_text = parts[1] if len(parts) > 1 else ""
-                                
-                                # Display thinking in expander
-                                with thinking_placeholder.expander("🧠 Azura is thinking...", expanded=False):
-                                    st.markdown(f"*{thinking_content.strip()}*")
-                            
-                            if in_thinking:
-                                thinking_content += delta.content
-                                with thinking_placeholder.expander("🧠 Azura is thinking...", expanded=True):
-                                    st.markdown(f"*{thinking_content.strip()}*")
-                            else:
-                                answer_content += delta.content
-                                # Render streaming answer
-                                answer_placeholder.markdown(f"""
-                                <div class="chat-bubble" style="display: flex; justify-content: flex-start; align-items: flex-start; margin-bottom: 20px;">
-                                    <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff; object-fit: cover;">
-                                    <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                                                max-width: 85%; border-left: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.3); word-wrap: break-word;">
-                                        {clean_text(answer_content)}
-                                    </div>
-                                </div>
-                                """, unsafe_allow_html=True)
+                            with st.expander("🧠 Azura's Thinking Process", expanded=False):
+                                st.markdown(f"*{thinking}*")
+                            res = answer
+                        else:
+                            res = full_response
+                    else:
+                        res = full_response
+                        
+                except Exception as e:
+                    if "busy" in str(e).lower() or "503" in str(e):
+                        res = "DeepSeek lagi sibuk nih bro! 😅 Coba model lain atau tunggu sebentar ya!"
+                    else:
+                        res = f"Error: {str(e)}"
+            
+            elif engine == "Scout":
+                current_image_data = st.session_state.uploaded_image
                 
-                # Clean up final answer
-                res = answer_content.strip()
-                
-            except Exception as e:
-                if "Model too busy" in str(e) or "503" in str(e):
-                    res = "Waduh bro, DeepSeek lagi sibuk banget nih! 😅 Coba lagi sebentar atau ganti ke model lain dulu ya!"
+                if current_image_data:
+                    pixel_info = analyze_image_pixels(current_image_data)
+                    base64_image = base64.b64encode(current_image_data).decode('utf-8')
+                    
+                    messages = [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": [
+                            {"type": "text", "text": f"{user_msg} (Image info: {pixel_info})"},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                        ]}
+                    ]
+                    
+                    resp = client_groq.chat.completions.create(
+                        model="meta-llama/llama-4-scout-17b-16e-instruct",
+                        messages=messages,
+                        temperature=0.7,
+                        max_tokens=1024
+                    )
+                    res = resp.choices[0].message.content
+                    st.session_state.uploaded_image = None
                 else:
-                    raise e
-        
-        elif engine == "Scout":
-            current_image_data = st.session_state.uploaded_image
+                    messages = [{"role": "system", "content": system_prompt}]
+                    for m in st.session_state.messages[:-1]:
+                        if m.get("type") != "image":
+                            messages.append({"role": m["role"], "content": m["content"]})
+                    messages.append({"role": "user", "content": user_msg})
+                    
+                    resp = client_groq.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=messages,
+                        temperature=0.7,
+                        max_tokens=1024
+                    )
+                    res = resp.choices[0].message.content
             
-            if current_image_data:
-                current_pixel_analysis = analyze_image_pixels(current_image_data)
-                base64_image = base64.b64encode(current_image_data).decode('utf-8')
-                
-                messages = [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": [
-                        {"type": "text", "text": user_msg + f" (Analyze the uploaded image using this pixel data: {current_pixel_analysis})"},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                    ]}
-                ]
-                
-                resp = client_groq.chat.completions.create(
-                    model="meta-llama/llama-4-scout-17b-16e-instruct",
-                    messages=messages,
-                    temperature=0.7,
-                    max_tokens=1024
-                )
-                res = resp.choices[0].message.content
-                st.session_state.uploaded_image = None
-            else:
+            elif engine == "Llama33":
                 messages = [{"role": "system", "content": system_prompt}]
                 for m in st.session_state.messages[:-1]:
                     if m.get("type") != "image":
@@ -570,67 +453,53 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 resp = client_groq.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=messages,
-                    temperature=0.7,
+                    temperature=0.8,
                     max_tokens=1024
                 )
                 res = resp.choices[0].message.content
+            
+            elif engine == "HuggingFace":
+                messages = [{"role": "system", "content": system_prompt}]
+                for m in st.session_state.messages[:-1]:
+                    if m.get("type") != "image":
+                        messages.append({"role": m["role"], "content": m["content"]})
+                messages.append({"role": "user", "content": user_msg})
+                
+                resp = client_hf.chat_completion(
+                    messages=messages,
+                    model="Qwen/Qwen2.5-7B-Instruct",
+                    max_tokens=1024,
+                    temperature=0.9
+                )
+                res = resp.choices[0].message.content
+            
+            elif engine == "Pollinations":
+                encoded_prompt = urllib.parse.quote(user_msg)
+                image_url = f"{POLLINATIONS_API}{encoded_prompt}"
+                
+                img_response = requests.get(image_url)
+                img = Image.open(io.BytesIO(img_response.content))
+                
+                st.session_state.messages.append({"role": "assistant", "type": "image", "content": img})
+                
+                if st.session_state.current_session_key:
+                    st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
+                save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
+                st.rerun()
+            
+            if res:
+                st.session_state.messages.append({"role": "assistant", "content": res})
+                
+                if st.session_state.current_session_key:
+                    st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
+                save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
+                st.rerun()
         
-        elif engine == "Llama33":
-            messages = [{"role": "system", "content": system_prompt}]
-            for m in st.session_state.messages[:-1]:
-                if m.get("type") != "image":
-                    messages.append({"role": m["role"], "content": m["content"]})
-            messages.append({"role": "user", "content": user_msg})
-            
-            resp = client_groq.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=messages,
-                temperature=0.8,
-                max_tokens=1024
-            )
-            res = resp.choices[0].message.content
-        
-        elif engine == "HuggingFace":
-            messages = [{"role": "system", "content": system_prompt}]
-            for m in st.session_state.messages[:-1]:
-                if m.get("type") != "image":
-                    messages.append({"role": m["role"], "content": m["content"]})
-            messages.append({"role": "user", "content": user_msg})
-            
-            resp = client_hf.chat_completion(
-                messages=messages,
-                model="Qwen/Qwen2.5-7B-Instruct",
-                max_tokens=1024,
-                temperature=0.9
-            )
-            res = resp.choices[0].message.content
-        
-        elif engine == "Pollinations":
-            encoded_prompt = urllib.parse.quote(user_msg)
-            image_url = f"{POLLINATIONS_API}{encoded_prompt}"
-            
-            img_response = requests.get(image_url)
-            img = Image.open(io.BytesIO(img_response.content))
-            
-            st.session_state.messages.append({"role": "assistant", "type": "image", "content": img})
-            
+        except Exception as e:
+            st.error(f"❌ Error bro: {str(e)}")
+            error_msg = f"Sorry bro, ada error: {str(e)} 😰"
+            st.session_state.messages.append({"role": "assistant", "content": error_msg})
             if st.session_state.current_session_key:
                 st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
             save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
             st.rerun()
-        
-        if res:
-            st.session_state.messages.append({"role": "assistant", "content": res})
-            
-            if st.session_state.current_session_key:
-                st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
-            save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-            st.rerun()
-    
-    except Exception as e:
-        st.error(f"❌ Error bro: {str(e)}")
-        st.session_state.messages.append({"role": "assistant", "content": f"Sorry bro, ada error nih: {str(e)} 😰"})
-        if st.session_state.current_session_key:
-            st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
-        save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-        st.rerun()
