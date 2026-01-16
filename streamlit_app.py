@@ -221,6 +221,13 @@ st.markdown(f"""
     [data-testid="stFileUploaderDropzone"] {{
         background: #00ffff11 !important; border: 1px solid #00ffff44 !important; border-radius: 50% !important;
         height: 42px !important; width: 42px !important; padding: 0 !important;
+        transition: all 0.3s ease !important;
+    }}
+    [data-testid="stFileUploaderDropzone"]:hover {{
+        transform: scale(1.1) !important;
+        background: #00ffff22 !important;
+        border-color: #00ffff !important;
+        box-shadow: 0 0 15px rgba(0,255,255,0.3) !important;
     }}
     [data-testid="stFileUploaderDropzone"] div {{ display: none !important; }}
     [data-testid="stFileUploaderDropzone"]::before {{
@@ -229,6 +236,7 @@ st.markdown(f"""
     }}
     [data-testid="stFileUploader"] label {{ display: none !important; }}
     [data-testid="stChatInput"] {{ margin-left: 60px !important; width: calc(100% - 80px) !important; }}
+    
     .sidebar-logo {{ display: block; margin: auto; width: 80px; height: 80px; border-radius: 50%; border: 1px solid #333; object-fit: cover; margin-bottom: 10px; }}
     .rotating-logo {{ animation: rotate 8s linear infinite; border-radius: 50%; border: 1px solid #333; }}
     @keyframes rotate {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
@@ -242,6 +250,46 @@ st.markdown(f"""
     .user-badge {{ background: linear-gradient(135deg, #00ffff22, #00ffff44); padding: 8px 15px; border-radius: 20px;
         border: 1px solid #00ffff; color: #00ffff; font-size: 13px; font-weight: bold; text-align: center;
         margin-bottom: 15px; box-shadow: 0 0 10px rgba(0,255,255,0.2); }}
+    
+    /* HOVER EFFECTS UNTUK SEMUA BUTTON */
+    .stButton button {{
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        border: 1px solid transparent !important;
+    }}
+    
+    .stButton button:hover {{
+        transform: scale(1.05) translateY(-2px) !important;
+        box-shadow: 0 5px 20px rgba(0,255,255,0.3) !important;
+        border-color: #00ffff !important;
+    }}
+    
+    .stButton button:active {{
+        transform: scale(0.98) translateY(0) !important;
+        box-shadow: 0 2px 10px rgba(0,255,255,0.2) !important;
+    }}
+    
+    /* HOVER UNTUK SELECTBOX (MODEL SELECTOR) */
+    [data-testid="stSelectbox"] {{
+        transition: all 0.3s ease !important;
+    }}
+    
+    [data-testid="stSelectbox"]:hover {{
+        transform: scale(1.02) !important;
+    }}
+    
+    [data-testid="stSelectbox"] > div {{
+        transition: all 0.3s ease !important;
+    }}
+    
+    [data-testid="stSelectbox"] > div:hover {{
+        border-color: #00ffff !important;
+        box-shadow: 0 0 15px rgba(0,255,255,0.2) !important;
+    }}
+    
+    /* SMOOTH TRANSITIONS */
+    * {{
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -387,9 +435,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         messages.append({"role": m["role"], "content": m["content"]})
                 messages.append({"role": "user", "content": user_msg})
                 
-                # Placeholder untuk thinking & answer
-                thinking_container = st.empty()
-                answer_container = st.empty()
+                # Single container untuk thinking & answer
+                response_container = st.empty()
                 
                 try:
                     # Streaming response
@@ -405,6 +452,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     answer_text = ""
                     in_think_tag = False
                     buffer = ""
+                    thinking_closed = False
                     
                     for chunk in stream:
                         if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
@@ -420,38 +468,48 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                 # Detect </think> tag
                                 if "</think>" in buffer:
                                     in_think_tag = False
+                                    thinking_closed = True
                                     parts = buffer.split("</think>")
                                     thinking_text += parts[0]
                                     buffer = parts[1] if len(parts) > 1 else ""
-                                    
-                                    # Show final thinking in expander
-                                    with thinking_container.container():
-                                        with st.expander("🧠 Azura's Deep Thinking Process", expanded=False):
-                                            st.markdown(f"```\n{thinking_text.strip()}\n```")
                                     continue
                                 
                                 # Route text ke thinking atau answer
                                 if in_think_tag:
                                     thinking_text += delta.content
                                     
-                                    # Display thinking dengan efek loading
-                                    with thinking_container.container():
-                                        st.markdown(f"""
-                                        <div style="background: #1a1a1a; padding: 15px; border-radius: 10px; border-left: 3px solid #00ffff; margin-bottom: 10px;">
-                                            <div style="color: #00ffff; font-weight: bold; margin-bottom: 8px;">🧠 Azura is thinking deeply...</div>
-                                            <div style="color: #888; font-size: 13px; font-family: monospace; white-space: pre-wrap;">{thinking_text}</div>
-                                            <div class="typing-indicator" style="margin-top: 5px;">
+                                    # Display HANYA thinking saat masih dalam tag
+                                    response_container.markdown(f"""
+                                    <div style="background: #0a0a0a; padding: 15px; border-radius: 10px; border-left: 3px solid #00ffff; margin-bottom: 15px;">
+                                        <div style="color: #00ffff; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                                            🧠 Azura's Deep Thinking Process
+                                            <div class="typing-indicator" style="margin: 0;">
                                                 <div class="typing-dot"></div>
                                                 <div class="typing-dot"></div>
                                                 <div class="typing-dot"></div>
                                             </div>
                                         </div>
-                                        """, unsafe_allow_html=True)
+                                        <div style="color: #888; font-size: 13px; font-family: 'Consolas', monospace; white-space: pre-wrap; line-height: 1.6;">{thinking_text}</div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
                                 else:
+                                    # Setelah thinking selesai, tampilkan answer
                                     answer_text += delta.content
                                     
-                                    # Display answer dengan typing effect (kiri ke kanan)
-                                    answer_container.markdown(f"""
+                                    # Tampilkan thinking (collapsed) + answer (streaming)
+                                    full_html = ""
+                                    
+                                    if thinking_closed and thinking_text:
+                                        full_html += f"""
+                                        <details style="background: #0a0a0a; padding: 12px; border-radius: 8px; border-left: 3px solid #00ffff44; margin-bottom: 15px; cursor: pointer;">
+                                            <summary style="color: #00ffff; font-weight: bold; cursor: pointer; user-select: none;">
+                                                🧠 Azura's Deep Thinking Process (Click to expand)
+                                            </summary>
+                                            <div style="color: #888; font-size: 13px; font-family: 'Consolas', monospace; margin-top: 10px; white-space: pre-wrap; line-height: 1.6;">{thinking_text.strip()}</div>
+                                        </details>
+                                        """
+                                    
+                                    full_html += f"""
                                     <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
                                         <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
                                         <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
@@ -459,16 +517,12 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                             <div style="white-space: pre-wrap;">{clean_text(answer_text)}</div>
                                         </div>
                                     </div>
-                                    """, unsafe_allow_html=True)
+                                    """
                                     
-                                    # Small delay untuk efek typing
+                                    response_container.markdown(full_html, unsafe_allow_html=True)
+                                    
+                                    # Delay untuk efek typing
                                     time.sleep(0.01)
-                    
-                    # Cleanup thinking display
-                    if thinking_text:
-                        with thinking_container.container():
-                            with st.expander("🧠 Azura's Deep Thinking Process", expanded=False):
-                                st.markdown(f"```\n{thinking_text.strip()}\n```")
                     
                     res = answer_text.strip() if answer_text else thinking_text.strip()
                         
