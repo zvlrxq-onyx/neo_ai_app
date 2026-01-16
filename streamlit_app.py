@@ -1,5 +1,4 @@
 import streamlit as st
-from streamlit_cookies_manager import EncryptedCookieManager
 from groq import Groq
 from huggingface_hub import InferenceClient
 import os, base64, requests, json
@@ -13,17 +12,10 @@ import hashlib
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(page_title="Azura AI", page_icon="🌐", layout="wide")
 
-# Cookie Manager - FIXED VERSION (No caching!)
-try:
-    if "cookies" not in st.session_state:
-        st.session_state.cookies = EncryptedCookieManager(
-            prefix="azura_ai_",
-            password=os.environ.get("COOKIES_PASSWORD", "azura-secret-key-2024")
-        )
-    cookies = st.session_state.cookies
-except Exception as e:
-    st.error(f"Cookie Manager Error: {e}")
-    st.stop()
+# Simple Session State (No Cookies - lebih stabil!)
+# Cookies sering bikin loading forever di beberapa environment
+if "cookies_ready" not in st.session_state:
+    st.session_state.cookies_ready = True
 
 # NAMA FILE DATABASE (Per-user dengan hash)
 DB_FOLDER = "azura_users_db"
@@ -93,29 +85,15 @@ def analyze_image_pixels(image_data):
     except:
         return "Image analysis available"
 
-# --- 2. USERNAME AUTHENTICATION WITH COOKIES + FILE FALLBACK ---
-# Wait for cookies to be ready
-if not cookies.ready():
-    st.info("⏳ Loading Azura AI...")
-    st.stop()
-
+# --- 2. USERNAME AUTHENTICATION (FILE-BASED ONLY) ---
 # Initialize current_user in session state
 if "current_user" not in st.session_state:
-    # Priority 1: Try cookies first
-    saved_username = cookies.get("username")
-    
-    if saved_username:
-        st.session_state.current_user = saved_username
-        save_last_user(saved_username)
+    # Try file backup
+    last_user = load_last_user()
+    if last_user:
+        st.session_state.current_user = last_user
     else:
-        # Priority 2: Try file backup
-        last_user = load_last_user()
-        if last_user:
-            st.session_state.current_user = last_user
-            cookies["username"] = last_user
-            cookies.save()
-        else:
-            st.session_state.current_user = None
+        st.session_state.current_user = None
 
 # Login Screen
 if st.session_state.current_user is None:
@@ -140,9 +118,7 @@ if st.session_state.current_user is None:
                 username = username_input.strip()
                 st.session_state.current_user = username
                 
-                # Save to BOTH cookie AND file
-                cookies["username"] = username
-                cookies.save()
+                # Save to file only (no cookies)
                 save_last_user(username)
                 
                 st.success("✅ Login successful!")
@@ -270,8 +246,7 @@ with st.sidebar:
     st.markdown(f'<div class="user-badge">👤 {st.session_state.current_user}</div>', unsafe_allow_html=True)
     
     if st.button("🚪 Logout", use_container_width=True):
-        cookies["username"] = ""
-        cookies.save()
+        # Clear file and session state
         if os.path.exists(LAST_USER_FILE):
             os.remove(LAST_USER_FILE)
         for key in list(st.session_state.keys()):
