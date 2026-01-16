@@ -508,44 +508,29 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     res = f"Error: {str(e)}"
         
         elif engine == "Scout":
-                current_image_data = st.session_state.uploaded_image
-                
-                if current_image_data:
-                    pixel_info = analyze_image_pixels(current_image_data)
-                    base64_image = base64.b64encode(current_image_data).decode('utf-8')
-                    
-                    messages = [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": [
-                            {"type": "text", "text": f"{user_msg} (Image info: {pixel_info})"},
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                        ]}
-                    ]
-                    
-                    resp = client_groq.chat.completions.create(
-                        model="meta-llama/llama-4-scout-17b-16e-instruct",
-                        messages=messages,
-                        temperature=0.7,
-                        max_tokens=1024
-                    )
-                    res = resp.choices[0].message.content
-                    st.session_state.uploaded_image = None
-                else:
-                    messages = [{"role": "system", "content": system_prompt}]
-                    for m in st.session_state.messages[:-1]:
-                        if m.get("type") != "image":
-                            messages.append({"role": m["role"], "content": m["content"]})
-                    messages.append({"role": "user", "content": user_msg})
-                    
-                    resp = client_groq.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=messages,
-                        temperature=0.7,
-                        max_tokens=1024
-                    )
-                    res = resp.choices[0].message.content
+            current_image_data = st.session_state.uploaded_image
             
-            elif engine == "Llama33":
+            if current_image_data:
+                pixel_info = analyze_image_pixels(current_image_data)
+                base64_image = base64.b64encode(current_image_data).decode('utf-8')
+                
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": f"{user_msg} (Image info: {pixel_info})"},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                    ]}
+                ]
+                
+                resp = client_groq.chat.completions.create(
+                    model="meta-llama/llama-4-scout-17b-16e-instruct",
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=1024
+                )
+                res = resp.choices[0].message.content
+                st.session_state.uploaded_image = None
+            else:
                 messages = [{"role": "system", "content": system_prompt}]
                 for m in st.session_state.messages[:-1]:
                     if m.get("type") != "image":
@@ -555,52 +540,68 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 resp = client_groq.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=messages,
-                    temperature=0.8,
+                    temperature=0.7,
                     max_tokens=1024
                 )
                 res = resp.choices[0].message.content
+        
+        elif engine == "Llama33":
+            messages = [{"role": "system", "content": system_prompt}]
+            for m in st.session_state.messages[:-1]:
+                if m.get("type") != "image":
+                    messages.append({"role": m["role"], "content": m["content"]})
+            messages.append({"role": "user", "content": user_msg})
             
-            elif engine == "HuggingFace":
-                messages = [{"role": "system", "content": system_prompt}]
-                for m in st.session_state.messages[:-1]:
-                    if m.get("type") != "image":
-                        messages.append({"role": m["role"], "content": m["content"]})
-                messages.append({"role": "user", "content": user_msg})
-                
-                resp = client_hf.chat_completion(
-                    messages=messages,
-                    model="Qwen/Qwen2.5-7B-Instruct",
-                    max_tokens=1024,
-                    temperature=0.9
-                )
-                res = resp.choices[0].message.content
+            resp = client_groq.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                temperature=0.8,
+                max_tokens=1024
+            )
+            res = resp.choices[0].message.content
+        
+        elif engine == "HuggingFace":
+            messages = [{"role": "system", "content": system_prompt}]
+            for m in st.session_state.messages[:-1]:
+                if m.get("type") != "image":
+                    messages.append({"role": m["role"], "content": m["content"]})
+            messages.append({"role": "user", "content": user_msg})
             
-            elif engine == "Pollinations":
-                encoded_prompt = urllib.parse.quote(user_msg)
-                image_url = f"{POLLINATIONS_API}{encoded_prompt}"
-                
-                img_response = requests.get(image_url)
-                img = Image.open(io.BytesIO(img_response.content))
-                
-                st.session_state.messages.append({"role": "assistant", "type": "image", "content": img})
-                
-                if st.session_state.current_session_key:
-                    st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
-                save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-                st.rerun()
+            resp = client_hf.chat_completion(
+                messages=messages,
+                model="Qwen/Qwen2.5-7B-Instruct",
+                max_tokens=1024,
+                temperature=0.9
+            )
+            res = resp.choices[0].message.content
+        
+        elif engine == "Pollinations":
+            encoded_prompt = urllib.parse.quote(user_msg)
+            image_url = f"{POLLINATIONS_API}{encoded_prompt}"
             
-            if res:
-                st.session_state.messages.append({"role": "assistant", "content": res})
-                
-                if st.session_state.current_session_key:
-                    st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
-                save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-                st.rerun()
-        except Exception as e:
-            st.error(f"❌ Error bro: {str(e)}")
-            error_msg = f"Sorry bro, ada error: {str(e)} 😰"
-            st.session_state.messages.append({"role": "assistant", "content": error_msg})
+            img_response = requests.get(image_url)
+            img = Image.open(io.BytesIO(img_response.content))
+            
+            st.session_state.messages.append({"role": "assistant", "type": "image", "content": img})
+            
             if st.session_state.current_session_key:
                 st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
             save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
             st.rerun()
+        
+        if res:
+            st.session_state.messages.append({"role": "assistant", "content": res})
+            
+            if st.session_state.current_session_key:
+                st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
+            save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
+            st.rerun()
+    
+    except Exception as e:
+        st.error(f"❌ Error bro: {str(e)}")
+        error_msg = f"Sorry bro, ada error: {str(e)} 😰"
+        st.session_state.messages.append({"role": "assistant", "content": error_msg})
+        if st.session_state.current_session_key:
+            st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
+        save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
+        st.rerun()
