@@ -349,30 +349,90 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         messages.append({"role": m["role"], "content": m["content"]})
                 messages.append({"role": "user", "content": user_msg})
                 
+                # Placeholder untuk thinking & answer
+                thinking_container = st.empty()
+                answer_container = st.empty()
+                
                 try:
-                    resp = client_hf.chat_completion(
+                    # Streaming response
+                    stream = client_hf.chat_completion(
                         messages=messages,
                         model="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
                         max_tokens=2048,
                         temperature=0.7,
-                        stream=False
+                        stream=True
                     )
-                    full_response = resp.choices[0].message.content
                     
-                    # Parse thinking tags
-                    if "<think>" in full_response and "</think>" in full_response:
-                        thinking_match = re.search(r'<think>(.*?)</think>', full_response, re.DOTALL)
-                        if thinking_match:
-                            thinking = thinking_match.group(1).strip()
-                            answer = re.sub(r'<think>.*?</think>', '', full_response, flags=re.DOTALL).strip()
-                            
-                            with st.expander("🧠 Azura's Thinking Process", expanded=False):
-                                st.markdown(f"*{thinking}*")
-                            res = answer
-                        else:
-                            res = full_response
-                    else:
-                        res = full_response
+                    thinking_text = ""
+                    answer_text = ""
+                    in_think_tag = False
+                    buffer = ""
+                    
+                    for chunk in stream:
+                        if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                            delta = chunk.choices[0].delta
+                            if hasattr(delta, 'content') and delta.content:
+                                buffer += delta.content
+                                
+                                # Detect <think> tag
+                                if "<think>" in buffer:
+                                    in_think_tag = True
+                                    buffer = buffer.replace("<think>", "")
+                                
+                                # Detect </think> tag
+                                if "</think>" in buffer:
+                                    in_think_tag = False
+                                    parts = buffer.split("</think>")
+                                    thinking_text += parts[0]
+                                    buffer = parts[1] if len(parts) > 1 else ""
+                                    
+                                    # Show final thinking in expander
+                                    with thinking_container.container():
+                                        with st.expander("🧠 Azura's Deep Thinking Process", expanded=False):
+                                            st.markdown(f"```\n{thinking_text.strip()}\n```")
+                                    continue
+                                
+                                # Route text ke thinking atau answer
+                                if in_think_tag:
+                                    thinking_text += delta.content
+                                    
+                                    # Display thinking dengan efek loading
+                                    with thinking_container.container():
+                                        st.markdown(f"""
+                                        <div style="background: #1a1a1a; padding: 15px; border-radius: 10px; border-left: 3px solid #00ffff; margin-bottom: 10px;">
+                                            <div style="color: #00ffff; font-weight: bold; margin-bottom: 8px;">🧠 Azura is thinking deeply...</div>
+                                            <div style="color: #888; font-size: 13px; font-family: monospace; white-space: pre-wrap;">{thinking_text}</div>
+                                            <div class="typing-indicator" style="margin-top: 5px;">
+                                                <div class="typing-dot"></div>
+                                                <div class="typing-dot"></div>
+                                                <div class="typing-dot"></div>
+                                            </div>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                else:
+                                    answer_text += delta.content
+                                    
+                                    # Display answer dengan typing effect (kiri ke kanan)
+                                    answer_container.markdown(f"""
+                                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                                        <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
+                                        <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
+                                                    max-width: 85%; border-left: 1px solid #333; word-wrap: break-word;">
+                                            <div style="white-space: pre-wrap;">{clean_text(answer_text)}</div>
+                                        </div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                    
+                                    # Small delay untuk efek typing
+                                    time.sleep(0.01)
+                    
+                    # Cleanup thinking display
+                    if thinking_text:
+                        with thinking_container.container():
+                            with st.expander("🧠 Azura's Deep Thinking Process", expanded=False):
+                                st.markdown(f"```\n{thinking_text.strip()}\n```")
+                    
+                    res = answer_text.strip() if answer_text else thinking_text.strip()
                         
                 except Exception as e:
                     if "busy" in str(e).lower() or "503" in str(e):
