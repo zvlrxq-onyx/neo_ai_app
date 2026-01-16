@@ -449,6 +449,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     in_think_tag = False
                     buffer = ""
                     thinking_closed = False
+                    thinking_displayed = False
                     
                     for chunk in stream:
                         if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
@@ -471,36 +472,46 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                 if in_think_tag:
                                     thinking_text += delta.content
                                     
-                                    response_container.markdown(f"""
-                                    <div style="background: #0a0a0a; padding: 15px; border-radius: 10px; border-left: 3px solid #00ffff; margin-bottom: 15px;">
-                                        <div style="color: #00ffff; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                                            🧠 Azura's Deep Thinking Process
-                                            <div class="typing-indicator" style="margin: 0;">
-                                                <div class="typing-dot"></div>
-                                                <div class="typing-dot"></div>
-                                                <div class="typing-dot"></div>
+                                    # Display thinking HANYA SEKALI saat masih dalam tag
+                                    if not thinking_displayed:
+                                        response_container.markdown(f"""
+                                        <div style="background: #0a0a0a; padding: 15px; border-radius: 10px; border-left: 3px solid #00ffff; margin-bottom: 15px;">
+                                            <div style="color: #00ffff; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                                                🧠 Azura's Deep Thinking Process
+                                                <div class="typing-indicator" style="margin: 0;">
+                                                    <div class="typing-dot"></div>
+                                                    <div class="typing-dot"></div>
+                                                    <div class="typing-dot"></div>
+                                                </div>
                                             </div>
+                                            <div style="color: #888; font-size: 13px; font-family: 'Consolas', monospace; white-space: pre-wrap; line-height: 1.6;">{clean_text(thinking_text)}</div>
                                         </div>
-                                        <div style="color: #888; font-size: 13px; font-family: 'Consolas', monospace; white-space: pre-wrap; line-height: 1.6;">{thinking_text}</div>
-                                    </div>
-                                    """, unsafe_allow_html=True)
+                                        """, unsafe_allow_html=True)
                                 else:
+                                    # Tandai thinking udah selesai ditampilkan
+                                    if in_think_tag == False and not thinking_displayed:
+                                        thinking_displayed = True
+                                    
                                     answer_text += delta.content
                                     
+                                    # Clean answer text untuk avoid HTML bocor
                                     clean_answer = clean_text(answer_text)
                                     
                                     full_html = ""
                                     
-                                    if thinking_closed and thinking_text:
+                                    # Tampilkan thinking (collapsed) HANYA SEKALI
+                                    if thinking_closed and thinking_text and not thinking_displayed:
                                         full_html += f"""
                                         <details style="background: #0a0a0a; padding: 12px; border-radius: 8px; border-left: 3px solid #00ffff44; margin-bottom: 15px; cursor: pointer;">
                                             <summary style="color: #00ffff; font-weight: bold; cursor: pointer; user-select: none;">
                                                 🧠 Azura's Deep Thinking Process (Click to expand)
                                             </summary>
-                                            <div style="color: #888; font-size: 13px; font-family: 'Consolas', monospace; margin-top: 10px; white-space: pre-wrap; line-height: 1.6;">{thinking_text.strip()}</div>
+                                            <div style="color: #888; font-size: 13px; font-family: 'Consolas', monospace; margin-top: 10px; white-space: pre-wrap; line-height: 1.6;">{clean_text(thinking_text.strip())}</div>
                                         </details>
                                         """
+                                        thinking_displayed = True
                                     
+                                    # Tampilkan answer dengan HTML yang clean
                                     full_html += f"""
                                     <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
                                         <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
