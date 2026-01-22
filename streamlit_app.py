@@ -213,84 +213,109 @@ user_img = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfIrn5orx6KdLU
 # --- 6. CSS ---
 st.markdown(f"""
 <style>
-    [data-testid="stAppViewContainer"] {{ background: #050505; }}
+    /* Background Utama Galaxy Deep Space */
+    [data-testid="stAppViewContainer"] {{ 
+        background: radial-gradient(circle at top right, #1a0b2e, #020205); 
+    }}
+    
+    /* Sidebar Galaxy Style */
+    [data-testid="stSidebar"] {{
+        background-color: #050510 !important;
+        border-right: 1px solid #9d50bb44;
+    }}
+
+    /* Floating File Uploader Button */
     [data-testid="stFileUploader"] {{ position: fixed; bottom: 58px; left: 15px; width: 45px; z-index: 1000; }}
     [data-testid="stFileUploaderDropzone"] {{
-        background: #00ffff11 !important; border: 1px solid #00ffff44 !important; border-radius: 50% !important;
+        background: linear-gradient(135deg, #00d2ff22, #9d50bb22) !important; 
+        border: 1px solid #9d50bb !important; border-radius: 50% !important;
         height: 42px !important; width: 42px !important; padding: 0 !important;
-        transition: all 0.3s ease !important;
     }}
-    [data-testid="stFileUploaderDropzone"]:hover {{
-        transform: scale(1.1) !important;
-        background: #00ffff22 !important;
-        border-color: #00ffff !important;
-        box-shadow: 0 0 15px rgba(0,255,255,0.3) !important;
-    }}
-    [data-testid="stFileUploaderDropzone"] div {{ display: none !important; }}
-    [data-testid="stFileUploaderDropzone"] span {{ display: none !important; }}
-    [data-testid="stFileUploaderDropzone"] p {{ display: none !important; }}
-    [data-testid="stFileUploaderDropzone"] small {{ display: none !important; }}
     [data-testid="stFileUploaderDropzone"]::before {{
-        content: "＋"; color: #00ffff; font-size: 26px; font-weight: bold;
+        content: "＋"; color: #00d2ff; font-size: 26px; font-weight: bold;
         display: flex; align-items: center; justify-content: center; height: 100%;
     }}
-    [data-testid="stFileUploader"] label {{ display: none !important; }}
-    [data-testid="stFileUploader"] span {{ display: none !important; }}
-    [data-testid="stFileUploader"] small {{ display: none !important; }}
-    [data-testid="stChatInput"] {{ margin-left: 60px !important; width: calc(100% - 80px) !important; }}
+
+    /* Input Chat Styling */
+    [data-testid="stChatInput"] {{ 
+        margin-left: 60px !important; 
+        width: calc(100% - 80px) !important;
+        background-color: #0d0d1a !important;
+        border: 1px solid #9d50bb66 !important;
+        border-radius: 15px !important;
+    }}
     
-    .sidebar-logo {{ display: block; margin: auto; width: 80px; height: 80px; border-radius: 50%; border: 1px solid #333; object-fit: cover; margin-bottom: 10px; }}
-    .rotating-logo {{ animation: rotate 8s linear infinite; border-radius: 50%; border: 1px solid #333; }}
+    /* Logo Sidebar & Glow */
+    .sidebar-logo {{ 
+        display: block; margin: auto; width: 80px; height: 80px; border-radius: 50%; 
+        object-fit: cover; margin-bottom: 10px;
+        box-shadow: 0 0 20px #9d50bb66;
+    }}
+    .rotating-logo {{ 
+        animation: rotate 10s linear infinite; 
+        border-radius: 50%; 
+        box-shadow: 0 0 30px #00d2ff44, 0 0 50px #9d50bb33;
+    }}
     @keyframes rotate {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
     
-    .typing-indicator {{ display: flex; align-items: center; gap: 5px; padding: 5px 0; }}
-    .typing-dot {{ width: 7px; height: 7px; background: #00ffff; border-radius: 50%; animation: blink 1.4s infinite both; }}
-    .typing-dot:nth-child(2) {{ animation-delay: 0.2s; }}
-    .typing-dot:nth-child(3) {{ animation-delay: 0.4s; }}
-    @keyframes blink {{ 0%, 80%, 100% {{ opacity: 0; }} 40% {{ opacity: 1; }} }}
+    /* Typing & Dots */
+    .typing-dot {{ width: 7px; height: 7px; background: #9d50bb; border-radius: 50%; animation: blink 1.4s infinite both; }}
     
-    .user-badge {{ background: linear-gradient(135deg, #00ffff22, #00ffff44); padding: 8px 15px; border-radius: 20px;
-        border: 1px solid #00ffff; color: #00ffff; font-size: 13px; font-weight: bold; text-align: center;
-        margin-bottom: 15px; box-shadow: 0 0 10px rgba(0,255,255,0.2); }}
+    /* User Badge Gradient */
+    .user-badge {{ 
+        background: linear-gradient(135deg, #00d2ff22, #9d50bb44); 
+        padding: 8px 15px; border-radius: 20px;
+        border: 1px solid #9d50bb; color: white; font-size: 13px; font-weight: bold; text-align: center;
+        margin-bottom: 15px; box-shadow: 0 0 15px rgba(157, 80, 187, 0.3); 
+    }}
     
+    /* Custom Button Nova Style */
     .stButton button {{
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        border: 1px solid transparent !important;
+        background: linear-gradient(135deg, #00d2ff 0%, #9d50bb 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 10px !important;
+        font-weight: bold !important;
     }}
-    
-    .stButton button:hover {{
-        transform: scale(1.05) translateY(-2px) !important;
-        box-shadow: 0 5px 20px rgba(0,255,255,0.3) !important;
-        border-color: #00ffff !important;
-    }}
-    
-    .stButton button:active {{
-        transform: scale(0.98) translateY(0) !important;
-        box-shadow: 0 2px 10px rgba(0,255,255,0.2) !important;
-    }}
-    
-    [data-testid="stSelectbox"] {{
-        transition: all 0.3s ease !important;
-    }}
-    
-    [data-testid="stSelectbox"]:hover {{
-        transform: scale(1.02) !important;
-    }}
-    
-    [data-testid="stSelectbox"] > div {{
-        transition: all 0.3s ease !important;
-    }}
-    
-    [data-testid="stSelectbox"] > div:hover {{
-        border-color: #00ffff !important;
-        box-shadow: 0 0 15px rgba(0,255,255,0.2) !important;
-    }}
-    
-    * {{
-        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-    }}
+
+    /* Scrollbar minimalis */
+    ::-webkit-scrollbar {{ width: 5px; }}
+    ::-webkit-scrollbar-track {{ background: #050505; }}
+    ::-webkit-scrollbar-thumb {{ background: #9d50bb66; border-radius: 10px; }}
 </style>
 """, unsafe_allow_html=True)
+
+# --- 7. BUBBLE ENGINE ---
+def render_chat_bubble(role, content):
+    content = clean_text(content)
+    
+    if role == "user":
+        # Bubble User dengan gradasi Biru-Ungu tipis
+        st.markdown(f"""
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+            <div style="background: linear-gradient(135deg, #00d2ff22, #9d50bb33); 
+                        backdrop-filter: blur(10px); color: white; padding: 12px 18px; 
+                        border-radius: 18px 18px 2px 18px; max-width: 85%; 
+                        border: 1px solid #9d50bb66; word-wrap: break-word;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                {content}
+            </div>
+            <img src="{user_img}" width="35" height="35" style="border-radius: 50%; margin-left: 10px; border: 1px solid #00d2ff;">
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        # Bubble Nova-X dengan tema Gelap Glassmorphism
+        st.markdown(f"""
+        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #9d50bb;">
+            <div style="background: rgba(25, 25, 40, 0.8); backdrop-filter: blur(10px); 
+                        color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
+                        max-width: 85%; border-left: 3px solid #9d50bb; word-wrap: break-word;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                {content}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # --- 7. BUBBLE ENGINE ---
 def clean_text(text):
