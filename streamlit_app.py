@@ -10,14 +10,14 @@ import time
 import hashlib
 
 # --- 1. CONFIG & SYSTEM SETUP ---
-st.set_page_config(page_title="Azura AI", page_icon="🌐", layout="wide")
+st.set_page_config(page_title="Nova-X AI", page_icon="🌐", layout="wide")
 
 # Simple Session State (No Cookies - lebih stabil!)
 if "cookies_ready" not in st.session_state:
     st.session_state.cookies_ready = True
 
 # NAMA FILE DATABASE (Per-user dengan hash)
-DB_FOLDER = "azura_users_db"
+DB_FOLDER = "novax_users_db"
 if not os.path.exists(DB_FOLDER):
     os.makedirs(DB_FOLDER)
 
@@ -114,7 +114,7 @@ if st.session_state.current_user is None:
         <div style="background: linear-gradient(135deg, #001a1a 0%, #003333 100%); 
                     padding: 50px; border-radius: 20px; border: 2px solid #00ffff; 
                     box-shadow: 0 0 30px rgba(0,255,255,0.4); text-align: center; max-width: 400px;">
-            <h1 style="color: #00ffff; margin-bottom: 10px;">🌐 Azura AI</h1>
+            <h1 style="color: #00ffff; margin-bottom: 10px;">🌐 Nova-X AI</h1>
             <p style="color: #888; margin-bottom: 30px;">Secure Multi-Modal AI Assistant</p>
         </div>
     </div>
@@ -328,7 +328,7 @@ def render_chat_bubble(role, content):
 with st.sidebar:
     if logo_url: 
         st.markdown(f'<img src="{logo_url}" class="sidebar-logo">', unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:#00ffff;'>Azura AI</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:#00ffff;'>Nova-X AI</h2>", unsafe_allow_html=True)
     
     st.markdown(f'<div class="user-badge">👤 {st.session_state.current_user}</div>', unsafe_allow_html=True)
     
@@ -346,11 +346,11 @@ with st.sidebar:
     st.markdown("---")
     
     engine_map = {
-        "Azura-R1 (DeepSeek Reasoning)": "DeepSeek",
-        "Azura-Lens 1.7 (Vision)": "Scout",
-        "Azura 1.5 (Power)": "Llama33",
-        "Azura-Prime (Creative)": "HuggingFace",
-        "Azura-Art (Draw)": "Pollinations"
+        "N-X3 Pro (Advanced Reasoning)": "NX3Pro",
+        "N-Vision Plus (Vision AI)": "NVision",
+        "N-Power Elite (High Performance)": "NPower",
+        "N-Creative Studio (Creative AI)": "NCreative",
+        "N-ArtGen (Image Generator)": "NArtGen"
     }
     selected_engine_name = st.selectbox("Pilih modelnya", list(engine_map.keys()))
     engine = engine_map[selected_engine_name]
@@ -399,7 +399,7 @@ if up:
     st.toast("✅ Image uploaded!", icon="📷")
 
 # Chat Input
-if prompt := st.chat_input("Message Azura AI..."):
+if prompt := st.chat_input("Message Nova-X AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     if st.session_state.current_session_key is None:
@@ -419,30 +419,30 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         res = ""
         
         system_prompt = (
-            "You are Azura AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
-                "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
-                "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
-                "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
-                "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
-                "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-                "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
-                "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
-                "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
-                "- Happy or excited: 😊🤩 "
-                "- Sad or disappointed: 😢😔 "
-                "- Assertive or warning: ⚠️😠 "
-                "- Thinking or curious: 🤔💭 "
-                "- Surprised: 😲 "
-                "- Playful: 😉😜 "
-                "- Proud or admiring success: 🏆 "
-                "- Anxious or worried: 😰 "
-                "- Refusal or denial: ❌ "
-                "- Motivational (e.g., encouraging user): 🚀 "
-                "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' "
-                "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."   
+            "You are Nova-X, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
+            "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
+            "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+            "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
+            "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
+            "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+            "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
+            "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
+            "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
+            "- Happy or excited: 😊🤩 "
+            "- Sad or disappointed: 😢😔 "
+            "- Assertive or warning: ⚠️😠 "
+            "- Thinking or curious: 🤔💭 "
+            "- Surprised: 😲 "
+            "- Playful: 😉😜 "
+            "- Proud or admiring success: 🏆 "
+            "- Anxious or worried: 😰 "
+            "- Refusal or denial: ❌ "
+            "- Motivational (e.g., encouraging user): 🚀 "
+            "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' "
+            "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."   
         )
         
-        if engine == "DeepSeek":
+        if engine == "NX3Pro":
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
@@ -489,7 +489,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                 response_container.markdown(f"""
                                 <div style="background: #0a0a0a; padding: 15px; border-radius: 10px; border-left: 3px solid #00ffff; margin-bottom: 15px;">
                                     <div style="color: #00ffff; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                                        🧠 Azura's Deep Thinking Process
+                                        🧠 Nova-X's Deep Thinking Process
                                         <div class="typing-indicator" style="margin: 0;">
                                             <div class="typing-dot"></div>
                                             <div class="typing-dot"></div>
@@ -520,11 +520,11 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     
             except Exception as e:
                 if "busy" in str(e).lower() or "503" in str(e):
-                    res = "DeepSeek lagi sibuk nih bro! 😅 Coba model lain atau tunggu sebentar ya!"
+                    res = "N-X3 Pro lagi sibuk nih bro! 😅 Coba model lain atau tunggu sebentar ya!"
                 else:
                     res = f"Error: {str(e)}"
         
-        elif engine == "Scout":
+        elif engine == "NVision":
             current_image_data = st.session_state.uploaded_image
             
             if current_image_data:
@@ -608,7 +608,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 
                 res = res_text
         
-        elif engine == "Llama33":
+        elif engine == "NPower":
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
@@ -646,7 +646,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             res = res_text
         
-        elif engine == "HuggingFace":
+        elif engine == "NCreative":
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
@@ -686,7 +686,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             res = res_text
         
-        elif engine == "Pollinations":
+        elif engine == "NArtGen":
             encoded_prompt = urllib.parse.quote(user_msg)
             image_url = f"{POLLINATIONS_API}{encoded_prompt}"
             
