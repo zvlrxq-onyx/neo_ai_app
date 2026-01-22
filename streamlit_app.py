@@ -346,11 +346,11 @@ with st.sidebar:
     st.markdown("---")
     
     engine_map = {
-        "N-X3 Pro (Advanced Reasoning)": "NX3Pro",
-        "N-Vision Plus (Vision AI)": "NVision",
-        "N-Power Elite (High Performance)": "NPower",
-        "N-Creative Studio (Creative AI)": "NCreative",
-        "N-ArtGen (Image Generator)": "NArtGen"
+        "N-X3 Pro": "NX3Pro",
+        "N-X2 Vision": "NVision",
+        "N-X4 Ultra": "NPower",
+        "N-X1 Creative": "NCreative",
+        "N-X5 ArtGen": "NArtGen"
     }
     selected_engine_name = st.selectbox("Pilih modelnya", list(engine_map.keys()))
     engine = engine_map[selected_engine_name]
