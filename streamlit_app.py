@@ -10,14 +10,14 @@ import time
 import hashlib
 
 # --- 1. CONFIG & SYSTEM SETUP ---
-st.set_page_config(page_title="Nova-X AI", page_icon="🌐", layout="wide")
+st.set_page_config(page_title="Azura AI", page_icon="🌐", layout="wide")
 
 # Simple Session State (No Cookies - lebih stabil!)
 if "cookies_ready" not in st.session_state:
     st.session_state.cookies_ready = True
 
 # NAMA FILE DATABASE (Per-user dengan hash)
-DB_FOLDER = "novax_users_db"
+DB_FOLDER = "azura_users_db"
 if not os.path.exists(DB_FOLDER):
     os.makedirs(DB_FOLDER)
 
@@ -114,7 +114,7 @@ if st.session_state.current_user is None:
         <div style="background: linear-gradient(135deg, #001a1a 0%, #003333 100%); 
                     padding: 50px; border-radius: 20px; border: 2px solid #00ffff; 
                     box-shadow: 0 0 30px rgba(0,255,255,0.4); text-align: center; max-width: 400px;">
-            <h1 style="color: #00ffff; margin-bottom: 10px;">🌐 Nova-X AI</h1>
+            <h1 style="color: #00ffff; margin-bottom: 10px;">🌐 Azura AI</h1>
             <p style="color: #888; margin-bottom: 30px;">Secure Multi-Modal AI Assistant</p>
         </div>
     </div>
@@ -213,109 +213,84 @@ user_img = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfIrn5orx6KdLU
 # --- 6. CSS ---
 st.markdown(f"""
 <style>
-    /* Background Utama Galaxy Deep Space */
-    [data-testid="stAppViewContainer"] {{ 
-        background: radial-gradient(circle at top right, #1a0b2e, #020205); 
-    }}
-    
-    /* Sidebar Galaxy Style */
-    [data-testid="stSidebar"] {{
-        background-color: #050510 !important;
-        border-right: 1px solid #9d50bb44;
-    }}
-
-    /* Floating File Uploader Button */
+    [data-testid="stAppViewContainer"] {{ background: #050505; }}
     [data-testid="stFileUploader"] {{ position: fixed; bottom: 58px; left: 15px; width: 45px; z-index: 1000; }}
     [data-testid="stFileUploaderDropzone"] {{
-        background: linear-gradient(135deg, #00d2ff22, #9d50bb22) !important; 
-        border: 1px solid #9d50bb !important; border-radius: 50% !important;
+        background: #00ffff11 !important; border: 1px solid #00ffff44 !important; border-radius: 50% !important;
         height: 42px !important; width: 42px !important; padding: 0 !important;
+        transition: all 0.3s ease !important;
     }}
+    [data-testid="stFileUploaderDropzone"]:hover {{
+        transform: scale(1.1) !important;
+        background: #00ffff22 !important;
+        border-color: #00ffff !important;
+        box-shadow: 0 0 15px rgba(0,255,255,0.3) !important;
+    }}
+    [data-testid="stFileUploaderDropzone"] div {{ display: none !important; }}
+    [data-testid="stFileUploaderDropzone"] span {{ display: none !important; }}
+    [data-testid="stFileUploaderDropzone"] p {{ display: none !important; }}
+    [data-testid="stFileUploaderDropzone"] small {{ display: none !important; }}
     [data-testid="stFileUploaderDropzone"]::before {{
-        content: "＋"; color: #00d2ff; font-size: 26px; font-weight: bold;
+        content: "＋"; color: #00ffff; font-size: 26px; font-weight: bold;
         display: flex; align-items: center; justify-content: center; height: 100%;
     }}
-
-    /* Input Chat Styling */
-    [data-testid="stChatInput"] {{ 
-        margin-left: 60px !important; 
-        width: calc(100% - 80px) !important;
-        background-color: #0d0d1a !important;
-        border: 1px solid #9d50bb66 !important;
-        border-radius: 15px !important;
-    }}
+    [data-testid="stFileUploader"] label {{ display: none !important; }}
+    [data-testid="stFileUploader"] span {{ display: none !important; }}
+    [data-testid="stFileUploader"] small {{ display: none !important; }}
+    [data-testid="stChatInput"] {{ margin-left: 60px !important; width: calc(100% - 80px) !important; }}
     
-    /* Logo Sidebar & Glow */
-    .sidebar-logo {{ 
-        display: block; margin: auto; width: 80px; height: 80px; border-radius: 50%; 
-        object-fit: cover; margin-bottom: 10px;
-        box-shadow: 0 0 20px #9d50bb66;
-    }}
-    .rotating-logo {{ 
-        animation: rotate 10s linear infinite; 
-        border-radius: 50%; 
-        box-shadow: 0 0 30px #00d2ff44, 0 0 50px #9d50bb33;
-    }}
+    .sidebar-logo {{ display: block; margin: auto; width: 80px; height: 80px; border-radius: 50%; border: 1px solid #333; object-fit: cover; margin-bottom: 10px; }}
+    .rotating-logo {{ animation: rotate 8s linear infinite; border-radius: 50%; border: 1px solid #333; }}
     @keyframes rotate {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
     
-    /* Typing & Dots */
-    .typing-dot {{ width: 7px; height: 7px; background: #9d50bb; border-radius: 50%; animation: blink 1.4s infinite both; }}
+    .typing-indicator {{ display: flex; align-items: center; gap: 5px; padding: 5px 0; }}
+    .typing-dot {{ width: 7px; height: 7px; background: #00ffff; border-radius: 50%; animation: blink 1.4s infinite both; }}
+    .typing-dot:nth-child(2) {{ animation-delay: 0.2s; }}
+    .typing-dot:nth-child(3) {{ animation-delay: 0.4s; }}
+    @keyframes blink {{ 0%, 80%, 100% {{ opacity: 0; }} 40% {{ opacity: 1; }} }}
     
-    /* User Badge Gradient */
-    .user-badge {{ 
-        background: linear-gradient(135deg, #00d2ff22, #9d50bb44); 
-        padding: 8px 15px; border-radius: 20px;
-        border: 1px solid #9d50bb; color: white; font-size: 13px; font-weight: bold; text-align: center;
-        margin-bottom: 15px; box-shadow: 0 0 15px rgba(157, 80, 187, 0.3); 
-    }}
+    .user-badge {{ background: linear-gradient(135deg, #00ffff22, #00ffff44); padding: 8px 15px; border-radius: 20px;
+        border: 1px solid #00ffff; color: #00ffff; font-size: 13px; font-weight: bold; text-align: center;
+        margin-bottom: 15px; box-shadow: 0 0 10px rgba(0,255,255,0.2); }}
     
-    /* Custom Button Nova Style */
     .stButton button {{
-        background: linear-gradient(135deg, #00d2ff 0%, #9d50bb 100%) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 10px !important;
-        font-weight: bold !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        border: 1px solid transparent !important;
     }}
-
-    /* Scrollbar minimalis */
-    ::-webkit-scrollbar {{ width: 5px; }}
-    ::-webkit-scrollbar-track {{ background: #050505; }}
-    ::-webkit-scrollbar-thumb {{ background: #9d50bb66; border-radius: 10px; }}
+    
+    .stButton button:hover {{
+        transform: scale(1.05) translateY(-2px) !important;
+        box-shadow: 0 5px 20px rgba(0,255,255,0.3) !important;
+        border-color: #00ffff !important;
+    }}
+    
+    .stButton button:active {{
+        transform: scale(0.98) translateY(0) !important;
+        box-shadow: 0 2px 10px rgba(0,255,255,0.2) !important;
+    }}
+    
+    [data-testid="stSelectbox"] {{
+        transition: all 0.3s ease !important;
+    }}
+    
+    [data-testid="stSelectbox"]:hover {{
+        transform: scale(1.02) !important;
+    }}
+    
+    [data-testid="stSelectbox"] > div {{
+        transition: all 0.3s ease !important;
+    }}
+    
+    [data-testid="stSelectbox"] > div:hover {{
+        border-color: #00ffff !important;
+        box-shadow: 0 0 15px rgba(0,255,255,0.2) !important;
+    }}
+    
+    * {{
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }}
 </style>
 """, unsafe_allow_html=True)
-
-# --- 7. BUBBLE ENGINE ---
-def render_chat_bubble(role, content):
-    content = clean_text(content)
-    
-    if role == "user":
-        # Bubble User dengan gradasi Biru-Ungu tipis
-        st.markdown(f"""
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-            <div style="background: linear-gradient(135deg, #00d2ff22, #9d50bb33); 
-                        backdrop-filter: blur(10px); color: white; padding: 12px 18px; 
-                        border-radius: 18px 18px 2px 18px; max-width: 85%; 
-                        border: 1px solid #9d50bb66; word-wrap: break-word;
-                        box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                {content}
-            </div>
-            <img src="{user_img}" width="35" height="35" style="border-radius: 50%; margin-left: 10px; border: 1px solid #00d2ff;">
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        # Bubble Nova-X dengan tema Gelap Glassmorphism
-        st.markdown(f"""
-        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #9d50bb;">
-            <div style="background: rgba(25, 25, 40, 0.8); backdrop-filter: blur(10px); 
-                        color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                        max-width: 85%; border-left: 3px solid #9d50bb; word-wrap: break-word;
-                        box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                {content}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
 
 # --- 7. BUBBLE ENGINE ---
 def clean_text(text):
@@ -353,7 +328,7 @@ def render_chat_bubble(role, content):
 with st.sidebar:
     if logo_url: 
         st.markdown(f'<img src="{logo_url}" class="sidebar-logo">', unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:#00ffff;'>Nova-X AI</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:#00ffff;'>Azura AI</h2>", unsafe_allow_html=True)
     
     st.markdown(f'<div class="user-badge">👤 {st.session_state.current_user}</div>', unsafe_allow_html=True)
     
@@ -371,11 +346,11 @@ with st.sidebar:
     st.markdown("---")
     
     engine_map = {
-        "N-X3 Pro": "NX3Pro",
-        "N-X2 Vision": "NVision",
-        "N-X4 Ultra": "NPower",
-        "N-X1 Creative": "NCreative",
-        "N-X5 ArtGen": "NArtGen"
+        "Azura-R1 (DeepSeek Reasoning)": "DeepSeek",
+        "Azura-Lens 1.7 (Vision)": "Scout",
+        "Azura 1.5 (Power)": "Llama33",
+        "Azura-Prime (Creative)": "HuggingFace",
+        "Azura-Art (Draw)": "Pollinations"
     }
     selected_engine_name = st.selectbox("Pilih modelnya", list(engine_map.keys()))
     engine = engine_map[selected_engine_name]
@@ -424,7 +399,7 @@ if up:
     st.toast("✅ Image uploaded!", icon="📷")
 
 # Chat Input
-if prompt := st.chat_input("Message Nova-X AI..."):
+if prompt := st.chat_input("Message Azura AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     if st.session_state.current_session_key is None:
@@ -444,30 +419,30 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         res = ""
         
         system_prompt = (
-            "You are Nova-X, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
-            "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
-            "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
-            "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
-            "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
-            "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-            "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
-            "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
-            "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
-            "- Happy or excited: 😊🤩 "
-            "- Sad or disappointed: 😢😔 "
-            "- Assertive or warning: ⚠️😠 "
-            "- Thinking or curious: 🤔💭 "
-            "- Surprised: 😲 "
-            "- Playful: 😉😜 "
-            "- Proud or admiring success: 🏆 "
-            "- Anxious or worried: 😰 "
-            "- Refusal or denial: ❌ "
-            "- Motivational (e.g., encouraging user): 🚀 "
-            "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' "
-            "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."   
+            "You are Azura AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
+                "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
+                "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+                "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
+                "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
+                "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+                "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
+                "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
+                "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
+                "- Happy or excited: 😊🤩 "
+                "- Sad or disappointed: 😢😔 "
+                "- Assertive or warning: ⚠️😠 "
+                "- Thinking or curious: 🤔💭 "
+                "- Surprised: 😲 "
+                "- Playful: 😉😜 "
+                "- Proud or admiring success: 🏆 "
+                "- Anxious or worried: 😰 "
+                "- Refusal or denial: ❌ "
+                "- Motivational (e.g., encouraging user): 🚀 "
+                "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' "
+                "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."   
         )
         
-        if engine == "NX3Pro":
+        if engine == "DeepSeek":
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
@@ -514,7 +489,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                 response_container.markdown(f"""
                                 <div style="background: #0a0a0a; padding: 15px; border-radius: 10px; border-left: 3px solid #00ffff; margin-bottom: 15px;">
                                     <div style="color: #00ffff; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                                        🧠 Nova-X's Deep Thinking Process
+                                        🧠 Azura's Deep Thinking Process
                                         <div class="typing-indicator" style="margin: 0;">
                                             <div class="typing-dot"></div>
                                             <div class="typing-dot"></div>
@@ -545,11 +520,11 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     
             except Exception as e:
                 if "busy" in str(e).lower() or "503" in str(e):
-                    res = "N-X3 Pro lagi sibuk nih bro! 😅 Coba model lain atau tunggu sebentar ya!"
+                    res = "DeepSeek lagi sibuk nih bro! 😅 Coba model lain atau tunggu sebentar ya!"
                 else:
                     res = f"Error: {str(e)}"
         
-        elif engine == "NVision":
+        elif engine == "Scout":
             current_image_data = st.session_state.uploaded_image
             
             if current_image_data:
@@ -633,7 +608,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 
                 res = res_text
         
-        elif engine == "NPower":
+        elif engine == "Llama33":
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
@@ -671,7 +646,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             res = res_text
         
-        elif engine == "NCreative":
+        elif engine == "HuggingFace":
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
@@ -711,7 +686,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             res = res_text
         
-        elif engine == "NArtGen":
+        elif engine == "Pollinations":
             encoded_prompt = urllib.parse.quote(user_msg)
             image_url = f"{POLLINATIONS_API}{encoded_prompt}"
             
