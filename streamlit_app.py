@@ -584,9 +584,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             )
      
             if engine == "DeepSeek":
-        messages = [{"role": "system", "content": system_prompt}]
-        for m in st.session_state.messages[:-1]:
-            if m.get("type") != "image":
+                messages = [{"role": "system", "content": system_prompt}]
+                for m in st.session_state.messages[:-1]:
+                    if m.get("type") != "image":
                 messages.append({"role": m["role"], "content": m["content"]})
         messages.append({"role": "user", "content": user_msg})
         
