@@ -11,20 +11,22 @@ import time
 import hashlib
 
 # --- 1. CONFIG & SYSTEM SETUP ---
-st.set_page_config(page_title="ZETRO", page_icon="/images/photo1769259058.jpg", layout="wide")
+st.set_page_config(page_title="ZETRO", page_icon="assets/logo.png", layout="wide")
 
-# Simple Session State
+# Simple Session State (No Cookies - lebih stabil!)
 if "cookies_ready" not in st.session_state:
     st.session_state.cookies_ready = True
 
-# Database folder
+# NAMA FILE DATABASE (Per-user dengan hash)
 DB_FOLDER = "zetro_users_db"
 if not os.path.exists(DB_FOLDER):
     os.makedirs(DB_FOLDER)
 
+# File untuk user credentials
 USERS_FILE = os.path.join(DB_FOLDER, "users.json")
 
 def load_users():
+    """Load registered users"""
     if os.path.exists(USERS_FILE):
         try:
             with open(USERS_FILE, "r") as f:
@@ -34,6 +36,7 @@ def load_users():
     return {}
 
 def save_users(users_dict):
+    """Save users to file"""
     try:
         with open(USERS_FILE, "w") as f:
             json.dump(users_dict, f)
@@ -41,15 +44,18 @@ def save_users(users_dict):
         print(f"Error saving users: {e}")
 
 def hash_password(password):
+    """Hash password untuk keamanan"""
     return hashlib.sha256(password.encode()).hexdigest()
 
 def verify_user(username, password):
+    """Verify user credentials"""
     users = load_users()
     if username in users:
         return users[username] == hash_password(password)
     return False
 
 def register_user(username, password):
+    """Register new user"""
     users = load_users()
     if username in users:
         return False, "Username sudah dipakai bro!"
@@ -58,10 +64,12 @@ def register_user(username, password):
     return True, "Registrasi berhasil!"
 
 def get_user_db_file(username):
+    """Generate unique database file path untuk setiap user"""
     user_hash = hashlib.md5(username.encode()).hexdigest()
     return os.path.join(DB_FOLDER, f"user_{user_hash}.json")
 
 def load_history_from_db(username):
+    """Load history dari file JSON spesifik user"""
     db_file = get_user_db_file(username)
     if os.path.exists(db_file):
         try:
@@ -76,6 +84,7 @@ def load_history_from_db(username):
     return {}
 
 def save_history_to_db(username, history_dict):
+    """Save history ke file JSON spesifik user"""
     db_file = get_user_db_file(username)
     try:
         with open(db_file, "w", encoding="utf-8") as f:
@@ -84,6 +93,7 @@ def save_history_to_db(username, history_dict):
         print(f"Gagal save db untuk {username}: {e}")
 
 def analyze_image_pixels(image_data):
+    """Analisis pixel gambar untuk data lebih detail"""
     try:
         img = Image.open(io.BytesIO(image_data))
         width, height = img.size
@@ -92,70 +102,72 @@ def analyze_image_pixels(image_data):
     except:
         return "Image analysis available"
 
-# --- 2. AUTHENTICATION ---
+# --- 2. USERNAME AUTHENTICATION (SECURE WITH PASSWORD) ---
 if "current_user" not in st.session_state:
     st.session_state.current_user = None
+if "auth_mode" not in st.session_state:
+    st.session_state.auth_mode = "login"
 
+# Login Screen
 if st.session_state.current_user is None:
     st.markdown("""
     <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #0a0a0a;">
         <div style="background: #1a1a1a; 
                     padding: 50px; border-radius: 30px; 
-                    border: 2px solid;
-                    border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1;
-                    box-shadow: 0 0 40px rgba(6,182,212,0.3); text-align: center; max-width: 400px;">
-            <h1 style="color: #ffffff; margin-bottom: 10px;">ZETRO</h1>
-            <p style="color: #888; margin-bottom: 30px;">Sistem AI Terintegrasi</p>
+                    border: 2px solid #06b6d4;
+                    box-shadow: 0 0 40px rgba(6,182,212,0.5); text-align: center; max-width: 400px;">
+            <h1 style="color: #ffffff; margin-bottom: 10px;">🌌 ZETRO</h1>
+            <p style="color: #888; margin-bottom: 30px; font-weight: bold;">Sistem AI Terintegrasi untuk Pemrograman Tingkat Lanjut</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        tab1, tab2 = st.tabs(["Login", "Register"])
+        tab1, tab2 = st.tabs(["🔐 Login", "📝 Register"])
         
         with tab1:
-            st.markdown("<h3 style='text-align:center; color:#ffffff; margin-bottom:20px;'>Login</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align:center; color:#ffffff; margin-bottom:20px;'>Login to Your Account</h3>", unsafe_allow_html=True)
             login_username = st.text_input("Username", placeholder="Your username", key="login_user")
             login_password = st.text_input("Password", type="password", placeholder="Your password", key="login_pass")
             
-            if st.button("Login", use_container_width=True, key="btn_login"):
+            if st.button("🚀 Login", use_container_width=True, key="btn_login"):
                 if login_username.strip() and login_password.strip():
                     if verify_user(login_username.strip(), login_password.strip()):
                         st.session_state.current_user = login_username.strip()
-                        st.success("Login successful!")
+                        st.success("✅ Login successful!")
                         time.sleep(0.5)
                         st.rerun()
                     else:
-                        st.error("Username atau password salah!")
+                        st.error("❌ Username atau password salah bro!")
                 else:
-                    st.error("Isi username dan password!")
+                    st.error("❌ Isi username dan password dulu!")
         
         with tab2:
-            st.markdown("<h3 style='text-align:center; color:#ffffff; margin-bottom:20px;'>Register</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align:center; color:#ffffff; margin-bottom:20px;'>Create New Account</h3>", unsafe_allow_html=True)
             reg_username = st.text_input("Username", placeholder="Choose a username", key="reg_user")
             reg_password = st.text_input("Password", type="password", placeholder="Choose a password", key="reg_pass")
             reg_confirm = st.text_input("Confirm Password", type="password", placeholder="Confirm your password", key="reg_confirm")
             
-            if st.button("Register", use_container_width=True, key="btn_register"):
+            if st.button("📝 Register", use_container_width=True, key="btn_register"):
                 if reg_username.strip() and reg_password.strip() and reg_confirm.strip():
                     if reg_password != reg_confirm:
-                        st.error("Password tidak sama!")
+                        st.error("❌ Password tidak sama bro!")
                     elif len(reg_password) < 4:
-                        st.error("Password minimal 4 karakter!")
+                        st.error("❌ Password minimal 4 karakter!")
                     else:
                         success, message = register_user(reg_username.strip(), reg_password.strip())
                         if success:
-                            st.success(message + " Silakan login!")
+                            st.success("✅ " + message + " Silakan login!")
                             time.sleep(1)
                             st.rerun()
                         else:
-                            st.error(message)
+                            st.error("❌ " + message)
                 else:
-                    st.error("Isi semua field!")
+                    st.error("❌ Isi semua field!")
     st.stop()
 
-# --- 3. SESSION STATE ---
+# --- 3. INITIALIZE SESSION STATE (Per User) ---
 if "all_chats" not in st.session_state:
     st.session_state.all_chats = load_history_from_db(st.session_state.current_user)
 
@@ -175,18 +187,22 @@ if "current_session_key" not in st.session_state:
 if "uploaded_image" not in st.session_state:
     st.session_state.uploaded_image = None
 
+if "show_upload_notif" not in st.session_state:
+    st.session_state.show_upload_notif = False
+
 # --- 4. API KEYS ---
 try:
     client_groq = Groq(api_key=st.secrets["GROQ_API_KEY"])
     client_hf = InferenceClient(token=st.secrets["HF_TOKEN"])
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    client_gemini = genai.GenerativeModel('gemini-2.0-flash-exp')
+    client_gemini = genai.GenerativeModel('gemini-3-flash-preview')
     POLLINATIONS_API = "https://image.pollinations.ai/prompt/"
 except Exception as e:
-    st.error(f"API Keys Error: {e}")
+    st.error(f"❌ API Keys Error: {e}")
+    st.info("Cek secrets.toml lu bro! Pastikan ada GROQ_API_KEY, HF_TOKEN, dan GEMINI_API_KEY")
     st.stop()
 
-# --- 5. LOAD LOGO ---
+# --- 5. ASSETS (LOGO & USER) ---
 @st.cache_data
 def get_base64_img(file_path):
     if os.path.exists(file_path):
@@ -194,150 +210,192 @@ def get_base64_img(file_path):
             return base64.b64encode(f.read()).decode()
     return None
 
-logo_data = get_base64_img('/images/photo1769259058.jpg')
+logo_data = get_base64_img('logo.png')
 logo_url = f"data:image/png;base64,{logo_data}" if logo_data else ""
+user_img = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfIrn5orx6KdLUiIvZ3IUkZTMdIyes-D6sMA&s"
 
-# --- 6. CSS ---
-st.markdown("""
+# --- 6. CSS (ROUNDED DESIGN + GRADIENT PURPLE TO CYAN) ---
+st.markdown(f"""
 <style>
-    [data-testid="stAppViewContainer"] { background: #0a0a0a; }
+    [data-testid="stAppViewContainer"] {{ background: #0a0a0a; }}
     
-    /* File Uploader */
-    [data-testid="stFileUploader"] { position: fixed; bottom: 58px; left: 15px; width: 45px; z-index: 1000; }
-    [data-testid="stFileUploaderDropzone"] {
+    /* FILE UPLOADER - ROUNDED CIRCLE */
+    [data-testid="stFileUploader"] {{ position: fixed; bottom: 58px; left: 15px; width: 45px; z-index: 1000; }}
+    [data-testid="stFileUploaderDropzone"] {{
         background: #1a1a1a !important; 
-        border: 2px solid;
-        border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1 !important;
+        border: 2px solid #06b6d4 !important; 
         border-radius: 50% !important;
         height: 42px !important; 
         width: 42px !important; 
         padding: 0 !important;
-        transition: all 0.3s ease !important;
-    }
-    [data-testid="stFileUploaderDropzone"]:hover {
-        transform: scale(1.1) !important;
-        box-shadow: 0 0 20px rgba(6,182,212,0.4) !important;
-    }
-    [data-testid="stFileUploaderDropzone"] div { display: none !important; }
-    [data-testid="stFileUploaderDropzone"]::before {
-        content: "+"; color: #06b6d4; font-size: 24px; font-weight: bold;
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    }}
+    [data-testid="stFileUploaderDropzone"]:hover {{
+        transform: scale(1.15) rotate(90deg) !important;
+        background: #2a2a2a !important;
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 25px rgba(6,182,212,0.6) !important;
+    }}
+    [data-testid="stFileUploaderDropzone"] div {{ display: none !important; }}
+    [data-testid="stFileUploaderDropzone"] span {{ display: none !important; }}
+    [data-testid="stFileUploaderDropzone"] p {{ display: none !important; }}
+    [data-testid="stFileUploaderDropzone"] small {{ display: none !important; }}
+    [data-testid="stFileUploaderDropzone"]::before {{
+        content: "＋"; color: #06b6d4; font-size: 26px; font-weight: bold;
         display: flex; align-items: center; justify-content: center; height: 100%;
-    }
-    [data-testid="stFileUploader"] label { display: none !important; }
+    }}
+    [data-testid="stFileUploader"] label {{ display: none !important; }}
+    [data-testid="stFileUploader"] span {{ display: none !important; }}
+    [data-testid="stFileUploader"] small {{ display: none !important; }}
     
-    /* Chat Input */
-    [data-testid="stChatInput"] { margin-left: 60px !important; width: calc(100% - 80px) !important; }
-    [data-testid="stChatInputTextArea"] {
+    /* CHAT INPUT AREA */
+    [data-testid="stChatInput"] {{ margin-left: 60px !important; width: calc(100% - 80px) !important; }}
+    
+    /* INPUT BOX - KOTAK (TIDAK ROUNDED!) */
+    [data-testid="stChatInputTextArea"] {{
         border-radius: 0px !important;
-        border: 2px solid;
-        border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1 !important;
+        border: 2px solid #06b6d4 !important;
         background: #1a1a1a !important;
         padding: 12px 50px 12px 20px !important;
-    }
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    }}
     
-    /* Submit Button - Arrow Up */
-    [data-testid="stChatInputSubmitButton"] {
+    [data-testid="stChatInputTextArea"]:focus {{
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 20px rgba(6,182,212,0.4) !important;
+    }}
+    
+    /* TOMBOL KIRIM - ROUNDED + PANAH KE ATAS */
+    [data-testid="stChatInputSubmitButton"] {{
         background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
         border-radius: 50% !important;
         width: 40px !important;
         height: 40px !important;
         border: none !important;
-    }
-    [data-testid="stChatInputSubmitButton"]:hover {
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    }}
+    
+    [data-testid="stChatInputSubmitButton"]:hover {{
         transform: scale(1.1) !important;
-        box-shadow: 0 0 20px rgba(139,92,246,0.5) !important;
-    }
-    [data-testid="stChatInputSubmitButton"] svg {
+        box-shadow: 0 0 20px rgba(139,92,246,0.6) !important;
+    }}
+    
+    /* PANAH KE ATAS */
+    [data-testid="stChatInputSubmitButton"] svg {{
         color: white !important;
         transform: rotate(-90deg) !important;
-    }
+    }}
     
-    /* Logo with gradient border */
-    .logo-container {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto 15px;
-        border-radius: 50%;
-        padding: 3px;
+    /* SIDEBAR LOGO - ROUNDED */
+    .sidebar-logo {{ 
+        display: block; 
+        margin: auto; 
+        width: 80px; 
+        height: 80px; 
+        border-radius: 50%; 
+        border: 2px solid #06b6d4; 
+        object-fit: cover; 
+        margin-bottom: 10px; 
+        box-shadow: 0 0 15px rgba(6,182,212,0.5); 
+    }}
+    
+    /* ROTATING LOGO - ROUNDED */
+    .rotating-logo {{ 
+        animation: rotate 8s linear infinite; 
+        border-radius: 50%; 
+        border: 2px solid #06b6d4; 
+        box-shadow: 0 0 25px rgba(6,182,212,0.6); 
+    }}
+    
+    @keyframes rotate {{ 
+        from {{ transform: rotate(0deg); }} 
+        to {{ transform: rotate(360deg); }} 
+    }}
+    
+    @keyframes slideInRight {{
+        from {{ opacity: 0; transform: translateX(20px); }}
+        to {{ opacity: 1; transform: translateX(0); }}
+    }}
+    
+    @keyframes slideInLeft {{
+        from {{ opacity: 0; transform: translateX(-20px); }}
+        to {{ opacity: 1; transform: translateX(0); }}
+    }}
+    
+    /* TYPING INDICATOR */
+    .typing-indicator {{ display: flex; align-items: center; gap: 5px; padding: 5px 0; }}
+    .typing-dot {{ width: 7px; height: 7px; background: #06b6d4; border-radius: 50%; animation: blink 1.4s infinite both; }}
+    .typing-dot:nth-child(2) {{ animation-delay: 0.2s; }}
+    .typing-dot:nth-child(3) {{ animation-delay: 0.4s; }}
+    @keyframes blink {{ 0%, 80%, 100% {{ opacity: 0; }} 40% {{ opacity: 1; }} }}
+    
+    /* USER BADGE - ROUNDED */
+    .user-badge {{ 
         background: linear-gradient(135deg, #8b5cf6, #06b6d4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .logo-inner {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        background: #0a0a0a;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
-    .logo-inner img {
-        width: 90%;
-        height: 90%;
-        object-fit: cover;
-        border-radius: 50%;
-    }
-    
-    /* Model logo circle */
-    .model-logo {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid;
-        border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1;
-    }
-    
-    /* User badge */
-    .user-badge {
-        background: #1a1a1a;
-        border: 2px solid;
-        border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1;
-        padding: 8px 16px;
-        border-radius: 20px;
-        color: #ffffff;
-        font-size: 13px;
+        padding: 10px 18px; 
+        border-radius: 25px;
+        color: #ffffff; 
+        font-size: 13px; 
+        font-weight: bold; 
         text-align: center;
-        margin-bottom: 15px;
-    }
+        margin-bottom: 15px; 
+        box-shadow: 0 0 15px rgba(6,182,212,0.4); 
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important; 
+    }}
     
-    /* Buttons */
-    .stButton button {
-        border: 1px solid;
-        border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1 !important;
+    .user-badge:hover {{
+        box-shadow: 0 0 25px rgba(139,92,246,0.6) !important;
+        transform: scale(1.05) !important;
+    }}
+    
+    /* BUTTONS - ROUNDED */
+    .stButton button {{
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        border: 1px solid #06b6d4 !important;
         background: #1a1a1a !important;
         color: #ffffff !important;
-        border-radius: 15px !important;
+        border-radius: 20px !important;
+    }}
+    
+    .stButton button:hover {{
+        transform: scale(1.05) translateY(-2px) !important;
+        box-shadow: 0 8px 30px rgba(6,182,212,0.5) !important;
+        border-color: #8b5cf6 !important;
+        background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
+    }}
+    
+    .stButton button:active {{
+        transform: scale(0.98) translateY(0) !important;
+        box-shadow: 0 2px 15px rgba(6,182,212,0.3) !important;
+        transition: all 0.1s ease !important;
+    }}
+    
+    /* SELECTBOX - ROUNDED */
+    [data-testid="stSelectbox"] {{
         transition: all 0.3s ease !important;
-    }
-    .stButton button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 5px 20px rgba(6,182,212,0.3) !important;
-    }
+    }}
     
-    /* Selectbox */
-    [data-testid="stSelectbox"] > div {
+    [data-testid="stSelectbox"]:hover {{
+        transform: scale(1.02) !important;
+    }}
+    
+    [data-testid="stSelectbox"] > div {{
+        transition: all 0.3s ease !important;
         border-radius: 15px !important;
-        border: 2px solid;
-        border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1 !important;
-    }
+    }}
     
-    @keyframes slideInRight {
-        from { opacity: 0; transform: translateX(20px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
+    [data-testid="stSelectbox"] > div:hover {{
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 20px rgba(139,92,246,0.3) !important;
+    }}
     
-    @keyframes slideInLeft {
-        from { opacity: 0; transform: translateX(-20px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
+    /* SMOOTH TRANSITIONS */
+    * {{
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }}
 </style>
 """, unsafe_allow_html=True)
-
-# --- 7. CHAT BUBBLE ---
+# --- 7. BUBBLE ENGINE (GRADIENT PURPLE TO CYAN + ROUNDED) ---
 def clean_text(text):
     if not isinstance(text, str): 
         return str(text)
@@ -351,29 +409,31 @@ def render_chat_bubble(role, content):
     if role == "user":
         st.markdown(f"""
         <div style="display: flex; justify-content: flex-end; margin-bottom: 20px; animation: slideInRight 0.3s ease-out;">
-            <div style="background: #1a1a1a;
-                        border: 2px solid;
-                        border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1;
+            <div style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); 
                         color: white; 
-                        padding: 12px 18px; 
-                        border-radius: 20px 20px 5px 20px; 
-                        max-width: 70%; 
-                        word-wrap: break-word;">
+                        padding: 15px 20px; 
+                        border-radius: 25px 25px 5px 25px; 
+                        max-width: 85%; 
+                        word-wrap: break-word; 
+                        box-shadow: 0 4px 20px rgba(139,92,246,0.4);">
                 {content}
             </div>
+            <img src="{user_img}" width="38" height="38" style="border-radius: 50%; margin-left: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
         </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown(f"""
         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
-            <div style="background: #1a1a1a;
-                        border: 2px solid;
-                        border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1;
+            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
+            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
                         color: #e9edef; 
-                        padding: 12px 18px; 
-                        border-radius: 5px 20px 20px 20px; 
-                        max-width: 70%; 
-                        word-wrap: break-word;">
+                        padding: 15px 20px; 
+                        border-radius: 5px 25px 25px 25px; 
+                        max-width: 85%; 
+                        border-left: 4px solid;
+                        border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1;
+                        word-wrap: break-word; 
+                        box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
                 {content}
             </div>
         </div>
@@ -381,143 +441,79 @@ def render_chat_bubble(role, content):
 
 # --- 8. SIDEBAR ---
 with st.sidebar:
-    if logo_url:
-        st.markdown(f"""
-        <div class="logo-container">
-            <div class="logo-inner">
-                <img src="{logo_url}">
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("<h2 style='text-align:center; color:#ffffff;'>ZETRO</h2>", unsafe_allow_html=True)
+    if logo_url: 
+        st.markdown(f'<img src="{logo_url}" class="sidebar-logo">', unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:#ffffff; text-shadow: 0 0 10px rgba(139,92,246,0.5);'>ZETRO</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; color:#888; font-size:11px; margin-top:-10px;'>AI multi modal</p>", unsafe_allow_html=True)
     
-    st.markdown(f'<div class="user-badge">{st.session_state.current_user}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="user-badge">👤 {st.session_state.current_user}</div>', unsafe_allow_html=True)
     
-    if st.button("Logout", use_container_width=True):
+    if st.button("🚪 Logout", use_container_width=True):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
     
-    if st.button("New Session", use_container_width=True):
+    if st.button("＋ New Session", use_container_width=True):
         st.session_state.messages = []
         st.session_state.uploaded_image = None
         st.session_state.current_session_key = None
         st.rerun()
         
     st.markdown("---")
-    st.markdown("### AI Model")
     
-    # Provider structure
-    PROVIDERS = {
-        "Gemini": {
-            "logo": "/images/photo1769259061.jpg",
-            "display_name": "Google Gemini",
-            "models": [
-                {"name": "Gemini 2.0 Flash", "engine": "Gemini", "model_id": "gemini-2.0-flash-exp"}
-            ]
+    engines = {
+        "Gemini 3 Flash Preview": {
+            "type": "Gemini",
+            "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Google_Gemini_icon_2025.svg/512px-Google_Gemini_icon_2025.svg.png",
+        },
+        "DeepSeek R1": {
+            "type": "DeepSeek",
+            "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqKHD28rGat3WVaqRkRDgIL-SHgOTHB6MrNg&s",
+        },
+        "LLaMA 4 Instruct": {
+            "type": "Vision",
+            "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Meta_Platforms_Inc._logo.svg/512px-Meta_Platforms_Inc._logo.png",
         },
         "Groq": {
-            "logo": "assets/groq.png",
-            "display_name": "Groq",
-            "models": [
-                {"name": "LLaMA 3.3 70B", "engine": "Fast", "model_id": "llama-3.3-70b-versatile"},
-                {"name": "LLaMA 4 Scout (Vision)", "engine": "Vision", "model_id": "meta-llama/llama-4-scout-17b-16e-instruct"}
-            ]
+            "type": "Fast",
+            "logo": "https://i.tracxn.com/tracxn-data-attachments/report/thumbnail/image/Groq_-_Unicorn_Business_Summary_2552daa3-40ba-4b52-b0cf-f409c6810e05.jpg?width=350",
         },
-        "DeepSeek": {
-            "logo": "assets/deepseek.png",
-            "display_name": "DeepSeek",
-            "models": [
-                {"name": "DeepSeek R1", "engine": "DeepSeek", "model_id": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B"}
-            ]
-        },
-        "HuggingFace": {
-            "logo": "/images/photo1769259058.jpg",
-            "display_name": "Qwen",
-            "models": [
-                {"name": "Qwen 2.5 7B", "engine": "HuggingFace", "model_id": "Qwen/Qwen2.5-7B-Instruct"}
-            ]
+        "Qwen 2.5 7B Instruct": {
+            "type": "HuggingFace",
+            "logo": "https://seeklogo.com/images/Q/qwen-logo-9F3C0D6D89-seeklogo.com.png",
         },
         "Pollinations": {
-            "logo": "/images/Pollinations.jpg",
-            "display_name": "Pollinations",
-            "models": [
-                {"name": "Image Generator", "engine": "Image Generator", "model_id": "pollinations-image-gen"}
-            ]
-        }
+            "type": "Image Generator",
+            "logo": "https://pollinations.ai/favicon.ico",
+        },
     }
-    
-    # Session state
-    if "selected_provider" not in st.session_state:
-        st.session_state.selected_provider = "Gemini"
-    if "selected_model_key" not in st.session_state:
-        st.session_state.selected_model_key = "Gemini_Gemini 2.0 Flash"
-    
-    # Provider selection
-    provider_options = list(PROVIDERS.keys())
-    provider_labels = [PROVIDERS[p]["display_name"] for p in provider_options]
-    
-    selected_provider_idx = provider_options.index(st.session_state.selected_provider) if st.session_state.selected_provider in provider_options else 0
-    
-    selected_provider_label = st.selectbox(
-        "Provider",
-        provider_labels,
-        index=selected_provider_idx,
-        key="provider_selector"
-    )
-    
-    selected_provider = provider_options[provider_labels.index(selected_provider_label)]
-    
-    if selected_provider != st.session_state.selected_provider:
-        st.session_state.selected_provider = selected_provider
-        first_model = PROVIDERS[selected_provider]["models"][0]
-        st.session_state.selected_model_key = f"{selected_provider}_{first_model['name']}"
-    
-    # Model selection
-    st.markdown("**Model:**")
-    
-    provider_data = PROVIDERS[selected_provider]
-    
-    # Load provider logo
-    provider_logo_data = get_base64_img(provider_data["logo"])
-    provider_logo_url = f"data:image/png;base64,{provider_logo_data}" if provider_logo_data else ""
-    
-    for model_info in provider_data["models"]:
-        model_key = f"{selected_provider}_{model_info['name']}"
-        is_active = model_key == st.session_state.selected_model_key
-        
-        col1, col2 = st.columns([1, 5])
+
+    # default selection
+    if "selected_engine_name" not in st.session_state:
+        st.session_state.selected_engine_name = list(engines.keys())[0]
+
+    # render model buttons
+    for name, data in engines.items():
+        active = name == st.session_state.selected_engine_name
+
+        col1, col2 = st.columns([1, 6])
         with col1:
-            if provider_logo_url:
-                st.markdown(f'<img src="{provider_logo_url}" class="model-logo">', unsafe_allow_html=True)
+            st.image(data["logo"], width=28)
         with col2:
             if st.button(
-                model_info['name'],
-                key=f"model_btn_{model_key}",
+                name,
+                key=f"engine_btn_{name}",
                 use_container_width=True,
-                type="primary" if is_active else "secondary"
+                type="primary" if active else "secondary"
             ):
-                st.session_state.selected_model_key = model_key
+                st.session_state.selected_engine_name = name
                 st.rerun()
-    
-    # Expose variables
-    selected_model_data = None
-    for model_info in PROVIDERS[selected_provider]["models"]:
-        if f"{selected_provider}_{model_info['name']}" == st.session_state.selected_model_key:
-            selected_model_data = model_info
-            break
-    
-    if selected_model_data:
-        engine = selected_model_data["engine"]
-        model_id = selected_model_data["model_id"]
-    else:
-        engine = "Gemini"
-        model_id = "gemini-2.0-flash-exp"
-    
-    st.markdown("---")
-    st.markdown("### History")
+
+    # expose selected engine
+    selected_engine_name = st.session_state.selected_engine_name
+    engine = engines[selected_engine_name]["type"]
+
+    st.markdown("### 🕒 Saved History")
     
     chat_keys = list(st.session_state.all_chats.keys())[::-1]
     
@@ -525,13 +521,13 @@ with st.sidebar:
         for title in chat_keys:
             col1, col2 = st.columns([4, 1])
             with col1:
-                button_label = f"{'✓ ' if title == st.session_state.current_session_key else ''}{title}"
+                button_label = f"{'✅ ' if title == st.session_state.current_session_key else ''}{title}"
                 if st.button(button_label, key=f"load_{title}", use_container_width=True):
                     st.session_state.messages = st.session_state.all_chats[title].copy()
                     st.session_state.current_session_key = title
                     st.rerun()
             with col2:
-                if st.button("×", key=f"delete_{title}", use_container_width=True):
+                if st.button("🗑️", key=f"delete_{title}", use_container_width=True):
                     del st.session_state.all_chats[title]
                     if st.session_state.current_session_key == title:
                         st.session_state.current_session_key = None
@@ -539,24 +535,29 @@ with st.sidebar:
                     save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
                     st.rerun()
     else:
-        st.info("No history yet")
+        st.info("Belum ada history nih bro! 📝")
 
-# --- 9. MAIN ---
-if not st.session_state.messages:
-    st.markdown("<div style='text-align:center; color:#ffffff; font-size:24px; font-weight:bold; margin-top:100px;'>ZETRO</div>", unsafe_allow_html=True)
-    st.markdown("<div style='text-align:center; color:#888; font-size:16px; margin-top:10px;'>How can I help you today?</div>", unsafe_allow_html=True)
+# --- 9. MAIN RENDER ---
+if logo_url:
+    st.markdown(f'<div style="text-align:center; margin-bottom:20px;"><img src="{logo_url}" width="130" class="rotating-logo"></div>', unsafe_allow_html=True)
+    if not st.session_state.messages:
+        st.markdown("<div style='text-align:center; color:#ffffff; font-size:22px; font-weight:bold;'>ZETRO</div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align:center; color:#888; font-size:16px; margin-top:20px;'>How can I help you today? 👋</div>", unsafe_allow_html=True)
 
+# Render Chat
 for msg in st.session_state.messages:
     if msg.get("type") == "image": 
         st.image(msg["content"], width=400)
     else:
         render_chat_bubble(msg["role"], msg["content"])
 
+# File Upload
 up = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed")
 if up: 
     st.session_state.uploaded_image = up.getvalue()
-    st.toast("Image uploaded!")
+    st.toast("✅ Image uploaded!", icon="📷")
 
+# Chat Input
 if prompt := st.chat_input("Message ZETRO..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     
@@ -577,8 +578,27 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         res = ""
         
         system_prompt = (
-            "You are ZETRO, an advanced AI assistant. "
-            "Respond naturally and helpfully. Keep responses concise and clear."
+            "You are ZETRO, a supreme multi-modal AI system created for advanced programming and integrated AI solutions. "
+            "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
+            "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+            "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
+            "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
+            "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+            "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
+            "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
+            "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
+            "- Happy or excited: 😊🤩 "
+            "- Sad or disappointed: 😢😔 "
+            "- Assertive or warning: ⚠️😠 "
+            "- Thinking or curious: 🤔💭 "
+            "- Surprised: 😲 "
+            "- Playful: 😉😜 "
+            "- Proud or admiring success: 🏆 "
+            "- Anxious or worried: 😰 "
+            "- Refusal or denial: ❌ "
+            "- Motivational (e.g., encouraging user): 🚀 "
+            "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' "
+            "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."   
         )
         
         if engine == "DeepSeek":
@@ -593,35 +613,72 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             try:
                 stream = client_hf.chat_completion(
                     messages=messages,
-                    model=model_id,
+                    model="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
                     max_tokens=2048,
                     temperature=0.7,
                     stream=True
                 )
                 
+                thinking_text = ""
                 answer_text = ""
+                in_think_tag = False
+                buffer = ""
                 
                 for chunk in stream:
                     if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
                         delta = chunk.choices[0].delta
                         if hasattr(delta, 'content') and delta.content:
-                            answer_text += delta.content
-                            clean_answer = clean_text(answer_text)
+                            buffer += delta.content
                             
-                            response_container.markdown(f"""
-                            <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                                <div style="background: #1a1a1a; border: 2px solid; border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1;
-                                            color: #e9edef; padding: 12px 18px; border-radius: 5px 20px 20px 20px; max-width: 70%; word-wrap: break-word;">
-                                    <div style="white-space: pre-wrap;">{clean_answer}</div>
+                            if "<think>" in buffer:
+                                in_think_tag = True
+                                buffer = buffer.replace("<think>", "")
+                            
+                            if "</think>" in buffer:
+                                in_think_tag = False
+                                parts = buffer.split("</think>")
+                                thinking_text += parts[0]
+                                buffer = parts[1] if len(parts) > 1 else ""
+                                continue
+                            
+                            if in_think_tag:
+                                thinking_text += delta.content
+                                
+                                response_container.markdown(f"""
+                                <div style="background: #0d0d0d; padding: 15px; border-radius: 20px; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; margin-bottom: 15px; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
+                                    <div style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                                        🧠 ZETRO Deep Thinking Process
+                                        <div class="typing-indicator" style="margin: 0;">
+                                            <div class="typing-dot"></div>
+                                            <div class="typing-dot"></div>
+                                            <div class="typing-dot"></div>
+                                        </div>
+                                    </div>
+                                    <div style="color: #888; font-size: 13px; font-family: 'Consolas', monospace; white-space: pre-wrap; line-height: 1.6;">{clean_text(thinking_text)}</div>
                                 </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            time.sleep(0.01)
+                                """, unsafe_allow_html=True)
+                            else:
+                                answer_text += delta.content
+                                clean_answer = clean_text(answer_text)
+                                
+                                response_container.markdown(f"""
+                                <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
+                                    <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
+                                    <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                                max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
+                                        <div style="white-space: pre-wrap;">{clean_answer}</div>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                time.sleep(0.01)
                 
-                res = answer_text.strip()
+                res = answer_text.strip() if answer_text else thinking_text.strip()
                     
             except Exception as e:
-                res = f"DeepSeek error: {str(e)}"
+                if "busy" in str(e).lower() or "503" in str(e):
+                    res = "DeepSeek lagi sibuk nih bro! 😅 Coba model lain atau tunggu sebentar ya!"
+                else:
+                    res = f"Error: {str(e)}"
         
         elif engine == "Gemini":
             messages_history = []
@@ -643,9 +700,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         clean_res = clean_text(res_text)
                         
                         response_container.markdown(f"""
-                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <div style="background: #1a1a1a; border: 2px solid; border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1;
-                                        color: #e9edef; padding: 12px 18px; border-radius: 5px 20px 20px 20px; max-width: 70%; word-wrap: break-word;">
+                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
+                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
@@ -654,9 +712,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 
                 res = res_text
             except Exception as e:
-                res = f"Gemini error: {str(e)}"
+                res = f"Gemini error bro: {str(e)} 😰"
         
-        elif engine == "Vision":
+        elif engine == "Scout":
             current_image_data = st.session_state.uploaded_image
             
             if current_image_data:
@@ -675,7 +733,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 res_text = ""
                 
                 stream = client_groq.chat.completions.create(
-                    model=model_id,
+                    model="meta-llama/llama-4-scout-17b-16e-instruct",
                     messages=messages,
                     temperature=0.7,
                     max_tokens=1024,
@@ -689,8 +747,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         
                         response_container.markdown(f"""
                         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <div style="background: #1a1a1a; border: 2px solid; border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1;
-                                        color: #e9edef; padding: 12px 18px; border-radius: 5px 20px 20px 20px; max-width: 70%; word-wrap: break-word;">
+                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
@@ -710,7 +769,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 res_text = ""
                 
                 stream = client_groq.chat.completions.create(
-                    model=model_id,
+                    model="llama-3.3-70b-versatile",
                     messages=messages,
                     temperature=0.7,
                     max_tokens=1024,
@@ -724,8 +783,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         
                         response_container.markdown(f"""
                         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <div style="background: #1a1a1a; border: 2px solid; border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1;
-                                        color: #e9edef; padding: 12px 18px; border-radius: 5px 20px 20px 20px; max-width: 70%; word-wrap: break-word;">
+                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
@@ -734,7 +794,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 
                 res = res_text
         
-        elif engine == "Fast":
+        elif engine == "Llama33":
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
@@ -745,7 +805,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             res_text = ""
             
             stream = client_groq.chat.completions.create(
-                model=model_id,
+                model="llama-3.3-70b-versatile",
                 messages=messages,
                 temperature=0.8,
                 max_tokens=1024,
@@ -759,8 +819,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     
                     response_container.markdown(f"""
                     <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                        <div style="background: #1a1a1a; border: 2px solid; border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1;
-                                    color: #e9edef; padding: 12px 18px; border-radius: 5px 20px 20px 20px; max-width: 70%; word-wrap: break-word;">
+                        <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                    max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                             <div style="white-space: pre-wrap;">{clean_res}</div>
                         </div>
                     </div>
@@ -781,7 +842,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             stream = client_hf.chat_completion(
                 messages=messages,
-                model=model_id,
+                model="Qwen/Qwen2.5-7B-Instruct",
                 max_tokens=1024,
                 temperature=0.9,
                 stream=True
@@ -796,8 +857,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         
                         response_container.markdown(f"""
                         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <div style="background: #1a1a1a; border: 2px solid; border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1;
-                                        color: #e9edef; padding: 12px 18px; border-radius: 5px 20px 20px 20px; max-width: 70%; word-wrap: break-word;">
+                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
@@ -806,7 +868,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             res = res_text
         
-        elif engine == "Image Generator":
+        elif engine == "Pollinations":
             encoded_prompt = urllib.parse.quote(user_msg)
             image_url = f"{POLLINATIONS_API}{encoded_prompt}"
             
@@ -829,8 +891,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             st.rerun()
     
     except Exception as e:
-        st.error(f"Error: {str(e)}")
-        error_msg = f"Error: {str(e)}"
+        st.error(f"❌ Error bro: {str(e)}")
+        error_msg = f"Sorry bro, ada error: {str(e)} 😰"
         st.session_state.messages.append({"role": "assistant", "content": error_msg})
         if st.session_state.current_session_key:
             st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
