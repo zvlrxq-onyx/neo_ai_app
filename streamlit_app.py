@@ -9,7 +9,6 @@ import io
 import urllib.parse
 import time
 import hashlib
-from datetime import datetime, timedelta
 
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(page_title="ZETRO: ZX-1.5 Flash", page_icon="🌌", layout="wide")
@@ -25,16 +24,6 @@ if not os.path.exists(DB_FOLDER):
 
 # File untuk user credentials
 USERS_FILE = os.path.join(DB_FOLDER, "users.json")
-
-# Model limits configuration
-MODEL_LIMITS = {
-    "Gemini 2.0 Flash": 4,
-    "Meta-Llama Scout (Vision)": 5,
-    "Pollinations AI": 5,
-    "Llama 3.3 70B": 10,
-    "DeepSeek R1": 10,
-    "Qwen 2.5 7B": 10
-}
 
 def load_users():
     """Load registered users"""
@@ -78,54 +67,6 @@ def get_user_db_file(username):
     """Generate unique database file path untuk setiap user"""
     user_hash = hashlib.md5(username.encode()).hexdigest()
     return os.path.join(DB_FOLDER, f"user_{user_hash}.json")
-
-def get_user_limits_file(username):
-    """Generate unique limits file path untuk setiap user"""
-    user_hash = hashlib.md5(username.encode()).hexdigest()
-    return os.path.join(DB_FOLDER, f"limits_{user_hash}.json")
-
-def load_user_limits(username):
-    """Load user's model usage limits"""
-    limits_file = get_user_limits_file(username)
-    if os.path.exists(limits_file):
-        try:
-            with open(limits_file, "r") as f:
-                data = json.load(f)
-                # Check if reset needed (24 hours passed)
-                if "last_reset" in data:
-                    last_reset = datetime.fromisoformat(data["last_reset"])
-                    if datetime.now() - last_reset > timedelta(days=1):
-                        # Reset all limits
-                        return {"last_reset": datetime.now().isoformat(), "usage": {}}
-                return data
-        except:
-            pass
-    return {"last_reset": datetime.now().isoformat(), "usage": {}}
-
-def save_user_limits(username, limits_data):
-    """Save user's model usage limits"""
-    limits_file = get_user_limits_file(username)
-    try:
-        with open(limits_file, "w") as f:
-            json.dump(limits_data, f)
-    except Exception as e:
-        print(f"Error saving limits: {e}")
-
-def check_model_limit(username, model_name):
-    """Check if user has exceeded model limit"""
-    limits_data = load_user_limits(username)
-    usage = limits_data.get("usage", {})
-    current_usage = usage.get(model_name, 0)
-    limit = MODEL_LIMITS.get(model_name, 999)
-    return current_usage < limit, current_usage, limit
-
-def increment_model_usage(username, model_name):
-    """Increment model usage count"""
-    limits_data = load_user_limits(username)
-    if "usage" not in limits_data:
-        limits_data["usage"] = {}
-    limits_data["usage"][model_name] = limits_data["usage"].get(model_name, 0) + 1
-    save_user_limits(username, limits_data)
 
 def load_history_from_db(username):
     """Load history dari file JSON spesifik user"""
@@ -254,7 +195,7 @@ try:
     client_groq = Groq(api_key=st.secrets["GROQ_API_KEY"])
     client_hf = InferenceClient(token=st.secrets["HF_TOKEN"])
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    client_gemini = genai.GenerativeModel('gemini-2.0-flash-exp')
+    client_gemini = genai.GenerativeModel('gemini-3-flash-preview')
     POLLINATIONS_API = "https://image.pollinations.ai/prompt/"
 except Exception as e:
     st.error(f"❌ API Keys Error: {e}")
@@ -272,16 +213,6 @@ def get_base64_img(file_path):
 logo_data = get_base64_img('logo.png')
 logo_url = f"data:image/png;base64,{logo_data}" if logo_data else ""
 user_img = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfIrn5orx6KdLUiIvZ3IUkZTMdIyes-D6sMA&s"
-
-# Model logos
-MODEL_LOGOS = {
-    "Gemini 2.0 Flash": "https://img.freepik.com/vektor-premium/ikon-logo-gemini_1273375-853.jpg",
-    "DeepSeek R1": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqKHD28rGat3WVaqRkRDgIL-SHgOTHB6MrNg&s",
-    "Qwen 2.5 7B": "https://cdn.worldvectorlogo.com/logos/huggingface-2.svg",
-    "Pollinations AI": "https://media.licdn.com/dms/image/v2/D4D0BAQGOEJsjFbbz4A/company-logo_200_200/company-logo_200_200/0/1737735031995/pollinations_ai_logo?e=2147483647&v=beta&t=gchueY2IyipraTYq_jsrYsSY4RbQmaAhBJUUlVcm4NU",
-    "Meta-Llama Scout (Vision)": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdtQY9Ofk71m8DVL5yV3d_sDPuqzCexABNLA&s",
-    "Llama 3.3 70B": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdtQY9Ofk71m8DVL5yV3d_sDPuqzCexABNLA&s"
-}
 
 # --- 6. CSS (OBSIDIAN BLACK, ELECTRIC VIOLET, CYBER CYAN) ---
 st.markdown(f"""
@@ -394,16 +325,8 @@ st.markdown(f"""
         transition: all 0.1s ease !important;
     }}
     
-    .stButton button:disabled {{
-        opacity: 0.4 !important;
-        cursor: not-allowed !important;
-        transform: none !important;
-        background: #0d0d0d !important;
-        border-color: #333 !important;
-    }}
-    
     [data-testid="stSelectbox"] {{
-        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        transition: all 0.3s ease !important;
     }}
     
     [data-testid="stSelectbox"]:hover {{
@@ -411,29 +334,16 @@ st.markdown(f"""
     }}
     
     [data-testid="stSelectbox"] > div {{
-        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-        border-radius: 12px !important;
+        transition: all 0.3s ease !important;
     }}
     
     [data-testid="stSelectbox"] > div:hover {{
-        border-color: #06b6d4 !important;
-        box-shadow: 0 0 25px rgba(6,182,212,0.4) !important;
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 20px rgba(139,92,246,0.3) !important;
     }}
     
     * {{
-        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), 
-                    box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
-                    border-color 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-    }}
-    
-    .model-logo {{
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid #06b6d4;
-        margin-right: 10px;
-        vertical-align: middle;
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -462,7 +372,7 @@ def render_chat_bubble(role, content):
     else:
         st.markdown(f"""
         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
-            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
+            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid; border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1; object-fit: cover; box-shadow: 0 0 10px rgba(139,92,246,0.4);">
             <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 4px 20px 20px 20px; 
                         max-width: 85%; border-left: 3px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 2px 15px rgba(6,182,212,0.3);">
                 {content}
@@ -492,55 +402,17 @@ with st.sidebar:
         
     st.markdown("---")
     
-    # Model selection with logos and limits
     engine_map = {
-        "Gemini 2.0 Flash": "Gemini",
-        "DeepSeek R1": "DeepSeek",
-        "Meta-Llama Scout (Vision)": "Scout",
-        "Llama 3.3 70B": "Llama33",
-        "Qwen 2.5 7B": "HuggingFace",
-        "Pollinations AI": "Pollinations"
+        "ZT-3 Pro": "Gemini",
+        "ZT-3 Fast": "DeepSeek",
+        "ZT-VISION 2.5": "Scout",
+        "ZT-1 Flash": "Llama33",
+        "ZT-2": "HuggingFace",
+        "Z-ART 3 Fast": "Pollinations"
     }
-    
-    st.markdown("### 🤖 AI Models")
-    
-    # Display models with usage info
-    for model_name, engine_code in engine_map.items():
-        can_use, current, limit = check_model_limit(st.session_state.current_user, model_name)
-        logo_url_model = MODEL_LOGOS.get(model_name, "")
-        
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            if st.button(
-                f"{model_name}",
-                key=f"model_{model_name}",
-                use_container_width=True,
-                disabled=not can_use
-            ):
-                st.session_state.selected_model = model_name
-                st.session_state.selected_engine = engine_code
-                st.rerun()
-        
-        with col2:
-            if can_use:
-                st.markdown(f"<div style='text-align:center; color:#06b6d4; font-size:11px; margin-top:8px;'>{current}/{limit}</div>", unsafe_allow_html=True)
-            else:
-                st.markdown(f"<div style='text-align:center; color:#ff4444; font-size:11px; margin-top:8px;'>LIMIT</div>", unsafe_allow_html=True)
-        
-        # Show logo
-        if logo_url_model:
-            st.markdown(f'<img src="{logo_url_model}" class="model-logo" style="display:none;">', unsafe_allow_html=True)
-    
-    # Set default model
-    if "selected_model" not in st.session_state:
-        for model_name, engine_code in engine_map.items():
-            can_use, _, _ = check_model_limit(st.session_state.current_user, model_name)
-            if can_use:
-                st.session_state.selected_model = model_name
-                st.session_state.selected_engine = engine_code
-                break
-    
-    st.markdown("---")
+    selected_engine_name = st.selectbox("Pilih Model AI", list(engine_map.keys()))
+    engine = engine_map[selected_engine_name]
+
     st.markdown("### 🕒 Saved History")
     
     chat_keys = list(st.session_state.all_chats.keys())[::-1]
@@ -573,26 +445,6 @@ if logo_url:
         st.markdown("<div style='text-align:center; color:#888; font-size:14px; margin-top:5px;'>Sistem AI Terintegrasi untuk Pemrograman Tingkat Lanjut</div>", unsafe_allow_html=True)
         st.markdown("<div style='text-align:center; color:#888; font-size:16px; margin-top:20px;'>How can I help you today? 👋</div>", unsafe_allow_html=True)
 
-# Check if model is limited
-if "selected_model" in st.session_state:
-    can_use, current, limit = check_model_limit(st.session_state.current_user, st.session_state.selected_model)
-    if not can_use:
-        st.markdown(f"""
-        <div style="background: #0d0d0d; padding: 20px; border-radius: 15px; border-left: 3px solid; 
-                    border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; margin: 20px auto; max-width: 600px;
-                    box-shadow: 0 4px 20px rgba(139,92,246,0.3);">
-            <div style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; 
-                        -webkit-text-fill-color: transparent; font-weight: bold; font-size: 18px; margin-bottom: 10px;">
-                ⚠️ Limit Reached
-            </div>
-            <div style="color: #888; font-size: 14px; line-height: 1.6;">
-                Kamu sudah mencapai limit untuk model <strong style="color:#06b6d4;">{st.session_state.selected_model}</strong> ({current}/{limit} requests).
-                <br><br>
-                Limit akan direset dalam <strong style="color:#8b5cf6;">24 jam</strong>. Silakan pilih model lain! 🚀
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
 # Render Chat
 for msg in st.session_state.messages:
     if msg.get("type") == "image": 
@@ -606,42 +458,25 @@ if up:
     st.session_state.uploaded_image = up.getvalue()
     st.toast("✅ Image uploaded!", icon="📷")
 
-# Chat Input - disable if limit reached
-if "selected_model" in st.session_state:
-    can_use, _, _ = check_model_limit(st.session_state.current_user, st.session_state.selected_model)
-    if can_use:
-        if prompt := st.chat_input("Message ZETRO..."):
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            
-            if st.session_state.current_session_key is None:
-                session_title = prompt[:30] + "..." if len(prompt) > 30 else prompt
-                st.session_state.current_session_key = session_title
-            else:
-                session_title = st.session_state.current_session_key
-            
-            st.session_state.all_chats[session_title] = st.session_state.messages.copy()
-            save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-            st.rerun()
+# Chat Input
+if prompt := st.chat_input("Message ZETRO..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    if st.session_state.current_session_key is None:
+        session_title = prompt[:30] + "..." if len(prompt) > 30 else prompt
+        st.session_state.current_session_key = session_title
     else:
-        st.chat_input("Model limit reached. Please select another model.", disabled=True)
+        session_title = st.session_state.current_session_key
+    
+    st.session_state.all_chats[session_title] = st.session_state.messages.copy()
+    save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
+    st.rerun()
 
 # --- 10. AI PROCESSING ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
-    # Check limit before processing
-    can_use, _, _ = check_model_limit(st.session_state.current_user, st.session_state.selected_model)
-    
-    if not can_use:
-        error_msg = f"⚠️ Limit tercapai untuk {st.session_state.selected_model}. Silakan pilih model lain!"
-        st.session_state.messages.append({"role": "assistant", "content": error_msg})
-        if st.session_state.current_session_key:
-            st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
-        save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-        st.rerun()
-    
     try:
         user_msg = st.session_state.messages[-1]["content"]
         res = ""
-        engine = st.session_state.selected_engine
         
         system_prompt = (
             "You are ZETRO, a supreme multi-modal AI system created for advanced programming and integrated AI solutions. "
@@ -812,10 +647,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         clean_res = clean_text(res_text)
                         
                         response_container.markdown(f"""
-                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
-                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
-                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 4px 20px 20px 20px; 
-                                        max-width: 85%; border-left: 3px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 2px 15px rgba(6,182,212,0.3);">
+                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 2px solid #8b5cf6;">
+                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
+                                        max-width: 85%; border-left: 2px solid #8b5cf6; word-wrap: break-word;">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
@@ -848,10 +683,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         clean_res = clean_text(res_text)
                         
                         response_container.markdown(f"""
-                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
-                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
-                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 4px 20px 20px 20px; 
-                                        max-width: 85%; border-left: 3px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 2px 15px rgba(6,182,212,0.3);">
+                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 2px solid #8b5cf6;">
+                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
+                                        max-width: 85%; border-left: 2px solid #8b5cf6; word-wrap: break-word;">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
@@ -884,10 +719,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     clean_res = clean_text(res_text)
                     
                     response_container.markdown(f"""
-                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
-                        <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
-                        <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 4px 20px 20px 20px; 
-                                    max-width: 85%; border-left: 3px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 2px 15px rgba(6,182,212,0.3);">
+                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                        <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 2px solid #8b5cf6;">
+                        <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
+                                    max-width: 85%; border-left: 2px solid #8b5cf6; word-wrap: break-word;">
                             <div style="white-space: pre-wrap;">{clean_res}</div>
                         </div>
                     </div>
@@ -922,10 +757,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         clean_res = clean_text(res_text)
                         
                         response_container.markdown(f"""
-                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
-                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
-                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 4px 20px 20px 20px; 
-                                        max-width: 85%; border-left: 3px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 2px 15px rgba(6,182,212,0.3);">
+                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 2px solid #8b5cf6;">
+                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
+                                        max-width: 85%; border-left: 2px solid #8b5cf6; word-wrap: break-word;">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
@@ -946,9 +781,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             if st.session_state.current_session_key:
                 st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
             save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-            
-            # Increment usage after successful request
-            increment_model_usage(st.session_state.current_user, st.session_state.selected_model)
             st.rerun()
         
         if res:
@@ -957,9 +789,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             if st.session_state.current_session_key:
                 st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
             save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-            
-            # Increment usage after successful request
-            increment_model_usage(st.session_state.current_user, st.session_state.selected_model)
             st.rerun()
     
     except Exception as e:
