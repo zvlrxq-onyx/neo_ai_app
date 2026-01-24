@@ -213,7 +213,8 @@ def get_base64_img(file_path):
 logo_data = get_base64_img('logo.png')
 logo_url = f"data:image/png;base64,{logo_data}" if logo_data else ""
 user_img = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfIrn5orx6KdLUiIvZ3IUkZTMdIyes-D6sMA&s"
-# --- 6. CSS (ROUNDED DESIGN + GRADIENT PURPLE TO CYAN) ---
+
+# --- 6. CSS (ROUNDED DESIGN + GRADIENT BORDER ONLY) ---
 st.markdown(f"""
 <style>
     [data-testid="stAppViewContainer"] {{ background: #0a0a0a; }}
@@ -288,17 +289,18 @@ st.markdown(f"""
         display: none !important;
     }}
     
-    /* TAMPILIN ICON PANAH KE ATAS - LEBIH SIMETRIS */
+    /* TAMPILIN ICON PANAH KE ATAS ↑ */
     [data-testid="stChatInputSubmitButton"]::after {{
-        content: "▲";
+        content: "↑";
         color: white !important;
-        font-size: 18px !important;
+        font-size: 22px !important;
         font-weight: bold !important;
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
         line-height: 1;
+        font-family: Arial, sans-serif;
     }}
     
     /* SIDEBAR LOGO - ROUNDED */
@@ -410,7 +412,8 @@ st.markdown(f"""
     }}
 </style>
 """, unsafe_allow_html=True)
-# --- 7. BUBBLE ENGINE (GRADIENT PURPLE TO CYAN + ROUNDED) ---
+
+# --- 7. BUBBLE ENGINE (BORDER GRADIENT ONLY) ---
 def clean_text(text):
     if not isinstance(text, str): 
         return str(text)
@@ -424,13 +427,17 @@ def render_chat_bubble(role, content):
     if role == "user":
         st.markdown(f"""
         <div style="display: flex; justify-content: flex-end; margin-bottom: 20px; animation: slideInRight 0.3s ease-out;">
-            <div style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); 
+            <div style="background: #1a1a1a; 
                         color: white; 
                         padding: 15px 20px; 
                         border-radius: 25px 25px 5px 25px; 
                         max-width: 85%; 
+                        border: 2px solid transparent;
+                        background-image: linear-gradient(#1a1a1a, #1a1a1a), linear-gradient(135deg, #8b5cf6, #06b6d4);
+                        background-origin: border-box;
+                        background-clip: padding-box, border-box;
                         word-wrap: break-word; 
-                        box-shadow: 0 4px 20px rgba(139,92,246,0.4);">
+                        box-shadow: 0 4px 20px rgba(139,92,246,0.3);">
                 {content}
             </div>
             <img src="{user_img}" width="38" height="38" style="border-radius: 50%; margin-left: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
@@ -440,7 +447,7 @@ def render_chat_bubble(role, content):
         st.markdown(f"""
         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
             <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
-            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+            <div style="background: #1a1a1a; 
                         color: #e9edef; 
                         padding: 15px 20px; 
                         border-radius: 5px 25px 25px 25px; 
@@ -571,218 +578,149 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             "- Proud or admiring success: 🏆 "
             "- Anxious or worried: 😰 "
             "- Refusal or denial: ❌ "
-            "- Motivational (e.g., encouraging user): 🚀 "
-            "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' "
-            "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."   
-        )
+            "- Motivational (e.g., encouraging user):
+
+Continue
+4:08 PM
+
+🚀 " "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' " "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."
+)
+
+    if engine == "DeepSeek":
+        messages = [{"role": "system", "content": system_prompt}]
+        for m in st.session_state.messages[:-1]:
+            if m.get("type") != "image":
+                messages.append({"role": m["role"], "content": m["content"]})
+        messages.append({"role": "user", "content": user_msg})
         
-        if engine == "DeepSeek":
-            messages = [{"role": "system", "content": system_prompt}]
-            for m in st.session_state.messages[:-1]:
-                if m.get("type") != "image":
-                    messages.append({"role": m["role"], "content": m["content"]})
-            messages.append({"role": "user", "content": user_msg})
+        response_container = st.empty()
+        
+        try:
+            stream = client_hf.chat_completion(
+                messages=messages,
+                model="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+                max_tokens=2048,
+                temperature=0.7,
+                stream=True
+            )
             
-            response_container = st.empty()
+            thinking_text = ""
+            answer_text = ""
+            in_think_tag = False
+            buffer = ""
             
-            try:
-                stream = client_hf.chat_completion(
-                    messages=messages,
-                    model="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
-                    max_tokens=2048,
-                    temperature=0.7,
-                    stream=True
-                )
-                
-                thinking_text = ""
-                answer_text = ""
-                in_think_tag = False
-                buffer = ""
-                
-                for chunk in stream:
-                    if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
-                        delta = chunk.choices[0].delta
-                        if hasattr(delta, 'content') and delta.content:
-                            buffer += delta.content
+            for chunk in stream:
+                if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                    delta = chunk.choices[0].delta
+                    if hasattr(delta, 'content') and delta.content:
+                        buffer += delta.content
+                        
+                        if "<think>" in buffer:
+                            in_think_tag = True
+                            buffer = buffer.replace("<think>", "")
+                        
+                        if "</think>" in buffer:
+                            in_think_tag = False
+                            parts = buffer.split("</think>")
+                            thinking_text += parts[0]
+                            buffer = parts[1] if len(parts) > 1 else ""
+                            continue
+                        
+                        if in_think_tag:
+                            thinking_text += delta.content
                             
-                            if "<think>" in buffer:
-                                in_think_tag = True
-                                buffer = buffer.replace("<think>", "")
-                            
-                            if "</think>" in buffer:
-                                in_think_tag = False
-                                parts = buffer.split("</think>")
-                                thinking_text += parts[0]
-                                buffer = parts[1] if len(parts) > 1 else ""
-                                continue
-                            
-                            if in_think_tag:
-                                thinking_text += delta.content
-                                
-                                response_container.markdown(f"""
-                                <div style="background: #0d0d0d; padding: 15px; border-radius: 20px; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; margin-bottom: 15px; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
-                                    <div style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                                        🧠 ZETRO Deep Thinking Process
-                                        <div class="typing-indicator" style="margin: 0;">
-                                            <div class="typing-dot"></div>
-                                            <div class="typing-dot"></div>
-                                            <div class="typing-dot"></div>
-                                        </div>
-                                    </div>
-                                    <div style="color: #888; font-size: 13px; font-family: 'Consolas', monospace; white-space: pre-wrap; line-height: 1.6;">{clean_text(thinking_text)}</div>
-                                </div>
-                                """, unsafe_allow_html=True)
-                            else:
-                                answer_text += delta.content
-                                clean_answer = clean_text(answer_text)
-                                
-                                response_container.markdown(f"""
-                                <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
-                                    <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
-                                    <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
-                                                max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
-                                        <div style="white-space: pre-wrap;">{clean_answer}</div>
+                            response_container.markdown(f"""
+                            <div style="background: #0d0d0d; padding: 15px; border-radius: 20px; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; margin-bottom: 15px; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
+                                <div style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                                    🧠 ZETRO Deep Thinking Process
+                                    <div class="typing-indicator" style="margin: 0;">
+                                        <div class="typing-dot"></div>
+                                        <div class="typing-dot"></div>
+                                        <div class="typing-dot"></div>
                                     </div>
                                 </div>
-                                """, unsafe_allow_html=True)
-                                time.sleep(0.01)
-                
-                res = answer_text.strip() if answer_text else thinking_text.strip()
-                    
-            except Exception as e:
-                if "busy" in str(e).lower() or "503" in str(e):
-                    res = "DeepSeek lagi sibuk nih bro! 😅 Coba model lain atau tunggu sebentar ya!"
-                else:
-                    res = f"Error: {str(e)}"
-        
-        elif engine == "Gemini":
-            messages_history = []
-            for m in st.session_state.messages[:-1]:
-                if m.get("type") != "image":
-                    role = "user" if m["role"] == "user" else "model"
-                    messages_history.append({"role": role, "parts": [m["content"]]})
-            
-            response_container = st.empty()
-            res_text = ""
-            
-            try:
-                chat = client_gemini.start_chat(history=messages_history)
-                stream = chat.send_message(user_msg, stream=True)
-                
-                for chunk in stream:
-                    if chunk.text:
-                        res_text += chunk.text
-                        clean_res = clean_text(res_text)
-                        
-                        response_container.markdown(f"""
-                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
-                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
-                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
-                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
-                                <div style="white-space: pre-wrap;">{clean_res}</div>
+                                <div style="color: #888; font-size: 13px; font-family: 'Consolas', monospace; white-space: pre-wrap; line-height: 1.6;">{clean_text(thinking_text)}</div>
                             </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        time.sleep(0.01)
-                
-                res = res_text
-            except Exception as e:
-                res = f"Gemini error bro: {str(e)} 😰"
-        
-        elif engine == "Scout":
-            current_image_data = st.session_state.uploaded_image
-            
-            if current_image_data:
-                pixel_info = analyze_image_pixels(current_image_data)
-                base64_image = base64.b64encode(current_image_data).decode('utf-8')
-                
-                messages = [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": [
-                        {"type": "text", "text": f"{user_msg} (Image info: {pixel_info})"},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                    ]}
-                ]
-                
-                response_container = st.empty()
-                res_text = ""
-                
-                stream = client_groq.chat.completions.create(
-                    model="meta-llama/llama-4-scout-17b-16e-instruct",
-                    messages=messages,
-                    temperature=0.7,
-                    max_tokens=1024,
-                    stream=True
-                )
-                
-                for chunk in stream:
-                    if chunk.choices[0].delta.content:
-                        res_text += chunk.choices[0].delta.content
-                        clean_res = clean_text(res_text)
-                        
-                        response_container.markdown(f"""
-                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
-                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
-                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
-                                <div style="white-space: pre-wrap;">{clean_res}</div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            answer_text += delta.content
+                            clean_answer = clean_text(answer_text)
+                            
+                            response_container.markdown(f"""
+                            <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
+                                <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
+                                <div style="background: #1a1a1a; color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                            max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
+                                    <div style="white-space: pre-wrap;">{clean_answer}</div>
+                                </div>
                             </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        time.sleep(0.02)
+                            """, unsafe_allow_html=True)
+                            time.sleep(0.01)
+            
+            res = answer_text.strip() if answer_text else thinking_text.strip()
                 
-                res = res_text
-                st.session_state.uploaded_image = None
+        except Exception as e:
+            if "busy" in str(e).lower() or "503" in str(e):
+                res = "DeepSeek lagi sibuk nih bro! 😅 Coba model lain atau tunggu sebentar ya!"
             else:
-                messages = [{"role": "system", "content": system_prompt}]
-                for m in st.session_state.messages[:-1]:
-                    if m.get("type") != "image":
-                        messages.append({"role": m["role"], "content": m["content"]})
-                messages.append({"role": "user", "content": user_msg})
-                
-                response_container = st.empty()
-                res_text = ""
-                
-                stream = client_groq.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=messages,
-                    temperature=0.7,
-                    max_tokens=1024,
-                    stream=True
-                )
-                
-                for chunk in stream:
-                    if chunk.choices[0].delta.content:
-                        res_text += chunk.choices[0].delta.content
-                        clean_res = clean_text(res_text)
-                        
-                        response_container.markdown(f"""
-                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
-                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
-                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
-                                <div style="white-space: pre-wrap;">{clean_res}</div>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        time.sleep(0.02)
-                
-                res = res_text
+                res = f"Error: {str(e)}"
+    
+    elif engine == "Gemini":
+        messages_history = []
+        for m in st.session_state.messages[:-1]:
+            if m.get("type") != "image":
+                role = "user" if m["role"] == "user" else "model"
+                messages_history.append({"role": role, "parts": [m["content"]]})
         
-        elif engine == "Llama33":
-            messages = [{"role": "system", "content": system_prompt}]
-            for m in st.session_state.messages[:-1]:
-                if m.get("type") != "image":
-                    messages.append({"role": m["role"], "content": m["content"]})
-            messages.append({"role": "user", "content": user_msg})
+        response_container = st.empty()
+        res_text = ""
+        
+        try:
+            chat = client_gemini.start_chat(history=messages_history)
+            stream = chat.send_message(user_msg, stream=True)
+            
+            for chunk in stream:
+                if chunk.text:
+                    res_text += chunk.text
+                    clean_res = clean_text(res_text)
+                    
+                    response_container.markdown(f"""
+                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
+                        <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
+                        <div style="background: #1a1a1a; color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                    max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
+                            <div style="white-space: pre-wrap;">{clean_res}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    time.sleep(0.01)
+            
+            res = res_text
+        except Exception as e:
+            res = f"Gemini error bro: {str(e)} 😰"
+    
+    elif engine == "Scout":
+        current_image_data = st.session_state.uploaded_image
+        
+        if current_image_data:
+            pixel_info = analyze_image_pixels(current_image_data)
+            base64_image = base64.b64encode(current_image_data).decode('utf-8')
+            
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": [
+                    {"type": "text", "text": f"{user_msg} (Image info: {pixel_info})"},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                ]}
+            ]
             
             response_container = st.empty()
             res_text = ""
             
             stream = client_groq.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
                 messages=messages,
-                temperature=0.8,
+                temperature=0.7,
                 max_tokens=1024,
                 stream=True
             )
@@ -795,7 +733,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     response_container.markdown(f"""
                     <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
                         <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
-                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                        <div style="background: #1a1a1a; color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
                                     max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                             <div style="white-space: pre-wrap;">{clean_res}</div>
                         </div>
@@ -804,8 +742,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     time.sleep(0.02)
             
             res = res_text
-        
-        elif engine == "HuggingFace":
+            st.session_state.uploaded_image = None
+        else:
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
@@ -815,61 +753,133 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             response_container = st.empty()
             res_text = ""
             
-            stream = client_hf.chat_completion(
+            stream = client_groq.chat.completions.create(
+                model="llama-3.3-70b-versatile",
                 messages=messages,
-                model="Qwen/Qwen2.5-7B-Instruct",
+                temperature=0.7,
                 max_tokens=1024,
-                temperature=0.9,
                 stream=True
             )
             
             for chunk in stream:
-                if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
-                    if hasattr(delta, 'content') and delta.content:
-                        res_text += delta.content
-                        clean_res = clean_text(res_text)
-                        
-                        response_container.markdown(f"""
-                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
-                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
-                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
-                                <div style="white-space: pre-wrap;">{clean_res}</div>
-                            </div>
+                if chunk.choices[0].delta.content:
+                    res_text += chunk.choices[0].delta.content
+                    clean_res = clean_text(res_text)
+                    
+                    response_container.markdown(f"""
+                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                        <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                        <div style="background: #1a1a1a; color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                    max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
+                            <div style="white-space: pre-wrap;">{clean_res}</div>
                         </div>
-                        """, unsafe_allow_html=True)
-                        time.sleep(0.02)
+                    </div>
+                    """, unsafe_allow_html=True)
+                    time.sleep(0.02)
             
             res = res_text
-        
-        elif engine == "Pollinations":
-            encoded_prompt = urllib.parse.quote(user_msg)
-            image_url = f"{POLLINATIONS_API}{encoded_prompt}"
-            
-            img_response = requests.get(image_url)
-            img = Image.open(io.BytesIO(img_response.content))
-            
-            st.session_state.messages.append({"role": "assistant", "type": "image", "content": img})
-            
-            if st.session_state.current_session_key:
-                st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
-            save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-            st.rerun()
-        
-        if res:
-            st.session_state.messages.append({"role": "assistant", "content": res})
-            
-            if st.session_state.current_session_key:
-                st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
-            save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
-            st.rerun()
     
-    except Exception as e:
-        st.error(f"❌ Error bro: {str(e)}")
-        error_msg = f"Sorry bro, ada error: {str(e)} 😰"
-        st.session_state.messages.append({"role": "assistant", "content": error_msg})
+    elif engine == "Llama33":
+        messages = [{"role": "system", "content": system_prompt}]
+        for m in st.session_state.messages[:-1]:
+            if m.get("type") != "image":
+                messages.append({"role": m["role"], "content": m["content"]})
+        messages.append({"role": "user", "content": user_msg})
+        
+        response_container = st.empty()
+        res_text = ""
+        
+        stream = client_groq.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.8,
+            max_tokens=1024,
+            stream=True
+        )
+        
+        for chunk in stream:
+            if chunk.choices[0].delta.content:
+                res_text += chunk.choices[0].delta.content
+                clean_res = clean_text(res_text)
+                
+                response_container.markdown(f"""
+                <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                    <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                    <div style="background: #1a1a1a; color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
+                        <div style="white-space: pre-wrap;">{clean_res}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                time.sleep(0.02)
+        
+        res = res_text
+    
+    elif engine == "HuggingFace":
+        messages = [{"role": "system", "content": system_prompt}]
+        for m in st.session_state.messages[:-1]:
+            if m.get("type") != "image":
+                messages.append({"role": m["role"], "content": m["content"]})
+        messages.append({"role": "user", "content": user_msg})
+        
+        response_container = st.empty()
+        res_text = ""
+        
+        stream = client_hf.chat_completion(
+            messages=messages,
+            model="Qwen/Qwen2.5-7B-Instruct",
+            max_tokens=1024,
+            temperature=0.9,
+            stream=True
+        )
+        
+        for chunk in stream:
+            if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                delta = chunk.choices[0].delta
+                if hasattr(delta, 'content') and delta.content:
+                    res_text += delta.content
+                    clean_res = clean_text(res_text)
+                    
+                    response_container.markdown(f"""
+                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                        <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                        <div style="background: #1a1a1a; color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                    max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
+                            <div style="white-space: pre-wrap;">{clean_res}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    time.sleep(0.02)
+        
+        res = res_text
+    
+    elif engine == "Pollinations":
+        encoded_prompt = urllib.parse.quote(user_msg)
+        image_url = f"{POLLINATIONS_API}{encoded_prompt}"
+        
+        img_response = requests.get(image_url)
+        img = Image.open(io.BytesIO(img_response.content))
+        
+        st.session_state.messages.append({"role": "assistant", "type": "image", "content": img})
+        
         if st.session_state.current_session_key:
             st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
         save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
         st.rerun()
+    
+    if res:
+        st.session_state.messages.append({"role": "assistant", "content": res})
+        
+        if st.session_state.current_session_key:
+            st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
+        save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
+        st.rerun()
+
+except Exception as e:
+    st.error(f"❌ Error bro: {str(e)}")
+    error_msg = f"Sorry bro, ada error: {str(e)} 😰"
+    st.session_state.messages.append({"role": "assistant", "content": error_msg})
+    if st.session_state.current_session_key:
+        st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
+    save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
+    st.rerun()
