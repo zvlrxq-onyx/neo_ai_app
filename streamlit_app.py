@@ -1,6 +1,7 @@
 import streamlit as st
 from groq import Groq
 from huggingface_hub import InferenceClient
+import google.generativeai as genai
 import os, base64, requests, json
 import re
 from PIL import Image
@@ -10,14 +11,14 @@ import time
 import hashlib
 
 # --- 1. CONFIG & SYSTEM SETUP ---
-st.set_page_config(page_title="Azura AI", page_icon="🌐", layout="wide")
+st.set_page_config(page_title="ZETRO: ZX-1.5 Flash", page_icon="🌌", layout="wide")
 
 # Simple Session State (No Cookies - lebih stabil!)
 if "cookies_ready" not in st.session_state:
     st.session_state.cookies_ready = True
 
 # NAMA FILE DATABASE (Per-user dengan hash)
-DB_FOLDER = "azura_users_db"
+DB_FOLDER = "zetro_users_db"
 if not os.path.exists(DB_FOLDER):
     os.makedirs(DB_FOLDER)
 
@@ -110,12 +111,13 @@ if "auth_mode" not in st.session_state:
 # Login Screen
 if st.session_state.current_user is None:
     st.markdown("""
-    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #050505;">
-        <div style="background: linear-gradient(135deg, #001a1a 0%, #003333 100%); 
-                    padding: 50px; border-radius: 20px; border: 2px solid #00ffff; 
-                    box-shadow: 0 0 30px rgba(0,255,255,0.4); text-align: center; max-width: 400px;">
-            <h1 style="color: #00ffff; margin-bottom: 10px;">🌐 Azura AI</h1>
-            <p style="color: #888; margin-bottom: 30px;">Secure Multi-Modal AI Assistant</p>
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #0a0a0a;">
+        <div style="background: #1a1a1a; 
+                    padding: 50px; border-radius: 30px; 
+                    border: 2px solid #06b6d4;
+                    box-shadow: 0 0 40px rgba(6,182,212,0.5); text-align: center; max-width: 400px;">
+            <h1 style="color: #ffffff; margin-bottom: 10px;">🌌 ZETRO</h1>
+            <p style="color: #888; margin-bottom: 30px; font-weight: bold;">Sistem AI Terintegrasi untuk Pemrograman Tingkat Lanjut</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -125,7 +127,7 @@ if st.session_state.current_user is None:
         tab1, tab2 = st.tabs(["🔐 Login", "📝 Register"])
         
         with tab1:
-            st.markdown("<h3 style='text-align:center; color:#00ffff; margin-bottom:20px;'>Login to Your Account</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align:center; color:#ffffff; margin-bottom:20px;'>Login to Your Account</h3>", unsafe_allow_html=True)
             login_username = st.text_input("Username", placeholder="Your username", key="login_user")
             login_password = st.text_input("Password", type="password", placeholder="Your password", key="login_pass")
             
@@ -142,7 +144,7 @@ if st.session_state.current_user is None:
                     st.error("❌ Isi username dan password dulu!")
         
         with tab2:
-            st.markdown("<h3 style='text-align:center; color:#00ffff; margin-bottom:20px;'>Create New Account</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align:center; color:#ffffff; margin-bottom:20px;'>Create New Account</h3>", unsafe_allow_html=True)
             reg_username = st.text_input("Username", placeholder="Choose a username", key="reg_user")
             reg_password = st.text_input("Password", type="password", placeholder="Choose a password", key="reg_pass")
             reg_confirm = st.text_input("Confirm Password", type="password", placeholder="Confirm your password", key="reg_confirm")
@@ -192,10 +194,12 @@ if "show_upload_notif" not in st.session_state:
 try:
     client_groq = Groq(api_key=st.secrets["GROQ_API_KEY"])
     client_hf = InferenceClient(token=st.secrets["HF_TOKEN"])
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    client_gemini = genai.GenerativeModel('gemini-3-flash-preview')
     POLLINATIONS_API = "https://image.pollinations.ai/prompt/"
 except Exception as e:
     st.error(f"❌ API Keys Error: {e}")
-    st.info("Cek secrets.toml lu bro!")
+    st.info("Cek secrets.toml lu bro! Pastikan ada GROQ_API_KEY, HF_TOKEN, dan GEMINI_API_KEY")
     st.stop()
 
 # --- 5. ASSETS (LOGO & USER) ---
@@ -209,66 +213,179 @@ def get_base64_img(file_path):
 logo_data = get_base64_img('logo.png')
 logo_url = f"data:image/png;base64,{logo_data}" if logo_data else ""
 user_img = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfIrn5orx6KdLUiIvZ3IUkZTMdIyes-D6sMA&s"
-
-# --- 6. CSS ---
+# --- 6. CSS (ROUNDED DESIGN + GRADIENT PURPLE TO CYAN) ---
 st.markdown(f"""
 <style>
-    [data-testid="stAppViewContainer"] {{ background: #050505; }}
+    [data-testid="stAppViewContainer"] {{ background: #0a0a0a; }}
+    
+    /* FILE UPLOADER - ROUNDED CIRCLE */
     [data-testid="stFileUploader"] {{ position: fixed; bottom: 58px; left: 15px; width: 45px; z-index: 1000; }}
     [data-testid="stFileUploaderDropzone"] {{
-        background: #00ffff11 !important; border: 1px solid #00ffff44 !important; border-radius: 50% !important;
-        height: 42px !important; width: 42px !important; padding: 0 !important;
-        transition: all 0.3s ease !important;
+        background: #1a1a1a !important; 
+        border: 2px solid #06b6d4 !important; 
+        border-radius: 50% !important;
+        height: 42px !important; 
+        width: 42px !important; 
+        padding: 0 !important;
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
     }}
     [data-testid="stFileUploaderDropzone"]:hover {{
-        transform: scale(1.1) !important;
-        background: #00ffff22 !important;
-        border-color: #00ffff !important;
-        box-shadow: 0 0 15px rgba(0,255,255,0.3) !important;
+        transform: scale(1.15) rotate(90deg) !important;
+        background: #2a2a2a !important;
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 25px rgba(6,182,212,0.6) !important;
     }}
     [data-testid="stFileUploaderDropzone"] div {{ display: none !important; }}
     [data-testid="stFileUploaderDropzone"] span {{ display: none !important; }}
     [data-testid="stFileUploaderDropzone"] p {{ display: none !important; }}
     [data-testid="stFileUploaderDropzone"] small {{ display: none !important; }}
     [data-testid="stFileUploaderDropzone"]::before {{
-        content: "＋"; color: #00ffff; font-size: 26px; font-weight: bold;
+        content: "＋"; color: #06b6d4; font-size: 26px; font-weight: bold;
         display: flex; align-items: center; justify-content: center; height: 100%;
     }}
     [data-testid="stFileUploader"] label {{ display: none !important; }}
     [data-testid="stFileUploader"] span {{ display: none !important; }}
     [data-testid="stFileUploader"] small {{ display: none !important; }}
+    
+    /* CHAT INPUT AREA */
     [data-testid="stChatInput"] {{ margin-left: 60px !important; width: calc(100% - 80px) !important; }}
     
-    .sidebar-logo {{ display: block; margin: auto; width: 80px; height: 80px; border-radius: 50%; border: 1px solid #333; object-fit: cover; margin-bottom: 10px; }}
-    .rotating-logo {{ animation: rotate 8s linear infinite; border-radius: 50%; border: 1px solid #333; }}
-    @keyframes rotate {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
+    /* INPUT BOX - KOTAK DENGAN ROUNDED DIKIT */
+    [data-testid="stChatInputTextArea"] {{
+        border-radius: 8px !important;
+        border: 2px solid #06b6d4 !important;
+        background: #1a1a1a !important;
+        padding: 12px 50px 12px 20px !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    }}
     
+    [data-testid="stChatInputTextArea"]:focus {{
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 20px rgba(6,182,212,0.4) !important;
+    }}
+    
+    /* TOMBOL KIRIM - KOTAK ROUNDED + ICON PANAH KE ATAS */
+    [data-testid="stChatInputSubmitButton"] {{
+        background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
+        border-radius: 10px !important;
+        width: 40px !important;
+        height: 40px !important;
+        border: none !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }}
+    
+    [data-testid="stChatInputSubmitButton"]:hover {{
+        transform: scale(1.1) !important;
+        box-shadow: 0 0 20px rgba(139,92,246,0.6) !important;
+    }}
+    
+    /* SEMBUNYIKAN ICON PESAWAT KERTAS DEFAULT */
+    [data-testid="stChatInputSubmitButton"] svg {{
+        display: none !important;
+    }}
+    
+    /* TAMPILIN ICON PANAH KE ATAS - LEBIH SIMETRIS */
+    [data-testid="stChatInputSubmitButton"]::after {{
+        content: "▲";
+        color: white !important;
+        font-size: 18px !important;
+        font-weight: bold !important;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        line-height: 1;
+    }}
+    
+    /* SIDEBAR LOGO - ROUNDED */
+    .sidebar-logo {{ 
+        display: block; 
+        margin: auto; 
+        width: 80px; 
+        height: 80px; 
+        border-radius: 50%; 
+        border: 2px solid #06b6d4; 
+        object-fit: cover; 
+        margin-bottom: 10px; 
+        box-shadow: 0 0 15px rgba(6,182,212,0.5); 
+    }}
+    
+    /* ROTATING LOGO - ROUNDED */
+    .rotating-logo {{ 
+        animation: rotate 8s linear infinite; 
+        border-radius: 50%; 
+        border: 2px solid #06b6d4; 
+        box-shadow: 0 0 25px rgba(6,182,212,0.6); 
+    }}
+    
+    @keyframes rotate {{ 
+        from {{ transform: rotate(0deg); }} 
+        to {{ transform: rotate(360deg); }} 
+    }}
+    
+    @keyframes slideInRight {{
+        from {{ opacity: 0; transform: translateX(20px); }}
+        to {{ opacity: 1; transform: translateX(0); }}
+    }}
+    
+    @keyframes slideInLeft {{
+        from {{ opacity: 0; transform: translateX(-20px); }}
+        to {{ opacity: 1; transform: translateX(0); }}
+    }}
+    
+    /* TYPING INDICATOR */
     .typing-indicator {{ display: flex; align-items: center; gap: 5px; padding: 5px 0; }}
-    .typing-dot {{ width: 7px; height: 7px; background: #00ffff; border-radius: 50%; animation: blink 1.4s infinite both; }}
+    .typing-dot {{ width: 7px; height: 7px; background: #06b6d4; border-radius: 50%; animation: blink 1.4s infinite both; }}
     .typing-dot:nth-child(2) {{ animation-delay: 0.2s; }}
     .typing-dot:nth-child(3) {{ animation-delay: 0.4s; }}
     @keyframes blink {{ 0%, 80%, 100% {{ opacity: 0; }} 40% {{ opacity: 1; }} }}
     
-    .user-badge {{ background: linear-gradient(135deg, #00ffff22, #00ffff44); padding: 8px 15px; border-radius: 20px;
-        border: 1px solid #00ffff; color: #00ffff; font-size: 13px; font-weight: bold; text-align: center;
-        margin-bottom: 15px; box-shadow: 0 0 10px rgba(0,255,255,0.2); }}
+    /* USER BADGE - ROUNDED */
+    .user-badge {{ 
+        background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+        padding: 10px 18px; 
+        border-radius: 25px;
+        color: #ffffff; 
+        font-size: 13px; 
+        font-weight: bold; 
+        text-align: center;
+        margin-bottom: 15px; 
+        box-shadow: 0 0 15px rgba(6,182,212,0.4); 
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important; 
+    }}
     
+    .user-badge:hover {{
+        box-shadow: 0 0 25px rgba(139,92,246,0.6) !important;
+        transform: scale(1.05) !important;
+    }}
+    
+    /* BUTTONS - ROUNDED */
     .stButton button {{
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        border: 1px solid transparent !important;
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        border: 1px solid #06b6d4 !important;
+        background: #1a1a1a !important;
+        color: #ffffff !important;
+        border-radius: 20px !important;
     }}
     
     .stButton button:hover {{
         transform: scale(1.05) translateY(-2px) !important;
-        box-shadow: 0 5px 20px rgba(0,255,255,0.3) !important;
-        border-color: #00ffff !important;
+        box-shadow: 0 8px 30px rgba(6,182,212,0.5) !important;
+        border-color: #8b5cf6 !important;
+        background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
     }}
     
     .stButton button:active {{
         transform: scale(0.98) translateY(0) !important;
-        box-shadow: 0 2px 10px rgba(0,255,255,0.2) !important;
+        box-shadow: 0 2px 15px rgba(6,182,212,0.3) !important;
+        transition: all 0.1s ease !important;
     }}
     
+    /* SELECTBOX - ROUNDED */
     [data-testid="stSelectbox"] {{
         transition: all 0.3s ease !important;
     }}
@@ -279,20 +396,21 @@ st.markdown(f"""
     
     [data-testid="stSelectbox"] > div {{
         transition: all 0.3s ease !important;
+        border-radius: 15px !important;
     }}
     
     [data-testid="stSelectbox"] > div:hover {{
-        border-color: #00ffff !important;
-        box-shadow: 0 0 15px rgba(0,255,255,0.2) !important;
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 20px rgba(139,92,246,0.3) !important;
     }}
     
+    /* SMOOTH TRANSITIONS */
     * {{
         transition: transform 0.2s ease, box-shadow 0.2s ease !important;
     }}
 </style>
 """, unsafe_allow_html=True)
-
-# --- 7. BUBBLE ENGINE ---
+# --- 7. BUBBLE ENGINE (GRADIENT PURPLE TO CYAN + ROUNDED) ---
 def clean_text(text):
     if not isinstance(text, str): 
         return str(text)
@@ -305,20 +423,32 @@ def render_chat_bubble(role, content):
     
     if role == "user":
         st.markdown(f"""
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-            <div style="background: #002b2b; color: white; padding: 12px 18px; border-radius: 18px 18px 2px 18px; 
-                        max-width: 85%; border-right: 3px solid #00ffff; word-wrap: break-word;">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 20px; animation: slideInRight 0.3s ease-out;">
+            <div style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); 
+                        color: white; 
+                        padding: 15px 20px; 
+                        border-radius: 25px 25px 5px 25px; 
+                        max-width: 85%; 
+                        word-wrap: break-word; 
+                        box-shadow: 0 4px 20px rgba(139,92,246,0.4);">
                 {content}
             </div>
-            <img src="{user_img}" width="35" height="35" style="border-radius: 50%; margin-left: 10px; border: 1px solid #00ffff;">
+            <img src="{user_img}" width="38" height="38" style="border-radius: 50%; margin-left: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
         </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown(f"""
-        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
-            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                        max-width: 85%; border-left: 1px solid #333; word-wrap: break-word;">
+        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
+            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
+            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                        color: #e9edef; 
+                        padding: 15px 20px; 
+                        border-radius: 5px 25px 25px 25px; 
+                        max-width: 85%; 
+                        border-left: 4px solid;
+                        border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1;
+                        word-wrap: break-word; 
+                        box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
                 {content}
             </div>
         </div>
@@ -328,7 +458,8 @@ def render_chat_bubble(role, content):
 with st.sidebar:
     if logo_url: 
         st.markdown(f'<img src="{logo_url}" class="sidebar-logo">', unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:#00ffff;'>Azura AI</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:#ffffff; text-shadow: 0 0 10px rgba(139,92,246,0.5);'>ZETRO</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#888; font-size:11px; margin-top:-10px;'>ZX-1.5 Flash System</p>", unsafe_allow_html=True)
     
     st.markdown(f'<div class="user-badge">👤 {st.session_state.current_user}</div>', unsafe_allow_html=True)
     
@@ -346,13 +477,14 @@ with st.sidebar:
     st.markdown("---")
     
     engine_map = {
-        "Azura-R1 (DeepSeek Reasoning)": "DeepSeek",
-        "Azura-Lens 1.7 (Vision)": "Scout",
-        "Azura 1.5 (Power)": "Llama33",
-        "Azura-Prime (Creative)": "HuggingFace",
-        "Azura-Art (Draw)": "Pollinations"
+        "ZT-3 Pro": "Gemini",
+        "ZT-3 Fast": "DeepSeek",
+        "ZT-VISION 2.5": "Scout",
+        "ZT-1 Flash": "Llama33",
+        "ZT-2": "HuggingFace",
+        "Z-ART 3 Fast": "Pollinations"
     }
-    selected_engine_name = st.selectbox("Pilih modelnya", list(engine_map.keys()))
+    selected_engine_name = st.selectbox("Pilih Model AI", list(engine_map.keys()))
     engine = engine_map[selected_engine_name]
 
     st.markdown("### 🕒 Saved History")
@@ -383,7 +515,9 @@ with st.sidebar:
 if logo_url:
     st.markdown(f'<div style="text-align:center; margin-bottom:20px;"><img src="{logo_url}" width="130" class="rotating-logo"></div>', unsafe_allow_html=True)
     if not st.session_state.messages:
-        st.markdown("<div style='text-align:center; color:#00ffff; font-size:18px;'>How can I help you today? 👋</div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align:center; color:#ffffff; font-size:22px; font-weight:bold;'>ZETRO | ZX-1.5 Flash</div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align:center; color:#888; font-size:14px; margin-top:5px;'>Sistem AI Terintegrasi untuk Pemrograman Tingkat Lanjut</div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align:center; color:#888; font-size:16px; margin-top:20px;'>How can I help you today? 👋</div>", unsafe_allow_html=True)
 
 # Render Chat
 for msg in st.session_state.messages:
@@ -399,7 +533,7 @@ if up:
     st.toast("✅ Image uploaded!", icon="📷")
 
 # Chat Input
-if prompt := st.chat_input("Message Azura AI..."):
+if prompt := st.chat_input("Message ZETRO..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     if st.session_state.current_session_key is None:
@@ -419,27 +553,27 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         res = ""
         
         system_prompt = (
-            "You are Azura AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
-                "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
-                "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
-                "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
-                "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
-                "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-                "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
-                "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
-                "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
-                "- Happy or excited: 😊🤩 "
-                "- Sad or disappointed: 😢😔 "
-                "- Assertive or warning: ⚠️😠 "
-                "- Thinking or curious: 🤔💭 "
-                "- Surprised: 😲 "
-                "- Playful: 😉😜 "
-                "- Proud or admiring success: 🏆 "
-                "- Anxious or worried: 😰 "
-                "- Refusal or denial: ❌ "
-                "- Motivational (e.g., encouraging user): 🚀 "
-                "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' "
-                "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."   
+            "You are ZETRO, a supreme multi-modal AI system created for advanced programming and integrated AI solutions. "
+            "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
+            "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+            "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
+            "For example, if a file is uploaded, say something like: 'I can see the content of the file you uploaded. Based on it...' and proceed to discuss or analyze it. "
+            "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+            "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
+            "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
+            "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
+            "- Happy or excited: 😊🤩 "
+            "- Sad or disappointed: 😢😔 "
+            "- Assertive or warning: ⚠️😠 "
+            "- Thinking or curious: 🤔💭 "
+            "- Surprised: 😲 "
+            "- Playful: 😉😜 "
+            "- Proud or admiring success: 🏆 "
+            "- Anxious or worried: 😰 "
+            "- Refusal or denial: ❌ "
+            "- Motivational (e.g., encouraging user): 🚀 "
+            "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' "
+            "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."   
         )
         
         if engine == "DeepSeek":
@@ -485,11 +619,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                             if in_think_tag:
                                 thinking_text += delta.content
                                 
-                                # Display HANYA thinking box (ga ada spinner lagi)
                                 response_container.markdown(f"""
-                                <div style="background: #0a0a0a; padding: 15px; border-radius: 10px; border-left: 3px solid #00ffff; margin-bottom: 15px;">
-                                    <div style="color: #00ffff; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                                        🧠 Azura's Deep Thinking Process
+                                <div style="background: #0d0d0d; padding: 15px; border-radius: 20px; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; margin-bottom: 15px; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
+                                    <div style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                                        🧠 ZETRO Deep Thinking Process
                                         <div class="typing-indicator" style="margin: 0;">
                                             <div class="typing-dot"></div>
                                             <div class="typing-dot"></div>
@@ -500,16 +633,14 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                 </div>
                                 """, unsafe_allow_html=True)
                             else:
-                                # Setelah thinking selesai, tampilkan answer TANPA thinking box lagi
                                 answer_text += delta.content
                                 clean_answer = clean_text(answer_text)
                                 
-                                # HANYA tampilkan answer bubble (thinking udah hilang)
                                 response_container.markdown(f"""
-                                <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                                    <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
-                                    <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                                                max-width: 85%; border-left: 1px solid #333; word-wrap: break-word;">
+                                <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
+                                    <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
+                                    <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                                max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
                                         <div style="white-space: pre-wrap;">{clean_answer}</div>
                                     </div>
                                 </div>
@@ -523,6 +654,40 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     res = "DeepSeek lagi sibuk nih bro! 😅 Coba model lain atau tunggu sebentar ya!"
                 else:
                     res = f"Error: {str(e)}"
+        
+        elif engine == "Gemini":
+            messages_history = []
+            for m in st.session_state.messages[:-1]:
+                if m.get("type") != "image":
+                    role = "user" if m["role"] == "user" else "model"
+                    messages_history.append({"role": role, "parts": [m["content"]]})
+            
+            response_container = st.empty()
+            res_text = ""
+            
+            try:
+                chat = client_gemini.start_chat(history=messages_history)
+                stream = chat.send_message(user_msg, stream=True)
+                
+                for chunk in stream:
+                    if chunk.text:
+                        res_text += chunk.text
+                        clean_res = clean_text(res_text)
+                        
+                        response_container.markdown(f"""
+                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
+                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
+                                <div style="white-space: pre-wrap;">{clean_res}</div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        time.sleep(0.01)
+                
+                res = res_text
+            except Exception as e:
+                res = f"Gemini error bro: {str(e)} 😰"
         
         elif engine == "Scout":
             current_image_data = st.session_state.uploaded_image
@@ -539,7 +704,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     ]}
                 ]
                 
-                # Streaming response dengan typing animation
                 response_container = st.empty()
                 res_text = ""
                 
@@ -556,12 +720,11 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         res_text += chunk.choices[0].delta.content
                         clean_res = clean_text(res_text)
                         
-                        # Tampilkan dengan typing animation
                         response_container.markdown(f"""
                         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
-                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                                        max-width: 85%; border-left: 1px solid #333; word-wrap: break-word;">
+                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
@@ -577,7 +740,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         messages.append({"role": m["role"], "content": m["content"]})
                 messages.append({"role": "user", "content": user_msg})
                 
-                # Streaming response dengan typing animation
                 response_container = st.empty()
                 res_text = ""
                 
@@ -594,12 +756,11 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         res_text += chunk.choices[0].delta.content
                         clean_res = clean_text(res_text)
                         
-                        # Tampilkan dengan typing animation
                         response_container.markdown(f"""
                         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
-                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                                        max-width: 85%; border-left: 1px solid #333; word-wrap: break-word;">
+                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
@@ -615,7 +776,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     messages.append({"role": m["role"], "content": m["content"]})
             messages.append({"role": "user", "content": user_msg})
             
-            # Streaming response dengan typing animation
             response_container = st.empty()
             res_text = ""
             
@@ -632,12 +792,11 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     res_text += chunk.choices[0].delta.content
                     clean_res = clean_text(res_text)
                     
-                    # Tampilkan dengan typing animation
                     response_container.markdown(f"""
                     <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                        <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
-                        <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                                    max-width: 85%; border-left: 1px solid #333; word-wrap: break-word;">
+                        <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                    max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                             <div style="white-space: pre-wrap;">{clean_res}</div>
                         </div>
                     </div>
@@ -653,7 +812,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     messages.append({"role": m["role"], "content": m["content"]})
             messages.append({"role": "user", "content": user_msg})
             
-            # Streaming response dengan typing animation
             response_container = st.empty()
             res_text = ""
             
@@ -672,12 +830,11 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         res_text += delta.content
                         clean_res = clean_text(res_text)
                         
-                        # Tampilkan dengan typing animation
                         response_container.markdown(f"""
                         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 1px solid #00ffff;">
-                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                                        max-width: 85%; border-left: 1px solid #333; word-wrap: break-word;">
+                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
