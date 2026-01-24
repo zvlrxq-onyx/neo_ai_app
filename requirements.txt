@@ -8,3 +8,4 @@ numpy
 python-dotenv
 huggingface_hub
 streamlit-cookies-manager
+google-generativeai
