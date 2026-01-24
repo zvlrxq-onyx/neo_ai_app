@@ -113,9 +113,9 @@ if st.session_state.current_user is None:
     st.markdown("""
     <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #0a0a0a;">
         <div style="background: #1a1a1a; 
-                    padding: 50px; border-radius: 25px; 
+                    padding: 50px; border-radius: 30px; 
                     border: 2px solid #06b6d4;
-                    box-shadow: 0 0 30px rgba(6,182,212,0.4); text-align: center; max-width: 400px;">
+                    box-shadow: 0 0 40px rgba(6,182,212,0.5); text-align: center; max-width: 400px;">
             <h1 style="color: #ffffff; margin-bottom: 10px;">🌌 ZETRO</h1>
             <p style="color: #888; margin-bottom: 30px; font-weight: bold;">Sistem AI Terintegrasi untuk Pemrograman Tingkat Lanjut</p>
         </div>
@@ -214,14 +214,20 @@ logo_data = get_base64_img('logo.png')
 logo_url = f"data:image/png;base64,{logo_data}" if logo_data else ""
 user_img = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfIrn5orx6KdLUiIvZ3IUkZTMdIyes-D6sMA&s"
 
-# --- 6. CSS (OBSIDIAN BLACK, ELECTRIC VIOLET, CYBER CYAN) ---
+# --- 6. CSS (ROUNDED DESIGN + GRADIENT PURPLE TO CYAN) ---
 st.markdown(f"""
 <style>
     [data-testid="stAppViewContainer"] {{ background: #0a0a0a; }}
+    
+    /* FILE UPLOADER - ROUNDED CIRCLE */
     [data-testid="stFileUploader"] {{ position: fixed; bottom: 58px; left: 15px; width: 45px; z-index: 1000; }}
     [data-testid="stFileUploaderDropzone"] {{
-        background: #1a1a1a !important; border: 2px solid #06b6d4 !important; border-radius: 50% !important;
-        height: 42px !important; width: 42px !important; padding: 0 !important;
+        background: #1a1a1a !important; 
+        border: 2px solid #06b6d4 !important; 
+        border-radius: 50% !important;
+        height: 42px !important; 
+        width: 42px !important; 
+        padding: 0 !important;
         transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
     }}
     [data-testid="stFileUploaderDropzone"]:hover {{
@@ -241,10 +247,13 @@ st.markdown(f"""
     [data-testid="stFileUploader"] label {{ display: none !important; }}
     [data-testid="stFileUploader"] span {{ display: none !important; }}
     [data-testid="stFileUploader"] small {{ display: none !important; }}
+    
+    /* CHAT INPUT AREA */
     [data-testid="stChatInput"] {{ margin-left: 60px !important; width: calc(100% - 80px) !important; }}
     
+    /* INPUT BOX - KOTAK (TIDAK ROUNDED!) */
     [data-testid="stChatInputTextArea"] {{
-        border-radius: 25px !important;
+        border-radius: 0px !important;
         border: 2px solid #06b6d4 !important;
         background: #1a1a1a !important;
         padding: 12px 50px 12px 20px !important;
@@ -256,6 +265,7 @@ st.markdown(f"""
         box-shadow: 0 0 20px rgba(6,182,212,0.4) !important;
     }}
     
+    /* TOMBOL KIRIM - ROUNDED + PANAH KE ATAS */
     [data-testid="stChatInputSubmitButton"] {{
         background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
         border-radius: 50% !important;
@@ -270,13 +280,37 @@ st.markdown(f"""
         box-shadow: 0 0 20px rgba(139,92,246,0.6) !important;
     }}
     
+    /* PANAH KE ATAS */
     [data-testid="stChatInputSubmitButton"] svg {{
         color: white !important;
+        transform: rotate(-90deg) !important;
     }}
     
-    .sidebar-logo {{ display: block; margin: auto; width: 80px; height: 80px; border-radius: 50%; border: 2px solid #06b6d4; object-fit: cover; margin-bottom: 10px; box-shadow: 0 0 15px rgba(6,182,212,0.5); }}
-    .rotating-logo {{ animation: rotate 8s linear infinite; border-radius: 50%; border: 2px solid #06b6d4; box-shadow: 0 0 25px rgba(6,182,212,0.6); }}
-    @keyframes rotate {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
+    /* SIDEBAR LOGO - ROUNDED */
+    .sidebar-logo {{ 
+        display: block; 
+        margin: auto; 
+        width: 80px; 
+        height: 80px; 
+        border-radius: 50%; 
+        border: 2px solid #06b6d4; 
+        object-fit: cover; 
+        margin-bottom: 10px; 
+        box-shadow: 0 0 15px rgba(6,182,212,0.5); 
+    }}
+    
+    /* ROTATING LOGO - ROUNDED */
+    .rotating-logo {{ 
+        animation: rotate 8s linear infinite; 
+        border-radius: 50%; 
+        border: 2px solid #06b6d4; 
+        box-shadow: 0 0 25px rgba(6,182,212,0.6); 
+    }}
+    
+    @keyframes rotate {{ 
+        from {{ transform: rotate(0deg); }} 
+        to {{ transform: rotate(360deg); }} 
+    }}
     
     @keyframes slideInRight {{
         from {{ opacity: 0; transform: translateX(20px); }}
@@ -288,35 +322,46 @@ st.markdown(f"""
         to {{ opacity: 1; transform: translateX(0); }}
     }}
     
+    /* TYPING INDICATOR */
     .typing-indicator {{ display: flex; align-items: center; gap: 5px; padding: 5px 0; }}
     .typing-dot {{ width: 7px; height: 7px; background: #06b6d4; border-radius: 50%; animation: blink 1.4s infinite both; }}
     .typing-dot:nth-child(2) {{ animation-delay: 0.2s; }}
     .typing-dot:nth-child(3) {{ animation-delay: 0.4s; }}
     @keyframes blink {{ 0%, 80%, 100% {{ opacity: 0; }} 40% {{ opacity: 1; }} }}
     
-    .user-badge {{ background: #2a2a2a; padding: 10px 18px; border-radius: 25px;
-        border: 1px solid #06b6d4; color: #ffffff; font-size: 13px; font-weight: bold; text-align: center;
-        margin-bottom: 15px; box-shadow: 0 0 15px rgba(6,182,212,0.4); 
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important; }}
-    
-    .user-badge:hover {{
-        box-shadow: 0 0 25px rgba(6,182,212,0.6) !important;
-        transform: scale(1.03) !important;
+    /* USER BADGE - ROUNDED */
+    .user-badge {{ 
+        background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+        padding: 10px 18px; 
+        border-radius: 25px;
+        color: #ffffff; 
+        font-size: 13px; 
+        font-weight: bold; 
+        text-align: center;
+        margin-bottom: 15px; 
+        box-shadow: 0 0 15px rgba(6,182,212,0.4); 
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important; 
     }}
     
+    .user-badge:hover {{
+        box-shadow: 0 0 25px rgba(139,92,246,0.6) !important;
+        transform: scale(1.05) !important;
+    }}
+    
+    /* BUTTONS - ROUNDED */
     .stButton button {{
         transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         border: 1px solid #06b6d4 !important;
         background: #1a1a1a !important;
         color: #ffffff !important;
-        border-radius: 12px !important;
+        border-radius: 20px !important;
     }}
     
     .stButton button:hover {{
         transform: scale(1.05) translateY(-2px) !important;
         box-shadow: 0 8px 30px rgba(6,182,212,0.5) !important;
         border-color: #8b5cf6 !important;
-        background: #2a2a2a !important;
+        background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
     }}
     
     .stButton button:active {{
@@ -325,6 +370,7 @@ st.markdown(f"""
         transition: all 0.1s ease !important;
     }}
     
+    /* SELECTBOX - ROUNDED */
     [data-testid="stSelectbox"] {{
         transition: all 0.3s ease !important;
     }}
@@ -335,6 +381,7 @@ st.markdown(f"""
     
     [data-testid="stSelectbox"] > div {{
         transition: all 0.3s ease !important;
+        border-radius: 15px !important;
     }}
     
     [data-testid="stSelectbox"] > div:hover {{
@@ -342,13 +389,13 @@ st.markdown(f"""
         box-shadow: 0 0 20px rgba(139,92,246,0.3) !important;
     }}
     
+    /* SMOOTH TRANSITIONS */
     * {{
         transition: transform 0.2s ease, box-shadow 0.2s ease !important;
     }}
 </style>
 """, unsafe_allow_html=True)
-
-# --- 7. BUBBLE ENGINE ---
+# --- 7. BUBBLE ENGINE (GRADIENT PURPLE TO CYAN + ROUNDED) ---
 def clean_text(text):
     if not isinstance(text, str): 
         return str(text)
@@ -362,8 +409,13 @@ def render_chat_bubble(role, content):
     if role == "user":
         st.markdown(f"""
         <div style="display: flex; justify-content: flex-end; margin-bottom: 20px; animation: slideInRight 0.3s ease-out;">
-            <div style="background: linear-gradient(135deg, #2a2a2a, #1a1a1a); color: white; padding: 12px 18px; border-radius: 20px 20px 4px 20px; 
-                        max-width: 85%; border: 2px solid; border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 2px 15px rgba(6,182,212,0.3);">
+            <div style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); 
+                        color: white; 
+                        padding: 15px 20px; 
+                        border-radius: 25px 25px 5px 25px; 
+                        max-width: 85%; 
+                        word-wrap: break-word; 
+                        box-shadow: 0 4px 20px rgba(139,92,246,0.4);">
                 {content}
             </div>
             <img src="{user_img}" width="38" height="38" style="border-radius: 50%; margin-left: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
@@ -372,9 +424,16 @@ def render_chat_bubble(role, content):
     else:
         st.markdown(f"""
         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
-            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid; border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1; object-fit: cover; box-shadow: 0 0 10px rgba(139,92,246,0.4);">
-            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 4px 20px 20px 20px; 
-                        max-width: 85%; border-left: 3px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 2px 15px rgba(6,182,212,0.3);">
+            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
+            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                        color: #e9edef; 
+                        padding: 15px 20px; 
+                        border-radius: 5px 25px 25px 25px; 
+                        max-width: 85%; 
+                        border-left: 4px solid;
+                        border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1;
+                        word-wrap: break-word; 
+                        box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
                 {content}
             </div>
         </div>
@@ -546,7 +605,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                 thinking_text += delta.content
                                 
                                 response_container.markdown(f"""
-                                <div style="background: #0d0d0d; padding: 15px; border-radius: 15px; border-left: 3px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; margin-bottom: 15px; box-shadow: 0 2px 15px rgba(6,182,212,0.2);">
+                                <div style="background: #0d0d0d; padding: 15px; border-radius: 20px; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; margin-bottom: 15px; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
                                     <div style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
                                         🧠 ZETRO Deep Thinking Process
                                         <div class="typing-indicator" style="margin: 0;">
@@ -565,8 +624,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                 response_container.markdown(f"""
                                 <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
                                     <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
-                                    <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 4px 20px 20px 20px; 
-                                                max-width: 85%; border-left: 3px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 2px 15px rgba(6,182,212,0.3);">
+                                    <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                                max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
                                         <div style="white-space: pre-wrap;">{clean_answer}</div>
                                     </div>
                                 </div>
@@ -603,8 +662,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         response_container.markdown(f"""
                         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
                             <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
-                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 4px 20px 20px 20px; 
-                                        max-width: 85%; border-left: 3px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 2px 15px rgba(6,182,212,0.3);">
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word; box-shadow: 0 4px 20px rgba(6,182,212,0.3);">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
@@ -648,9 +707,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         
                         response_container.markdown(f"""
                         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 2px solid #8b5cf6;">
-                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                                        max-width: 85%; border-left: 2px solid #8b5cf6; word-wrap: break-word;">
+                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
@@ -684,9 +743,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         
                         response_container.markdown(f"""
                         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 2px solid #8b5cf6;">
-                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                                        max-width: 85%; border-left: 2px solid #8b5cf6; word-wrap: break-word;">
+                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
@@ -720,9 +779,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     
                     response_container.markdown(f"""
                     <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                        <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 2px solid #8b5cf6;">
-                        <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                                    max-width: 85%; border-left: 2px solid #8b5cf6; word-wrap: break-word;">
+                        <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                    max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                             <div style="white-space: pre-wrap;">{clean_res}</div>
                         </div>
                     </div>
@@ -758,9 +817,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         
                         response_container.markdown(f"""
                         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <img src="{logo_url}" width="35" height="35" style="border-radius: 50%; margin-right: 10px; border: 2px solid #8b5cf6;">
-                            <div style="background: #1a1a1a; color: #e9edef; padding: 12px 18px; border-radius: 2px 18px 18px 18px; 
-                                        max-width: 85%; border-left: 2px solid #8b5cf6; word-wrap: break-word;">
+                            <img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4;">
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
                             </div>
                         </div>
