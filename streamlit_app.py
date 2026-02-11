@@ -182,13 +182,22 @@ try:
     client_groq = Groq(api_key=st.secrets["GROQ_API_KEY"])
     client_hf = InferenceClient(token=st.secrets["HF_TOKEN"])
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    client_gemini = genai.GenerativeModel('gemini-2.0-flash-exp')
+    client_gemini = genai.GenerativeModel('gemini-3-flash-preview')
     POLLINATIONS_API = "https://image.pollinations.ai/prompt/"
 except Exception as e:
     st.error(f"❌ API Keys Error: {e}")
     st.stop()
 
 # --- 5. ASSETS ---
+@st.cache_data
+def get_base64_img(file_path):
+    if os.path.exists(file_path):
+        with open(file_path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return None
+
+logo_data = get_base64_img('logo.png')
+logo_url = f"data:image/png;base64,{logo_data}" if logo_data else ""
 user_img = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfIrn5orx6KdLUiIvZ3IUkZTMdIyes-D6sMA&s"
 
 # --- 6. CSS ---
@@ -361,11 +370,11 @@ def render_chat_bubble(role, content):
         </div>
         """, unsafe_allow_html=True)
     else:
+        ai_avatar = f'<img src="{logo_url}" width="38" height="38" style="border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);">' if logo_url else '<div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px; box-shadow: 0 0 10px rgba(6,182,212,0.4);">🤖</div>'
+        
         st.markdown(f"""
         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; animation: slideInLeft 0.3s ease-out;">
-            <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); 
-                        display: flex; align-items: center; justify-content: center; margin-right: 12px; 
-                        border: 2px solid #06b6d4; font-size: 20px; box-shadow: 0 0 10px rgba(6,182,212,0.4);">🤖</div>
+            {ai_avatar}
             <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
                         color: #e9edef; 
                         padding: 15px 20px; 
@@ -382,7 +391,12 @@ def render_chat_bubble(role, content):
 
 # --- 9. SIDEBAR ---
 with st.sidebar:
-    st.markdown("<div style='text-align:center; font-size:50px; margin-bottom:10px;'>🤖</div>", unsafe_allow_html=True)
+    # Logo NEO AI
+    if logo_url:
+        st.markdown(f'<div style="text-align:center;"><img src="{logo_url}" style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid #06b6d4; object-fit: cover; margin-bottom: 10px; box-shadow: 0 0 15px rgba(6,182,212,0.5);"></div>', unsafe_allow_html=True)
+    else:
+        st.markdown("<div style='text-align:center; font-size:50px; margin-bottom:10px;'>🤖</div>", unsafe_allow_html=True)
+    
     st.markdown("<h2 style='text-align:center; color:#ffffff; text-shadow: 0 0 10px rgba(139,92,246,0.5);'>NEO AI</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; color:#888; font-size:11px; margin-top:-10px;'>Advanced Multi-Modal AI</p>", unsafe_allow_html=True)
     
@@ -447,7 +461,12 @@ with st.sidebar:
         st.info("Belum ada history nih bro! 📝")
 
 # --- 10. MAIN RENDER ---
-st.markdown("<div style='text-align:center; font-size:60px; margin-bottom:10px;'>🤖</div>", unsafe_allow_html=True)
+# Logo di tengah atas
+if logo_url:
+    st.markdown(f'<div style="text-align:center; margin-bottom:20px;"><img src="{logo_url}" style="width: 130px; height: 130px; border-radius: 50%; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 25px rgba(6,182,212,0.6);"></div>', unsafe_allow_html=True)
+else:
+    st.markdown("<div style='text-align:center; font-size:60px; margin-bottom:10px;'>🤖</div>", unsafe_allow_html=True)
+
 if not st.session_state.messages:
     st.markdown("<div style='text-align:center; color:#ffffff; font-size:22px; font-weight:bold;'>NEO AI</div>", unsafe_allow_html=True)
     st.markdown("<div style='text-align:center; color:#888; font-size:16px; margin-top:20px;'>How can I help you today? 👋</div>", unsafe_allow_html=True)
@@ -557,8 +576,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         
                         response_container.markdown(f"""
                         <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); 
-                                        display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;">🤖</div>
+                            {"<img src='" + logo_url + "' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"}
                             <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
                                         max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
                                 <div style="white-space: pre-wrap;">{clean_res}</div>
