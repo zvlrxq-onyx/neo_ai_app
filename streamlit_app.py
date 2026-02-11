@@ -256,7 +256,7 @@ st.markdown("""
     }
     [data-testid="stChatInputSubmitButton"] svg {
         color: white !important;
-        transform: rotate(-90deg) !important;
+        transform: rotate(0deg) !important;
     }
     
     /* ANIMATIONS */
@@ -332,7 +332,7 @@ st.markdown("""
 
 # --- 7. MODEL ENGINES ---
 engines = {
-    "Gemini 2.0 Flash": {"type": "Gemini", "emoji": "✨"},
+    "Gemini 3 Flash Preview": {"type": "Gemini", "emoji": "✨"},
     "DeepSeek R1": {"type": "DeepSeek", "emoji": "🧠"},
     "LLaMA 4 Scout": {"type": "Scout", "emoji": "🦙"},
     "Groq LLaMA 3.3": {"type": "Llama33", "emoji": "⚡"},
