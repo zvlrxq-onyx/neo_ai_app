@@ -302,7 +302,7 @@ st.markdown("""
         transform: rotate(0deg) !important;
     }
     
-    /* DEEPSEEK THINKING ANIMATION */
+    /* DEEPSEEK THINKING ANIMATION - OPTIMIZED */
     @keyframes shimmer {
         0% { background-position: -200% center; }
         100% { background-position: 200% center; }
@@ -324,6 +324,9 @@ st.markdown("""
         border: 1px solid #06b6d4;
         animation: shimmer 3s linear infinite;
         box-shadow: 0 0 15px rgba(6,182,212,0.3);
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+        transform: translateZ(0);
     }
     
     .thinking-text {
@@ -344,6 +347,9 @@ st.markdown("""
         border-radius: 50%;
         background: #06b6d4;
         animation: pulse 1.5s ease-in-out infinite;
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+        transform: translateZ(0);
     }
     
     .thinking-dot:nth-child(1) { animation-delay: 0s; }
@@ -358,6 +364,11 @@ st.markdown("""
     @keyframes slideInLeft {
         from { opacity: 0; transform: translateX(-20px); }
         to { opacity: 1; transform: translateX(0); }
+    }
+    
+    /* SMOOTH TRANSITIONS FOR STREAMING */
+    [data-testid="stMarkdownContainer"] {
+        transition: all 0.1s ease-out !important;
     }
     
     /* USER BADGE */
@@ -585,7 +596,7 @@ if prompt := st.chat_input("Message NEO AI..."):
     save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
     st.rerun()
 
-# --- 11. AI PROCESSING ---
+# --- 11. AI PROCESSING WITH OPTIMIZED STREAMING ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     try:
         user_msg = st.session_state.messages[-1]["content"]
@@ -600,6 +611,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             "Vary your responses creatively - don't repeat the same phrases."
         )
         
+        # ========== DEEPSEEK R1 - OPTIMIZED STREAMING ==========
         if engine == "DeepSeek":
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
@@ -625,8 +637,14 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 answer_text = ""
                 in_think_tag = False
                 buffer = ""
-                thinking_counter = 0
-                last_update = time.time()
+                
+                # OPTIMIZATION: Batched rendering
+                last_render_time = time.time()
+                RENDER_INTERVAL = 0.1  # Update UI tiap 100ms (10 FPS)
+                last_thinking_update = time.time()
+                THINKING_INTERVAL = 1.0  # Update thinking animation tiap 1 detik
+                
+                ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
                 
                 for chunk in stream:
                     if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
@@ -650,57 +668,71 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                 thinking_text += delta.content
                                 current_time = time.time()
                                 
-                                # Update animasi setiap 0.5 detik aja biar ga lag
-                                if current_time - last_update > 0.5:
+                                # Update thinking animation cuma tiap 1 detik
+                                if current_time - last_thinking_update >= THINKING_INTERVAL:
                                     elapsed = int(current_time - start_time)
-                                    thinking_counter += 1
                                     
-                                    if thinking_counter % 2 == 0:
-                                        thinking_html = f"""
-                                        <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
-                                            <div class="thinking-container">
-                                                <span class="thinking-text">🧠 Thinking</span>
-                                                <div class="thinking-dots">
-                                                    <div class="thinking-dot"></div>
-                                                    <div class="thinking-dot"></div>
-                                                    <div class="thinking-dot"></div>
-                                                </div>
+                                    thinking_container.markdown(f"""
+                                    <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+                                        <div class="thinking-container">
+                                            <span class="thinking-text">🧠 Thinking ({elapsed}s)</span>
+                                            <div class="thinking-dots">
+                                                <div class="thinking-dot"></div>
+                                                <div class="thinking-dot"></div>
+                                                <div class="thinking-dot"></div>
                                             </div>
                                         </div>
-                                        """
-                                    else:
-                                        thinking_html = f"""
-                                        <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
-                                            <div class="thinking-container">
-                                                <span class="thinking-text">⏱️ Thought for {elapsed}s</span>
-                                            </div>
-                                        </div>
-                                        """
-                                    
-                                    thinking_container.markdown(thinking_html, unsafe_allow_html=True)
-                                    last_update = current_time
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                    last_thinking_update = current_time
                             else:
                                 answer_text += delta.content
-                                clean_answer = clean_text(answer_text)
+                                current_time = time.time()
                                 
-                                ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
-                                
-                                response_container.markdown(f"""
-                                <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                                    {ai_avatar_html}
-                                    <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
-                                                max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
-                                        <div style="white-space: pre-wrap;">{clean_answer}</div>
+                                # Render answer cuma tiap 100ms
+                                if current_time - last_render_time >= RENDER_INTERVAL:
+                                    clean_answer = clean_text(answer_text)
+                                    
+                                    response_container.markdown(f"""
+                                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                                        {ai_avatar_html}
+                                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                                    color: #e9edef; padding: 15px 20px; 
+                                                    border-radius: 5px 25px 25px 25px; 
+                                                    max-width: 85%; border-left: 4px solid; 
+                                                    border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                                    word-wrap: break-word;">
+                                            <div style="white-space: pre-wrap;">{clean_answer}</div>
+                                        </div>
                                     </div>
-                                </div>
-                                """, unsafe_allow_html=True)
+                                    """, unsafe_allow_html=True)
+                                    
+                                    last_render_time = current_time
                 
+                # Final render untuk sisa text
                 thinking_container.empty()
+                if answer_text:
+                    clean_answer = clean_text(answer_text)
+                    response_container.markdown(f"""
+                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                        {ai_avatar_html}
+                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                    color: #e9edef; padding: 15px 20px; 
+                                    border-radius: 5px 25px 25px 25px; 
+                                    max-width: 85%; border-left: 4px solid; 
+                                    border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                    word-wrap: break-word;">
+                            <div style="white-space: pre-wrap;">{clean_answer}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
                 res = answer_text.strip() if answer_text else thinking_text.strip()
                     
             except Exception as e:
                 res = f"DeepSeek lagi sibuk nih bro! 😅 Coba model lain ya!"
         
+        # ========== GEMINI - OPTIMIZED STREAMING ==========
         elif engine == "Gemini":
             messages_history = []
             for m in st.session_state.messages[:-1]:
@@ -711,6 +743,12 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             response_container = st.empty()
             res_text = ""
             
+            # OPTIMIZATION: Batched rendering
+            last_render_time = time.time()
+            RENDER_INTERVAL = 0.1  # 100ms = 10 FPS
+            
+            ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
+            
             try:
                 chat = client_gemini.start_chat(history=messages_history)
                 stream = chat.send_message(user_msg, stream=True)
@@ -718,24 +756,60 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 for chunk in stream:
                     if chunk.text:
                         res_text += chunk.text
-                        clean_res = clean_text(res_text)
+                        current_time = time.time()
                         
-                        response_container.markdown(f"""
-                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            {"<img src='" + logo_url + "' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"}
-                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
-                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
-                                <div style="white-space: pre-wrap;">{clean_res}</div>
+                        # Render tiap 100ms aja
+                        if current_time - last_render_time >= RENDER_INTERVAL:
+                            clean_res = clean_text(res_text)
+                            
+                            response_container.markdown(f"""
+                            <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                                {ai_avatar_html}
+                                <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                            color: #e9edef; padding: 15px 20px; 
+                                            border-radius: 5px 25px 25px 25px; 
+                                            max-width: 85%; border-left: 4px solid; 
+                                            border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                            word-wrap: break-word;">
+                                    <div style="white-space: pre-wrap;">{clean_res}</div>
+                                </div>
                             </div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                            """, unsafe_allow_html=True)
+                            
+                            last_render_time = current_time
+                
+                # Final render
+                clean_res = clean_text(res_text)
+                response_container.markdown(f"""
+                <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                    {ai_avatar_html}
+                    <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                color: #e9edef; padding: 15px 20px; 
+                                border-radius: 5px 25px 25px 25px; 
+                                max-width: 85%; border-left: 4px solid; 
+                                border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                word-wrap: break-word;">
+                        <div style="white-space: pre-wrap;">{clean_res}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
                 
                 res = res_text
             except Exception as e:
                 res = f"Gemini error bro: {str(e)} 😰"
         
+        # ========== LLAMA 4 SCOUT - OPTIMIZED STREAMING ==========
         elif engine == "Scout":
             current_image_data = st.session_state.uploaded_image
+            
+            response_container = st.empty()
+            res_text = ""
+            
+            # OPTIMIZATION: Batched rendering
+            last_render_time = time.time()
+            RENDER_INTERVAL = 0.1
+            
+            ai_avatar_html = "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
             
             if current_image_data:
                 pixel_info = analyze_image_pixels(current_image_data)
@@ -749,9 +823,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     ]}
                 ]
                 
-                response_container = st.empty()
-                res_text = ""
-                
                 stream = client_groq.chat.completions.create(
                     model="meta-llama/llama-4-scout-17b-16e-instruct",
                     messages=messages,
@@ -763,18 +834,42 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 for chunk in stream:
                     if chunk.choices[0].delta.content:
                         res_text += chunk.choices[0].delta.content
-                        clean_res = clean_text(res_text)
+                        current_time = time.time()
                         
-                        response_container.markdown(f"""
-                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); 
-                                        display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;">🤖</div>
-                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
-                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
-                                <div style="white-space: pre-wrap;">{clean_res}</div>
+                        if current_time - last_render_time >= RENDER_INTERVAL:
+                            clean_res = clean_text(res_text)
+                            
+                            response_container.markdown(f"""
+                            <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                                {ai_avatar_html}
+                                <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                            color: #e9edef; padding: 15px 20px; 
+                                            border-radius: 5px 25px 25px 25px; 
+                                            max-width: 85%; border-left: 4px solid; 
+                                            border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                            word-wrap: break-word;">
+                                    <div style="white-space: pre-wrap;">{clean_res}</div>
+                                </div>
                             </div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                            """, unsafe_allow_html=True)
+                            
+                            last_render_time = current_time
+                
+                # Final render
+                clean_res = clean_text(res_text)
+                response_container.markdown(f"""
+                <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                    {ai_avatar_html}
+                    <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                color: #e9edef; padding: 15px 20px; 
+                                border-radius: 5px 25px 25px 25px; 
+                                max-width: 85%; border-left: 4px solid; 
+                                border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                word-wrap: break-word;">
+                        <div style="white-space: pre-wrap;">{clean_res}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
                 
                 res = res_text
                 st.session_state.uploaded_image = None
@@ -784,9 +879,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     if m.get("type") != "image":
                         messages.append({"role": m["role"], "content": m["content"]})
                 messages.append({"role": "user", "content": user_msg})
-                
-                response_container = st.empty()
-                res_text = ""
                 
                 stream = client_groq.chat.completions.create(
                     model="llama-3.3-70b-versatile",
@@ -799,21 +891,46 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 for chunk in stream:
                     if chunk.choices[0].delta.content:
                         res_text += chunk.choices[0].delta.content
-                        clean_res = clean_text(res_text)
+                        current_time = time.time()
                         
-                        response_container.markdown(f"""
-                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); 
-                                        display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;">🤖</div>
-                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
-                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
-                                <div style="white-space: pre-wrap;">{clean_res}</div>
+                        if current_time - last_render_time >= RENDER_INTERVAL:
+                            clean_res = clean_text(res_text)
+                            
+                            response_container.markdown(f"""
+                            <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                                {ai_avatar_html}
+                                <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                            color: #e9edef; padding: 15px 20px; 
+                                            border-radius: 5px 25px 25px 25px; 
+                                            max-width: 85%; border-left: 4px solid; 
+                                            border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                            word-wrap: break-word;">
+                                    <div style="white-space: pre-wrap;">{clean_res}</div>
+                                </div>
                             </div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                            """, unsafe_allow_html=True)
+                            
+                            last_render_time = current_time
+                
+                # Final render
+                clean_res = clean_text(res_text)
+                response_container.markdown(f"""
+                <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                    {ai_avatar_html}
+                    <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                color: #e9edef; padding: 15px 20px; 
+                                border-radius: 5px 25px 25px 25px; 
+                                max-width: 85%; border-left: 4px solid; 
+                                border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                word-wrap: break-word;">
+                        <div style="white-space: pre-wrap;">{clean_res}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
                 
                 res = res_text
         
+        # ========== GROQ LLAMA 3.3 - OPTIMIZED STREAMING ==========
         elif engine == "Llama33":
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
@@ -823,6 +940,12 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             response_container = st.empty()
             res_text = ""
+            
+            # OPTIMIZATION: Batched rendering
+            last_render_time = time.time()
+            RENDER_INTERVAL = 0.1
+            
+            ai_avatar_html = "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
             
             stream = client_groq.chat.completions.create(
                 model="llama-3.3-70b-versatile",
@@ -835,21 +958,46 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             for chunk in stream:
                 if chunk.choices[0].delta.content:
                     res_text += chunk.choices[0].delta.content
-                    clean_res = clean_text(res_text)
+                    current_time = time.time()
                     
-                    response_container.markdown(f"""
-                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                        <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); 
-                                    display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;">🤖</div>
-                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
-                                    max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
-                            <div style="white-space: pre-wrap;">{clean_res}</div>
+                    if current_time - last_render_time >= RENDER_INTERVAL:
+                        clean_res = clean_text(res_text)
+                        
+                        response_container.markdown(f"""
+                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                            {ai_avatar_html}
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                        color: #e9edef; padding: 15px 20px; 
+                                        border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; 
+                                        border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                        word-wrap: break-word;">
+                                <div style="white-space: pre-wrap;">{clean_res}</div>
+                            </div>
                         </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
+                        
+                        last_render_time = current_time
+            
+            # Final render
+            clean_res = clean_text(res_text)
+            response_container.markdown(f"""
+            <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                {ai_avatar_html}
+                <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                            color: #e9edef; padding: 15px 20px; 
+                            border-radius: 5px 25px 25px 25px; 
+                            max-width: 85%; border-left: 4px solid; 
+                            border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                            word-wrap: break-word;">
+                    <div style="white-space: pre-wrap;">{clean_res}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
             
             res = res_text
         
+        # ========== QWEN 2.5 7B - OPTIMIZED STREAMING ==========
         elif engine == "HuggingFace":
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
@@ -859,6 +1007,12 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             response_container = st.empty()
             res_text = ""
+            
+            # OPTIMIZATION: Batched rendering
+            last_render_time = time.time()
+            RENDER_INTERVAL = 0.1
+            
+            ai_avatar_html = "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
             
             stream = client_hf.chat_completion(
                 messages=messages,
@@ -873,21 +1027,46 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     delta = chunk.choices[0].delta
                     if hasattr(delta, 'content') and delta.content:
                         res_text += delta.content
-                        clean_res = clean_text(res_text)
+                        current_time = time.time()
                         
-                        response_container.markdown(f"""
-                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); 
-                                        display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;">🤖</div>
-                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
-                                        max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
-                                <div style="white-space: pre-wrap;">{clean_res}</div>
+                        if current_time - last_render_time >= RENDER_INTERVAL:
+                            clean_res = clean_text(res_text)
+                            
+                            response_container.markdown(f"""
+                            <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                                {ai_avatar_html}
+                                <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                            color: #e9edef; padding: 15px 20px; 
+                                            border-radius: 5px 25px 25px 25px; 
+                                            max-width: 85%; border-left: 4px solid; 
+                                            border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                            word-wrap: break-word;">
+                                    <div style="white-space: pre-wrap;">{clean_res}</div>
+                                </div>
                             </div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                            """, unsafe_allow_html=True)
+                            
+                            last_render_time = current_time
+            
+            # Final render
+            clean_res = clean_text(res_text)
+            response_container.markdown(f"""
+            <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                {ai_avatar_html}
+                <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                            color: #e9edef; padding: 15px 20px; 
+                            border-radius: 5px 25px 25px 25px; 
+                            max-width: 85%; border-left: 4px solid; 
+                            border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                            word-wrap: break-word;">
+                    <div style="white-space: pre-wrap;">{clean_res}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
             
             res = res_text
         
+        # ========== POLLINATIONS AI ==========
         elif engine == "Pollinations":
             encoded_prompt = urllib.parse.quote(user_msg)
             image_url = f"{POLLINATIONS_API}{encoded_prompt}"
