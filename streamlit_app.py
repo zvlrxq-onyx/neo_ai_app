@@ -1,3 +1,4 @@
+
 import streamlit as st
 from groq import Groq
 from huggingface_hub import InferenceClient
@@ -615,13 +616,13 @@ if up:
     st.toast("✅ Image uploaded!", icon="📷")
 
 # STOP BUTTON - Show only when generating
-if st.session_state.is_generating:
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("⏹️ Stop Generation", use_container_width=True, type="primary"):
-            st.session_state.stop_generation = True
-            st.session_state.is_generating = False
-            st.rerun()
+#if st.session_state.is_generating:
+#   col1, col2, col3 = st.columns([1, 1, 1])
+#    with col2:
+#        if st.button("⏹️ Stop Generation", use_container_width=True, type="primary"):
+#            st.session_state.stop_generation = True
+#            st.session_state.is_generating = False
+#            st.rerun()
 
 # Chat Input
 if prompt := st.chat_input("Message NEO AI..."):
@@ -786,7 +787,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     
             except Exception as e:
                 res = f"DeepSeek lagi limit atau error bro: {str(e)} 😅"
-        
+
         # ========== GEMINI - WITH STOP ==========
         elif engine == "Gemini":
             messages_history = []
