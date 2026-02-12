@@ -235,32 +235,30 @@ st.markdown("""
         width: calc(100% - 80px) !important; 
     }
     
+    /* HIDE DEFAULT CONTAINER BORDERS */
+    [data-testid="stChatInput"] > div,
+    [data-testid="stChatInput"] > div > div {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+    
     [data-testid="stChatInputTextArea"] {
         border-radius: 8px !important;
-        border: 2px solid #06b6d4 !important;
+        border: 1px solid #06b6d4 !important;
         background: #1a1a1a !important;
         padding: 10px 45px 10px 15px !important;
         font-size: 14px !important;
         min-height: 44px !important;
         max-height: 200px !important;
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        transition: all 0.3s ease !important;
         box-sizing: border-box !important;
-    }
-    
-    [data-testid="stChatInputTextArea"]:focus {
-        border-color: #8b5cf6 !important;
-        box-shadow: 0 0 15px rgba(6,182,212,0.3) !important;
         outline: none !important;
     }
     
-    /* HIDE DEFAULT STREAMLIT BORDER */
-    [data-testid="stChatInput"] > div {
-        border: none !important;
-        box-shadow: none !important;
-    }
-    
-    [data-testid="stChatInput"] > div > div {
-        border: none !important;
+    [data-testid="stChatInputTextArea"]:focus {
+        border: 1px solid #8b5cf6 !important;
+        box-shadow: 0 0 12px rgba(139,92,246,0.3) !important;
     }
     [data-testid="stChatInputSubmitButton"] {
         background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
@@ -551,27 +549,49 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     stream=True
                 )
                 
+                thinking_text = ""
                 answer_text = ""
+                in_think_tag = False
+                buffer = ""
+                
                 for chunk in stream:
                     if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
                         delta = chunk.choices[0].delta
                         if hasattr(delta, 'content') and delta.content:
-                            answer_text += delta.content
-                            clean_answer = clean_text(answer_text)
+                            buffer += delta.content
                             
-                            response_container.markdown(f"""
-                            <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                                <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); 
-                                            display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;">🤖</div>
-                                <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
-                                            max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
-                                    <div style="white-space: pre-wrap;">{clean_answer}</div>
+                            if "<think>" in buffer:
+                                in_think_tag = True
+                                buffer = buffer.replace("<think>", "")
+                            
+                            if "</think>" in buffer:
+                                in_think_tag = False
+                                parts = buffer.split("</think>")
+                                thinking_text += parts[0]
+                                buffer = parts[1] if len(parts) > 1 else ""
+                                continue
+                            
+                            if in_think_tag:
+                                thinking_text += delta.content
+                            else:
+                                answer_text += delta.content
+                                clean_answer = clean_text(answer_text)
+                                
+                                ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
+                                
+                                response_container.markdown(f"""
+                                <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                                    {ai_avatar_html}
+                                    <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: #e9edef; padding: 15px 20px; border-radius: 5px 25px 25px 25px; 
+                                                max-width: 85%; border-left: 4px solid; border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; word-wrap: break-word;">
+                                        <div style="white-space: pre-wrap;">{clean_answer}</div>
+                                    </div>
                                 </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            time.sleep(0.01)
+                                """, unsafe_allow_html=True)
+                                time.sleep(0.01)
                 
-                res = answer_text.strip()
+                res = answer_text.strip() if answer_text else thinking_text.strip()
+                    
             except Exception as e:
                 res = f"DeepSeek lagi sibuk nih bro! 😅 Coba model lain ya!"
         
