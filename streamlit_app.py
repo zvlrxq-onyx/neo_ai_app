@@ -182,7 +182,7 @@ try:
     client_groq = Groq(api_key=st.secrets["GROQ_API_KEY"])
     client_hf = InferenceClient(token=st.secrets["HF_TOKEN"])
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    client_gemini = genai.GenerativeModel('gemini-2.0-flash-exp')
+    client_gemini = genai.GenerativeModel('gemini-3-flash-preview')
     POLLINATIONS_API = "https://image.pollinations.ai/prompt/"
 except Exception as e:
     st.error(f"❌ API Keys Error: {e}")
@@ -254,7 +254,7 @@ st.markdown("""
     [data-testid="stFileUploader"] span { display: none !important; }
     [data-testid="stFileUploader"] section { font-size: 0 !important; }
     
-    /* CHAT INPUT */
+    /* CHAT INPUT - ROUNDED RECTANGLE */
     [data-testid="stChatInput"] { 
         margin-left: 60px !important; 
         width: calc(100% - 80px) !important; 
@@ -268,7 +268,7 @@ st.markdown("""
     }
     
     [data-testid="stChatInputTextArea"] {
-        border-radius: 25px !important;
+        border-radius: 12px !important;
         border: 2px solid #06b6d4 !important;
         background: #1a1a1a !important;
         padding: 12px 50px 12px 20px !important;
@@ -419,7 +419,7 @@ st.markdown("""
 
 # --- 7. MODEL ENGINES ---
 engines = {
-    "Gemini 2.0 Flash": {"type": "Gemini", "emoji": "✨"},
+    "Gemini 3 Flash Preview": {"type": "Gemini", "emoji": "✨"},
     "DeepSeek R1": {"type": "DeepSeek", "emoji": "🧠"},
     "LLaMA 4 Scout": {"type": "Scout", "emoji": "🦙"},
     "Groq LLaMA 3.3": {"type": "Llama33", "emoji": "⚡"},
@@ -625,8 +625,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 answer_text = ""
                 in_think_tag = False
                 buffer = ""
-                thinking_mode = True
                 thinking_counter = 0
+                last_update = time.time()
                 
                 for chunk in stream:
                     if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
@@ -640,7 +640,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                             
                             if "</think>" in buffer:
                                 in_think_tag = False
-                                thinking_mode = False
                                 parts = buffer.split("</think>")
                                 thinking_text += parts[0]
                                 buffer = parts[1] if len(parts) > 1 else ""
@@ -649,32 +648,37 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                             
                             if in_think_tag:
                                 thinking_text += delta.content
-                                elapsed = int(time.time() - start_time)
+                                current_time = time.time()
                                 
-                                thinking_counter += 1
-                                if thinking_counter % 2 == 0:
-                                    thinking_html = f"""
-                                    <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
-                                        <div class="thinking-container">
-                                            <span class="thinking-text">🧠 Thinking</span>
-                                            <div class="thinking-dots">
-                                                <div class="thinking-dot"></div>
-                                                <div class="thinking-dot"></div>
-                                                <div class="thinking-dot"></div>
+                                # Update animasi setiap 0.5 detik aja biar ga lag
+                                if current_time - last_update > 0.5:
+                                    elapsed = int(current_time - start_time)
+                                    thinking_counter += 1
+                                    
+                                    if thinking_counter % 2 == 0:
+                                        thinking_html = f"""
+                                        <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+                                            <div class="thinking-container">
+                                                <span class="thinking-text">🧠 Thinking</span>
+                                                <div class="thinking-dots">
+                                                    <div class="thinking-dot"></div>
+                                                    <div class="thinking-dot"></div>
+                                                    <div class="thinking-dot"></div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    """
-                                else:
-                                    thinking_html = f"""
-                                    <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
-                                        <div class="thinking-container">
-                                            <span class="thinking-text">⏱️ Thought for {elapsed}s</span>
+                                        """
+                                    else:
+                                        thinking_html = f"""
+                                        <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+                                            <div class="thinking-container">
+                                                <span class="thinking-text">⏱️ Thought for {elapsed}s</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    """
-                                
-                                thinking_container.markdown(thinking_html, unsafe_allow_html=True)
+                                        """
+                                    
+                                    thinking_container.markdown(thinking_html, unsafe_allow_html=True)
+                                    last_update = current_time
                             else:
                                 answer_text += delta.content
                                 clean_answer = clean_text(answer_text)
@@ -690,7 +694,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                     </div>
                                 </div>
                                 """, unsafe_allow_html=True)
-                                time.sleep(0.01)
                 
                 thinking_container.empty()
                 res = answer_text.strip() if answer_text else thinking_text.strip()
@@ -726,7 +729,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
-                        time.sleep(0.01)
                 
                 res = res_text
             except Exception as e:
@@ -773,7 +775,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
-                        time.sleep(0.02)
                 
                 res = res_text
                 st.session_state.uploaded_image = None
@@ -810,7 +811,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
-                        time.sleep(0.02)
                 
                 res = res_text
         
@@ -847,7 +847,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-                    time.sleep(0.02)
             
             res = res_text
         
@@ -886,7 +885,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
-                        time.sleep(0.02)
             
             res = res_text
         
