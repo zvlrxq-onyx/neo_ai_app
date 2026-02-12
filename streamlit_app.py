@@ -182,7 +182,7 @@ try:
     client_groq = Groq(api_key=st.secrets["GROQ_API_KEY"])
     client_hf = InferenceClient(token=st.secrets["HF_TOKEN"])
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    client_gemini = genai.GenerativeModel('gemini-3-flash-preview')
+    client_gemini = genai.GenerativeModel('gemini-2.0-flash-exp')
     POLLINATIONS_API = "https://image.pollinations.ai/prompt/"
 except Exception as e:
     st.error(f"❌ API Keys Error: {e}")
@@ -205,8 +205,14 @@ st.markdown("""
 <style>
     [data-testid="stAppViewContainer"] { background: #0a0a0a; }
     
-    /* FILE UPLOADER */
-    [data-testid="stFileUploader"] { position: fixed; bottom: 58px; left: 15px; width: 45px; z-index: 1000; }
+    /* FILE UPLOADER FIX */
+    [data-testid="stFileUploader"] { 
+        position: fixed; 
+        bottom: 58px; 
+        left: 15px; 
+        width: 45px; 
+        z-index: 1000; 
+    }
     [data-testid="stFileUploaderDropzone"] {
         background: #1a1a1a !important; 
         border: 2px solid #06b6d4 !important; 
@@ -215,6 +221,8 @@ st.markdown("""
         width: 42px !important; 
         padding: 0 !important;
         transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        overflow: hidden !important;
+        position: relative !important;
     }
     [data-testid="stFileUploaderDropzone"]:hover {
         transform: scale(1.15) rotate(90deg) !important;
@@ -222,12 +230,29 @@ st.markdown("""
         border-color: #8b5cf6 !important;
         box-shadow: 0 0 25px rgba(6,182,212,0.6) !important;
     }
-    [data-testid="stFileUploaderDropzone"] div { display: none !important; }
+    [data-testid="stFileUploaderDropzone"] * { 
+        display: none !important; 
+    }
     [data-testid="stFileUploaderDropzone"]::before {
-        content: "＋"; color: #06b6d4; font-size: 26px; font-weight: bold;
-        display: flex; align-items: center; justify-content: center; height: 100%;
+        content: "＋" !important;
+        color: #06b6d4 !important;
+        font-size: 26px !important;
+        font-weight: bold !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 100% !important;
+        width: 100% !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        z-index: 10 !important;
     }
     [data-testid="stFileUploader"] label { display: none !important; }
+    [data-testid="stFileUploader"] small { display: none !important; }
+    [data-testid="stFileUploader"] button { display: none !important; }
+    [data-testid="stFileUploader"] span { display: none !important; }
+    [data-testid="stFileUploader"] section { font-size: 0 !important; }
     
     /* CHAT INPUT */
     [data-testid="stChatInput"] { 
@@ -235,7 +260,6 @@ st.markdown("""
         width: calc(100% - 80px) !important; 
     }
     
-    /* HIDE DEFAULT CONTAINER BORDERS */
     [data-testid="stChatInput"] > div,
     [data-testid="stChatInput"] > div > div {
         border: none !important;
@@ -244,10 +268,10 @@ st.markdown("""
     }
     
     [data-testid="stChatInputTextArea"] {
-        border-radius: 8px !important;
-        border: 1px solid #06b6d4 !important;
+        border-radius: 25px !important;
+        border: 2px solid #06b6d4 !important;
         background: #1a1a1a !important;
-        padding: 10px 45px 10px 15px !important;
+        padding: 12px 50px 12px 20px !important;
         font-size: 14px !important;
         min-height: 44px !important;
         max-height: 200px !important;
@@ -257,9 +281,10 @@ st.markdown("""
     }
     
     [data-testid="stChatInputTextArea"]:focus {
-        border: 1px solid #8b5cf6 !important;
-        box-shadow: 0 0 12px rgba(139,92,246,0.3) !important;
+        border: 2px solid #8b5cf6 !important;
+        box-shadow: 0 0 15px rgba(139,92,246,0.4) !important;
     }
+    
     [data-testid="stChatInputSubmitButton"] {
         background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
         border-radius: 50% !important;
@@ -274,8 +299,56 @@ st.markdown("""
     }
     [data-testid="stChatInputSubmitButton"] svg {
         color: white !important;
-        transform: rotate(-90deg) !important;
+        transform: rotate(0deg) !important;
     }
+    
+    /* DEEPSEEK THINKING ANIMATION */
+    @keyframes shimmer {
+        0% { background-position: -200% center; }
+        100% { background-position: 200% center; }
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    .thinking-container {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
+        background-size: 200% auto;
+        border-radius: 20px;
+        border: 1px solid #06b6d4;
+        animation: shimmer 3s linear infinite;
+        box-shadow: 0 0 15px rgba(6,182,212,0.3);
+    }
+    
+    .thinking-text {
+        color: #06b6d4;
+        font-size: 13px;
+        font-weight: 600;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    .thinking-dots {
+        display: flex;
+        gap: 3px;
+    }
+    
+    .thinking-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #06b6d4;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    .thinking-dot:nth-child(1) { animation-delay: 0s; }
+    .thinking-dot:nth-child(2) { animation-delay: 0.3s; }
+    .thinking-dot:nth-child(3) { animation-delay: 0.6s; }
     
     /* ANIMATIONS */
     @keyframes slideInRight {
@@ -285,10 +358,6 @@ st.markdown("""
     @keyframes slideInLeft {
         from { opacity: 0; transform: translateX(-20px); }
         to { opacity: 1; transform: translateX(0); }
-    }
-    @keyframes blink {
-        0%, 80%, 100% { opacity: 0; }
-        40% { opacity: 1; }
     }
     
     /* USER BADGE */
@@ -539,8 +608,11 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             messages.append({"role": "user", "content": user_msg})
             
             response_container = st.empty()
+            thinking_container = st.empty()
             
             try:
+                start_time = time.time()
+                
                 stream = client_hf.chat_completion(
                     messages=messages,
                     model="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
@@ -553,6 +625,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 answer_text = ""
                 in_think_tag = False
                 buffer = ""
+                thinking_mode = True
+                thinking_counter = 0
                 
                 for chunk in stream:
                     if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
@@ -566,13 +640,41 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                             
                             if "</think>" in buffer:
                                 in_think_tag = False
+                                thinking_mode = False
                                 parts = buffer.split("</think>")
                                 thinking_text += parts[0]
                                 buffer = parts[1] if len(parts) > 1 else ""
+                                thinking_container.empty()
                                 continue
                             
                             if in_think_tag:
                                 thinking_text += delta.content
+                                elapsed = int(time.time() - start_time)
+                                
+                                thinking_counter += 1
+                                if thinking_counter % 2 == 0:
+                                    thinking_html = f"""
+                                    <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+                                        <div class="thinking-container">
+                                            <span class="thinking-text">🧠 Thinking</span>
+                                            <div class="thinking-dots">
+                                                <div class="thinking-dot"></div>
+                                                <div class="thinking-dot"></div>
+                                                <div class="thinking-dot"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    """
+                                else:
+                                    thinking_html = f"""
+                                    <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+                                        <div class="thinking-container">
+                                            <span class="thinking-text">⏱️ Thought for {elapsed}s</span>
+                                        </div>
+                                    </div>
+                                    """
+                                
+                                thinking_container.markdown(thinking_html, unsafe_allow_html=True)
                             else:
                                 answer_text += delta.content
                                 clean_answer = clean_text(answer_text)
@@ -590,6 +692,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                 """, unsafe_allow_html=True)
                                 time.sleep(0.01)
                 
+                thinking_container.empty()
                 res = answer_text.strip() if answer_text else thinking_text.strip()
                     
             except Exception as e:
