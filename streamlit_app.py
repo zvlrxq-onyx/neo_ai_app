@@ -215,7 +215,6 @@ st.markdown("""
         width: 42px !important; 
         padding: 0 !important;
         transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-        overflow: hidden !important;
     }
     [data-testid="stFileUploaderDropzone"]:hover {
         transform: scale(1.15) rotate(90deg) !important;
@@ -223,38 +222,45 @@ st.markdown("""
         border-color: #8b5cf6 !important;
         box-shadow: 0 0 25px rgba(6,182,212,0.6) !important;
     }
-    [data-testid="stFileUploaderDropzone"] * { display: none !important; }
+    [data-testid="stFileUploaderDropzone"] div { display: none !important; }
     [data-testid="stFileUploaderDropzone"]::before {
-        content: "＋" !important;
-        color: #06b6d4 !important;
-        font-size: 26px !important;
-        font-weight: bold !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        height: 100% !important;
-        width: 100% !important;
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
+        content: "＋"; color: #06b6d4; font-size: 26px; font-weight: bold;
+        display: flex; align-items: center; justify-content: center; height: 100%;
     }
     [data-testid="stFileUploader"] label { display: none !important; }
-    [data-testid="stFileUploader"] small { display: none !important; }
-    [data-testid="stFileUploader"] button { display: none !important; }
-    [data-testid="stFileUploader"] span { font-size: 0 !important; }
     
     /* CHAT INPUT */
-    [data-testid="stChatInput"] { margin-left: 60px !important; width: calc(100% - 80px) !important; }
+    [data-testid="stChatInput"] { 
+        margin-left: 60px !important; 
+        width: calc(100% - 80px) !important; 
+    }
+    
     [data-testid="stChatInputTextArea"] {
-        border-radius: 0px !important;
+        border-radius: 8px !important;
         border: 2px solid #06b6d4 !important;
         background: #1a1a1a !important;
-        padding: 12px 50px 12px 20px !important;
+        padding: 10px 45px 10px 15px !important;
+        font-size: 14px !important;
+        min-height: 44px !important;
+        max-height: 200px !important;
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        box-sizing: border-box !important;
     }
+    
     [data-testid="stChatInputTextArea"]:focus {
         border-color: #8b5cf6 !important;
-        box-shadow: 0 0 20px rgba(6,182,212,0.4) !important;
+        box-shadow: 0 0 15px rgba(6,182,212,0.3) !important;
+        outline: none !important;
+    }
+    
+    /* HIDE DEFAULT STREAMLIT BORDER */
+    [data-testid="stChatInput"] > div {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    [data-testid="stChatInput"] > div > div {
+        border: none !important;
     }
     [data-testid="stChatInputSubmitButton"] {
         background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
@@ -270,7 +276,7 @@ st.markdown("""
     }
     [data-testid="stChatInputSubmitButton"] svg {
         color: white !important;
-        transform: rotate(0deg) !important;
+        transform: rotate(-90deg) !important;
     }
     
     /* ANIMATIONS */
@@ -346,7 +352,7 @@ st.markdown("""
 
 # --- 7. MODEL ENGINES ---
 engines = {
-    "Gemini 3 Flash Preview": {"type": "Gemini", "emoji": "✨"},
+    "Gemini 2.0 Flash": {"type": "Gemini", "emoji": "✨"},
     "DeepSeek R1": {"type": "DeepSeek", "emoji": "🧠"},
     "LLaMA 4 Scout": {"type": "Scout", "emoji": "🦙"},
     "Groq LLaMA 3.3": {"type": "Llama33", "emoji": "⚡"},
