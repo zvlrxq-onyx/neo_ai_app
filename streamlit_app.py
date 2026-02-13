@@ -457,7 +457,8 @@ st.markdown("""
 # --- 7. MODEL ENGINES ---
 engines = {
     "Gemini 3 Flash Preview": {"type": "Gemini", "emoji": "✨"},
-    "DeepSeek R1": {"type": "DeepSeek", "emoji": "🧠"},
+    "DeepSeek R1 (Original)": {"type": "DeepSeekOri", "emoji": "🧠"},
+    "DeepSeek R1 Distilled": {"type": "DeepSeek", "emoji": "🔬"},
     "LLaMA 4 Scout": {"type": "Scout", "emoji": "🦙"},
     "Groq LLaMA 3.3": {"type": "Llama33", "emoji": "⚡"},
     "Qwen 2.5 7B": {"type": "HuggingFace", "emoji": "🤖"},
@@ -637,8 +638,157 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             "Vary your responses creatively - don't repeat the same phrases."
         )
         
-        # ========== DEEPSEEK R1 - DYNAMIC THINKING STAGES ==========
-        if engine == "DeepSeek":
+        # ========== DEEPSEEK R1 ORIGINAL (via Groq) - ENHANCED THINKING ==========
+        if engine == "DeepSeekOri":
+            messages = [{"role": "system", "content": system_prompt}]
+            for m in st.session_state.messages[:-1]:
+                if m.get("type") != "image":
+                    messages.append({"role": m["role"], "content": m["content"]})
+            messages.append({"role": "user", "content": user_msg})
+            
+            response_container = st.empty()
+            thinking_container = st.empty()
+            
+            try:
+                start_time = time.time()
+                
+                stream = client_groq.chat.completions.create(
+                    model="deepseek-r1-distill-llama-70b",
+                    messages=messages,
+                    max_tokens=8000,
+                    temperature=0.7,
+                    stream=True
+                )
+                
+                thinking_text = ""
+                answer_text = ""
+                in_think_tag = False
+                buffer = ""
+                
+                # THINKING STAGES - berdasarkan WAKTU
+                thinking_stages = [
+                    ("🧠 Thinking...", 0, 2),
+                    ("🔍 Analyzing the question...", 2, 4),
+                    ("📚 Gathering knowledge...", 4, 7),
+                    ("🌐 Searching on the web...", 7, 10),
+                    ("🔬 Cross-referencing sources...", 10, 13),
+                    ("📊 Processing information...", 13, 16),
+                    ("💡 Connecting the dots...", 16, 19),
+                    ("✨ Refining the details...", 19, 22),
+                    ("🎯 Finalizing response...", 22, 999)
+                ]
+                
+                current_stage_idx = 0
+                last_render_time = time.time()
+                RENDER_INTERVAL = 0.1
+                last_thinking_update = time.time()
+                THINKING_INTERVAL = 0.8
+                
+                ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
+                
+                for chunk in stream:
+                    if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                        delta = chunk.choices[0].delta
+                        if hasattr(delta, 'content') and delta.content:
+                            content = delta.content
+                            buffer += content
+                            
+                            # Detect thinking tags (Groq format)
+                            if "<think>" in buffer or "thinking" in buffer.lower()[:20]:
+                                in_think_tag = True
+                                buffer = buffer.replace("<think>", "")
+                            
+                            if "</think>" in buffer or (in_think_tag and "\n\n" in buffer):
+                                in_think_tag = False
+                                parts = buffer.split("</think>") if "</think>" in buffer else buffer.split("\n\n", 1)
+                                thinking_text += parts[0]
+                                buffer = parts[1] if len(parts) > 1 else ""
+                                
+                                # Show final thought time
+                                elapsed = int(time.time() - start_time)
+                                thinking_container.markdown(f"""
+                                <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+                                    <div class="thinking-container" style="border-color: #8b5cf6;">
+                                        <span class="final-thought">💡 Thought for {elapsed} seconds</span>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                time.sleep(0.8)
+                                thinking_container.empty()
+                                continue
+                            
+                            if in_think_tag:
+                                thinking_text += content
+                                current_time = time.time()
+                                elapsed = current_time - start_time
+                                
+                                # Determine stage based on elapsed time
+                                for i, (stage_text, start_sec, end_sec) in enumerate(thinking_stages):
+                                    if start_sec <= elapsed < end_sec:
+                                        current_stage_idx = i
+                                        break
+                                
+                                # Update thinking animation
+                                if current_time - last_thinking_update >= THINKING_INTERVAL:
+                                    stage_text, _, _ = thinking_stages[current_stage_idx]
+                                    
+                                    thinking_container.markdown(f"""
+                                    <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+                                        <div class="thinking-container">
+                                            <div class="thinking-spinner"></div>
+                                            <span class="thinking-text">{stage_text}</span>
+                                        </div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                    last_thinking_update = current_time
+                            else:
+                                answer_text += content
+                                current_time = time.time()
+                                
+                                if current_time - last_render_time >= RENDER_INTERVAL:
+                                    clean_answer = clean_text(answer_text)
+                                    
+                                    response_container.markdown(f"""
+                                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                                        {ai_avatar_html}
+                                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                                    color: #e9edef; padding: 15px 20px; 
+                                                    border-radius: 5px 25px 25px 25px; 
+                                                    max-width: 85%; border-left: 4px solid; 
+                                                    border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                                    word-wrap: break-word;">
+                                            <div style="white-space: pre-wrap;">{clean_answer}</div>
+                                        </div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                    
+                                    last_render_time = current_time
+                
+                # Final render
+                thinking_container.empty()
+                if answer_text:
+                    clean_answer = clean_text(answer_text)
+                    response_container.markdown(f"""
+                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                        {ai_avatar_html}
+                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                    color: #e9edef; padding: 15px 20px; 
+                                    border-radius: 5px 25px 25px 25px; 
+                                    max-width: 85%; border-left: 4px solid; 
+                                    border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                    word-wrap: break-word;">
+                            <div style="white-space: pre-wrap;">{clean_answer}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                res = answer_text.strip() if answer_text else thinking_text.strip()
+                    
+            except Exception as e:
+                res = f"DeepSeek R1 error bro: {str(e)} 😅"
+        
+        # ========== DEEPSEEK R1 DISTILLED (via HuggingFace) ==========
+        elif engine == "DeepSeek":
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
