@@ -441,7 +441,7 @@ st.markdown("""
 
 # --- 7. MODEL ENGINES WITH RATE LIMITS ---
 engines = {
-    "Gemini 3 Flash Preview": {"type": "Gemini", "emoji": "✨", "limit": 10, "model": "gemini-2.0-flash-exp"},
+    "Gemini 3 Flash Preview": {"type": "Gemini", "emoji": "✨", "limit": 10, "model": "gemini-3-flash-preview"},
     "Mixtral 8x7B": {"type": "Groq", "emoji": "🔥", "limit": 20, "model": "mixtral-8x7b-32768"},
     "Gemma 2 9B": {"type": "Groq", "emoji": "💎", "limit": 30, "model": "gemma2-9b-it"},
     "LLaMA 3.3 70B": {"type": "Groq", "emoji": "🦙", "limit": 15, "model": "llama-3.3-70b-versatile"},
@@ -816,4 +816,3 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
         save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
         st.rerun()
-(venv) 
