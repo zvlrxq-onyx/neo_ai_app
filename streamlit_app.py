@@ -1,5 +1,6 @@
 import streamlit as st
 from groq import Groq
+from huggingface_hub import InferenceClient
 import google.generativeai as genai
 import os, base64, requests, json
 import re
@@ -8,7 +9,6 @@ import io
 import urllib.parse
 import time
 import hashlib
-from datetime import datetime, timedelta
 
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(page_title="NEO AI", page_icon="🤖", layout="wide")
@@ -91,72 +91,6 @@ def analyze_image_pixels(image_data):
         return f"Size: {width}x{height}, Mode: {mode}"
     except:
         return "Image analysis available"
-
-# --- RATE LIMITING SYSTEM ---
-def get_rate_limit_file(username):
-    user_hash = hashlib.md5(username.encode()).hexdigest()
-    return os.path.join(DB_FOLDER, f"rate_limit_{user_hash}.json")
-
-def load_rate_limits(username):
-    limit_file = get_rate_limit_file(username)
-    if os.path.exists(limit_file):
-        try:
-            with open(limit_file, "r") as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
-
-def save_rate_limits(username, limits_dict):
-    limit_file = get_rate_limit_file(username)
-    try:
-        with open(limit_file, "w") as f:
-            json.dump(limits_dict, f)
-    except Exception as e:
-        print(f"Error saving rate limits: {e}")
-
-def check_rate_limit(username, model_name, limit):
-    """Check if user has exceeded rate limit for this model"""
-    limits = load_rate_limits(username)
-    
-    if model_name not in limits:
-        limits[model_name] = {"count": 0, "reset_time": None}
-    
-    model_limit = limits[model_name]
-    current_time = datetime.now()
-    
-    # Check if reset time has passed
-    if model_limit["reset_time"]:
-        reset_time = datetime.fromisoformat(model_limit["reset_time"])
-        if current_time >= reset_time:
-            # Reset counter
-            model_limit["count"] = 0
-            model_limit["reset_time"] = None
-    
-    # Check if limit exceeded
-    if model_limit["count"] >= limit:
-        if model_limit["reset_time"]:
-            reset_time = datetime.fromisoformat(model_limit["reset_time"])
-            return False, reset_time
-        return False, None
-    
-    return True, None
-
-def increment_rate_limit(username, model_name, limit):
-    """Increment usage counter for this model"""
-    limits = load_rate_limits(username)
-    
-    if model_name not in limits:
-        limits[model_name] = {"count": 0, "reset_time": None}
-    
-    limits[model_name]["count"] += 1
-    
-    # Set reset time to 12 hours from now if limit reached
-    if limits[model_name]["count"] >= limit:
-        reset_time = datetime.now() + timedelta(hours=12)
-        limits[model_name]["reset_time"] = reset_time.isoformat()
-    
-    save_rate_limits(username, limits)
 
 # --- 2. AUTHENTICATION ---
 if "current_user" not in st.session_state:
@@ -246,6 +180,7 @@ if "model_popup_open" not in st.session_state:
 # --- 4. API KEYS ---
 try:
     client_groq = Groq(api_key=st.secrets["GROQ_API_KEY"])
+    client_hf = InferenceClient(token=st.secrets["HF_TOKEN"])
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     client_gemini = genai.GenerativeModel('gemini-3-flash-preview')
     POLLINATIONS_API = "https://image.pollinations.ai/prompt/"
@@ -367,6 +302,86 @@ st.markdown("""
         transform: rotate(0deg) !important;
     }
     
+    /* DEEPSEEK ADVANCED THINKING ANIMATIONS */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes shimmer {
+        0% { background-position: -200% center; }
+        100% { background-position: 200% center; }
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .thinking-container {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 18px;
+        background: linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
+        background-size: 200% auto;
+        border-radius: 20px;
+        border: 1px solid #06b6d4;
+        animation: shimmer 3s linear infinite;
+        box-shadow: 0 0 15px rgba(6,182,212,0.3);
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+        transform: translateZ(0);
+    }
+    
+    .thinking-spinner {
+        width: 18px;
+        height: 18px;
+        border: 3px solid #06b6d4;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    
+    .thinking-text {
+        color: #06b6d4;
+        font-size: 14px;
+        font-weight: 600;
+        animation: fadeIn 0.5s ease-in;
+    }
+    
+    .thinking-dots {
+        display: flex;
+        gap: 3px;
+    }
+    
+    .thinking-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #06b6d4;
+        animation: pulse 1.5s ease-in-out infinite;
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+        transform: translateZ(0);
+    }
+    
+    .thinking-dot:nth-child(1) { animation-delay: 0s; }
+    .thinking-dot:nth-child(2) { animation-delay: 0.3s; }
+    .thinking-dot:nth-child(3) { animation-delay: 0.6s; }
+    
+    .final-thought {
+        color: #8b5cf6;
+        font-weight: bold;
+        font-size: 14px;
+        animation: fadeIn 0.5s ease-in;
+    }
+    
     /* ANIMATIONS */
     @keyframes slideInRight {
         from { opacity: 0; transform: translateX(20px); }
@@ -439,14 +454,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 7. MODEL ENGINES WITH RATE LIMITS ---
+# --- 7. MODEL ENGINES ---
 engines = {
-    "Gemini 3 Flash Preview": {"type": "Gemini", "emoji": "✨", "limit": 10, "model": "gemini-3-flash-preview"},
-    "Mistral Small 24B": {"type": "Groq", "emoji": "🔥", "limit": 20, "model": "mistral-small-24b-instruct-25k"},
-    "Gemma 2 9B": {"type": "Groq", "emoji": "💎", "limit": 30, "model": "gemma2-9b-it"},
-    "LLaMA 3.3 70B": {"type": "Groq", "emoji": "🦙", "limit": 15, "model": "llama-3.3-70b-versatile"},
-    "LLaMA 3.1 8B": {"type": "Groq", "emoji": "⚡", "limit": 50, "model": "llama-3.1-8b-instant"},
-    "Pollinations AI": {"type": "Pollinations", "emoji": "🎨", "limit": 100},
+    "Gemini 3 Flash Preview": {"type": "Gemini", "emoji": "✨"},
+    "DeepSeek R1": {"type": "DeepSeek", "emoji": "🧠"},
+    "LLaMA 4 Scout": {"type": "Scout", "emoji": "🦙"},
+    "Groq LLaMA 3.3": {"type": "Llama33", "emoji": "⚡"},
+    "Qwen 2.5 7B": {"type": "HuggingFace", "emoji": "🤖"},
+    "Pollinations AI": {"type": "Pollinations", "emoji": "🎨"},
 }
 
 if "selected_engine_name" not in st.session_state:
@@ -524,28 +539,17 @@ with st.sidebar:
         
     st.markdown("---")
     
-    # MODEL SELECTOR WITH EXPANDER & RATE LIMIT INFO
+    # MODEL SELECTOR WITH EXPANDER
     selected_engine_name = st.session_state.selected_engine_name
     selected_emoji = engines[selected_engine_name]["emoji"]
     
-    # Get rate limit info
-    limits = load_rate_limits(st.session_state.current_user)
-    current_model_limit = limits.get(selected_engine_name, {"count": 0, "reset_time": None})
-    usage = current_model_limit["count"]
-    max_limit = engines[selected_engine_name]["limit"]
-    
-    with st.expander(f"{selected_emoji} **{selected_engine_name}** ({usage}/{max_limit})", expanded=False):
+    with st.expander(f"{selected_emoji} **{selected_engine_name}**", expanded=False):
         st.markdown("**Choose AI Model:**")
         for name, data in engines.items():
             is_active = (name == st.session_state.selected_engine_name)
             
-            # Get usage for this model
-            model_limits = limits.get(name, {"count": 0, "reset_time": None})
-            model_usage = model_limits["count"]
-            model_max = data["limit"]
-            
             if st.button(
-                f"{data['emoji']} {name} ({model_usage}/{model_max})",
+                f"{data['emoji']} {name}",
                 key=f"model_{name}",
                 use_container_width=True,
                 type="primary" if is_active else "secondary"
@@ -553,7 +557,7 @@ with st.sidebar:
                 st.session_state.selected_engine_name = name
                 st.rerun()
     
-    engine_type = engines[selected_engine_name]["type"]
+    engine = engines[selected_engine_name]["type"]
     
     st.markdown("---")
     st.markdown("### 🕒 Saved History")
@@ -606,20 +610,6 @@ if up:
 
 # Chat Input
 if prompt := st.chat_input("Message NEO AI..."):
-    # Check rate limit before processing
-    selected_model = st.session_state.selected_engine_name
-    model_limit = engines[selected_model]["limit"]
-    
-    can_proceed, reset_time = check_rate_limit(st.session_state.current_user, selected_model, model_limit)
-    
-    if not can_proceed:
-        if reset_time:
-            reset_str = reset_time.strftime("%I:%M %p")
-            st.error(f"⏰ Rate limit reached for {selected_model}! Please try again at {reset_str}.")
-        else:
-            st.error(f"⏰ Rate limit reached for {selected_model}! Please try again later.")
-        st.stop()
-    
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     if st.session_state.current_session_key is None:
@@ -632,41 +622,170 @@ if prompt := st.chat_input("Message NEO AI..."):
     save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
     st.rerun()
 
-# --- 11. AI PROCESSING ---
+# --- 11. AI PROCESSING WITH ENHANCED DEEPSEEK THINKING ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     try:
         user_msg = st.session_state.messages[-1]["content"]
         res = ""
         
         system_prompt = (
-            "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
-            "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
-            "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
-            "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
-            "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
-            "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
-            "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
-            "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
-            "- Happy or excited: 😊🤩 "
-            "- Sad or disappointed: 😢😔 "
-            "- Assertive or warning: ⚠️😠 "
-            "- Thinking or curious: 🤔💭 "
-            "- Surprised: 😲 "
-            "- Playful: 😉😜 "
-            "- Proud or admiring success: 🏆 "
-            "- Anxious or worried: 😰 "
-            "- Refusal or denial: ❌ "
-            "- Motivational (e.g., encouraging user): 🚀 "
-            "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' "
-            "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."
+            "You are NEO AI, an advanced multi-modal AI system. "
+            "You can process images, generate visuals, and handle complex tasks. "
+            "Always respond confidently and naturally. Use casual Indonesian slang like 'bro', 'nih', 'ya'. "
+            "Include relevant emojis (1-2 per response) to enhance conversation. "
+            "NEVER provide malicious code examples (SQL injection, XSS, etc). Refuse with ❌. "
+            "Vary your responses creatively - don't repeat the same phrases."
         )
         
-        selected_model = st.session_state.selected_engine_name
-        engine_config = engines[selected_model]
-        engine_type = engine_config["type"]
+        # ========== DEEPSEEK R1 - DYNAMIC THINKING STAGES ==========
+        if engine == "DeepSeek":
+            messages = [{"role": "system", "content": system_prompt}]
+            for m in st.session_state.messages[:-1]:
+                if m.get("type") != "image":
+                    messages.append({"role": m["role"], "content": m["content"]})
+            messages.append({"role": "user", "content": user_msg})
+            
+            response_container = st.empty()
+            thinking_container = st.empty()
+            
+            try:
+                start_time = time.time()
+                
+                stream = client_hf.chat_completion(
+                    messages=messages,
+                    model="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+                    max_tokens=2048,
+                    temperature=0.7,
+                    stream=True
+                )
+                
+                thinking_text = ""
+                answer_text = ""
+                in_think_tag = False
+                buffer = ""
+                
+                # THINKING STAGES - berdasarkan WAKTU biar semua stage keliatan
+                thinking_stages = [
+                    ("🧠 Thinking...", 0, 2),
+                    ("🔍 Analyzing the question...", 2, 4),
+                    ("📚 Gathering knowledge...", 4, 7),
+                    ("🌐 Searching on the web...", 7, 10),
+                    ("🔬 Cross-referencing sources...", 10, 13),
+                    ("📊 Processing information...", 13, 16),
+                    ("💡 Connecting the dots...", 16, 19),
+                    ("✨ Refining the details...", 19, 22),
+                    ("🎯 Finalizing response...", 22, 999)
+                ]
+                
+                current_stage_idx = 0
+                last_render_time = time.time()
+                RENDER_INTERVAL = 0.1
+                last_thinking_update = time.time()
+                THINKING_INTERVAL = 0.8  # Update tiap 0.8 detik biar smooth
+                
+                ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
+                
+                for chunk in stream:
+                    if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                        delta = chunk.choices[0].delta
+                        if hasattr(delta, 'content') and delta.content:
+                            buffer += delta.content
+                            
+                            if "<think>" in buffer:
+                                in_think_tag = True
+                                buffer = buffer.replace("<think>", "")
+                            
+                            if "</think>" in buffer:
+                                in_think_tag = False
+                                parts = buffer.split("</think>")
+                                thinking_text += parts[0]
+                                buffer = parts[1] if len(parts) > 1 else ""
+                                
+                                # Show final thought time
+                                elapsed = int(time.time() - start_time)
+                                thinking_container.markdown(f"""
+                                <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+                                    <div class="thinking-container" style="border-color: #8b5cf6;">
+                                        <span class="final-thought">💡 Thought for {elapsed} seconds</span>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                time.sleep(0.8)
+                                thinking_container.empty()
+                                continue
+                            
+                            if in_think_tag:
+                                thinking_text += delta.content
+                                current_time = time.time()
+                                elapsed = current_time - start_time
+                                
+                                # Tentukan stage berdasarkan WAKTU yang udah lewat
+                                for i, (stage_text, start_sec, end_sec) in enumerate(thinking_stages):
+                                    if start_sec <= elapsed < end_sec:
+                                        current_stage_idx = i
+                                        break
+                                
+                                # Update animasi thinking
+                                if current_time - last_thinking_update >= THINKING_INTERVAL:
+                                    stage_text, _, _ = thinking_stages[current_stage_idx]
+                                    
+                                    thinking_container.markdown(f"""
+                                    <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+                                        <div class="thinking-container">
+                                            <div class="thinking-spinner"></div>
+                                            <span class="thinking-text">{stage_text}</span>
+                                        </div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                    last_thinking_update = current_time
+                            else:
+                                answer_text += delta.content
+                                current_time = time.time()
+                                
+                                if current_time - last_render_time >= RENDER_INTERVAL:
+                                    clean_answer = clean_text(answer_text)
+                                    
+                                    response_container.markdown(f"""
+                                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                                        {ai_avatar_html}
+                                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                                    color: #e9edef; padding: 15px 20px; 
+                                                    border-radius: 5px 25px 25px 25px; 
+                                                    max-width: 85%; border-left: 4px solid; 
+                                                    border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                                    word-wrap: break-word;">
+                                            <div style="white-space: pre-wrap;">{clean_answer}</div>
+                                        </div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                    
+                                    last_render_time = current_time
+                
+                # Final render
+                thinking_container.empty()
+                if answer_text:
+                    clean_answer = clean_text(answer_text)
+                    response_container.markdown(f"""
+                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                        {ai_avatar_html}
+                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                    color: #e9edef; padding: 15px 20px; 
+                                    border-radius: 5px 25px 25px 25px; 
+                                    max-width: 85%; border-left: 4px solid; 
+                                    border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                    word-wrap: break-word;">
+                            <div style="white-space: pre-wrap;">{clean_answer}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                res = answer_text.strip() if answer_text else thinking_text.strip()
+                    
+            except Exception as e:
+                res = f"DeepSeek lagi sibuk nih bro! 😅 Coba model lain ya!"
         
-        # ========== GEMINI ==========
-        if engine_type == "Gemini":
+        # ========== GEMINI - OPTIMIZED ==========
+        elif engine == "Gemini":
             messages_history = []
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
@@ -728,8 +847,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             except Exception as e:
                 res = f"Gemini error bro: {str(e)} 😰"
         
-        # ========== GROQ MODELS ==========
-        elif engine_type == "Groq":
+        # ========== OTHER ENGINES (Scout, Llama, Qwen) ==========
+        elif engine in ["Scout", "Llama33", "HuggingFace"]:
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
@@ -744,17 +863,40 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             ai_avatar_html = "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
             
-            stream = client_groq.chat.completions.create(
-                model=engine_config["model"],
-                messages=messages,
-                temperature=0.7,
-                max_tokens=1024,
-                stream=True
-            )
+            if engine == "Scout":
+                stream = client_groq.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=1024,
+                    stream=True
+                )
+            elif engine == "Llama33":
+                stream = client_groq.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=messages,
+                    temperature=0.8,
+                    max_tokens=1024,
+                    stream=True
+                )
+            else:
+                stream = client_hf.chat_completion(
+                    messages=messages,
+                    model="Qwen/Qwen2.5-7B-Instruct",
+                    max_tokens=1024,
+                    temperature=0.9,
+                    stream=True
+                )
             
             for chunk in stream:
-                if chunk.choices[0].delta.content:
-                    res_text += chunk.choices[0].delta.content
+                content = None
+                if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                    delta = chunk.choices[0].delta
+                    if hasattr(delta, 'content') and delta.content:
+                        content = delta.content
+                
+                if content:
+                    res_text += content
                     current_time = time.time()
                     
                     if current_time - last_render_time >= RENDER_INTERVAL:
@@ -794,7 +936,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             res = res_text
         
         # ========== POLLINATIONS AI ==========
-        elif engine_type == "Pollinations":
+        elif engine == "Pollinations":
             encoded_prompt = urllib.parse.quote(user_msg)
             image_url = f"{POLLINATIONS_API}{encoded_prompt}"
             
@@ -803,9 +945,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             st.session_state.messages.append({"role": "assistant", "type": "image", "content": img})
             
-            # Increment rate limit
-            increment_rate_limit(st.session_state.current_user, selected_model, engine_config["limit"])
-            
             if st.session_state.current_session_key:
                 st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
             save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
@@ -813,9 +952,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         
         if res:
             st.session_state.messages.append({"role": "assistant", "content": res})
-            
-            # Increment rate limit
-            increment_rate_limit(st.session_state.current_user, selected_model, engine_config["limit"])
             
             if st.session_state.current_session_key:
                 st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
