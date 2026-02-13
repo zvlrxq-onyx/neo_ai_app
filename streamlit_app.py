@@ -260,21 +260,33 @@ st.markdown("""
         border: 1px solid #8b5cf6 !important;
         box-shadow: 0 0 12px rgba(139,92,246,0.3) !important;
     }
+    /* TOMBOL KIRIM - PANAH KE ATAS */
     [data-testid="stChatInputSubmitButton"] {
         background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
         border-radius: 50% !important;
         width: 40px !important;
         height: 40px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
         border: none !important;
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
     }
+    
     [data-testid="stChatInputSubmitButton"]:hover {
         transform: scale(1.1) !important;
         box-shadow: 0 0 20px rgba(139,92,246,0.6) !important;
     }
+    
+    /* PANAH KE ATAS - ROTATE -90 DERAJAT */
     [data-testid="stChatInputSubmitButton"] svg {
         color: white !important;
         transform: rotate(-90deg) !important;
+        width: 20px !important;
+        height: 20px !important;
+    }
+    
+    [data-testid="stChatInputSubmitButton"] svg path {
+        fill: white !important;
     }
     
     /* ANIMATIONS */
