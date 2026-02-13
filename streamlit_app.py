@@ -664,24 +664,24 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 in_think_tag = False
                 buffer = ""
                 
-                # DYNAMIC THINKING STAGES - berdasarkan panjang thinking text
+                # THINKING STAGES - berdasarkan WAKTU biar semua stage keliatan
                 thinking_stages = [
-                    ("🧠 Thinking...", 0),
-                    ("🔍 Analyzing the question...", 150),
-                    ("📚 Gathering knowledge...", 350),
-                    ("🌐 Searching on the web...", 600),
-                    ("🔬 Cross-referencing sources...", 900),
-                    ("📊 Processing information...", 1200),
-                    ("💡 Connecting the dots...", 1500),
-                    ("✨ Refining the details...", 1800),
-                    ("🎯 Finalizing response...", 2100)
+                    ("🧠 Thinking...", 0, 2),
+                    ("🔍 Analyzing the question...", 2, 4),
+                    ("📚 Gathering knowledge...", 4, 7),
+                    ("🌐 Searching on the web...", 7, 10),
+                    ("🔬 Cross-referencing sources...", 10, 13),
+                    ("📊 Processing information...", 13, 16),
+                    ("💡 Connecting the dots...", 16, 19),
+                    ("✨ Refining the details...", 19, 22),
+                    ("🎯 Finalizing response...", 22, 999)
                 ]
                 
                 current_stage_idx = 0
                 last_render_time = time.time()
                 RENDER_INTERVAL = 0.1
                 last_thinking_update = time.time()
-                THINKING_INTERVAL = 1.2  # Update tiap 1.2 detik
+                THINKING_INTERVAL = 0.8  # Update tiap 0.8 detik biar smooth
                 
                 ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
                 
@@ -717,17 +717,17 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                             if in_think_tag:
                                 thinking_text += delta.content
                                 current_time = time.time()
+                                elapsed = current_time - start_time
                                 
-                                # Tentukan stage berdasarkan panjang thinking text
-                                thinking_len = len(thinking_text)
-                                for i, (stage_text, threshold) in enumerate(thinking_stages):
-                                    if thinking_len >= threshold:
+                                # Tentukan stage berdasarkan WAKTU yang udah lewat
+                                for i, (stage_text, start_sec, end_sec) in enumerate(thinking_stages):
+                                    if start_sec <= elapsed < end_sec:
                                         current_stage_idx = i
+                                        break
                                 
                                 # Update animasi thinking
                                 if current_time - last_thinking_update >= THINKING_INTERVAL:
-                                    stage_text, _ = thinking_stages[current_stage_idx]
-                                    elapsed = int(current_time - start_time)
+                                    stage_text, _, _ = thinking_stages[current_stage_idx]
                                     
                                     thinking_container.markdown(f"""
                                     <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
