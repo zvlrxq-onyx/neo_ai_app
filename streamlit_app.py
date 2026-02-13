@@ -1,4 +1,3 @@
-
 import streamlit as st
 from groq import Groq
 from huggingface_hub import InferenceClient
@@ -616,13 +615,13 @@ if up:
     st.toast("✅ Image uploaded!", icon="📷")
 
 # STOP BUTTON - Show only when generating
-#if st.session_state.is_generating:
-#   col1, col2, col3 = st.columns([1, 1, 1])
-#    with col2:
-#        if st.button("⏹️ Stop Generation", use_container_width=True, type="primary"):
-#            st.session_state.stop_generation = True
-#            st.session_state.is_generating = False
-#            st.rerun()
+if st.session_state.is_generating:
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("⏹️ Stop Generation", use_container_width=True, type="primary"):
+            st.session_state.stop_generation = True
+            st.session_state.is_generating = False
+            st.rerun()
 
 # Chat Input
 if prompt := st.chat_input("Message NEO AI..."):
@@ -655,17 +654,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             "Vary your responses creatively - don't repeat the same phrases."
         )
         
-    # ========== DEEPSEEK R1 - ADVANCED THINKING STAGES ==========
+        # ========== DEEPSEEK R1 - ADVANCED THINKING STAGES ==========
         if engine == "DeepSeek":
-            # Kita paksa AI-nya buat mikir lewat prompt tambahan
-            deepseek_system = (
-                system_prompt + 
-                "\n\nIMPORTANT: You must think deeply before answering. "
-                "Always start your response with a detailed step-by-step reasoning process wrapped inside <think> tags. "
-                "After the reasoning, provide your final response in casual Indonesian."
-            )
-            
-            messages = [{"role": "system", "content": deepseek_system}]
+            messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
                     messages.append({"role": m["role"], "content": m["content"]})
@@ -677,12 +668,11 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             try:
                 start_time = time.time()
                 
-                # Gunakan max_tokens lebih besar karena Reasoning/DeepThink itu boros token
                 stream = client_hf.chat_completion(
                     messages=messages,
                     model="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
-                    max_tokens=4096, 
-                    temperature=0.6,
+                    max_tokens=2048,
+                    temperature=0.7,
                     stream=True
                 )
                 
@@ -691,33 +681,39 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 in_think_tag = False
                 buffer = ""
                 
-                # Visual stages biar keren di UI
+                # THINKING STAGES
                 thinking_stages = [
-                    ("🧠 Mengumpulkan data...", 0, 4),
-                    ("🔍 Menganalisis konteks...", 4, 8),
-                    ("🌐 Menghubungkan informasi...", 8, 15),
-                    ("📊 Memvalidasi jawaban...", 15, 25),
-                    ("🎯 Menyusun respon terbaik...", 25, 999)
+                    ("🧠 Thinking...", 0, 3),
+                    ("🔍 Analyzing the question...", 3, 6),
+                    ("🌐 Searching on the web...", 6, 10),
+                    ("📊 Processing information...", 10, 15),
+                    ("✨ Refining the details...", 15, 20),
+                    ("🎯 Finalizing response...", 20, 999)
                 ]
                 
+                current_stage = 0
                 last_render_time = time.time()
+                RENDER_INTERVAL = 0.1
                 last_thinking_update = time.time()
+                THINKING_INTERVAL = 1.5
                 
-                ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "🤖"
+                ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
                 
                 for chunk in stream:
+                    # Check stop flag
                     if st.session_state.stop_generation:
                         thinking_container.empty()
-                        res = answer_text.strip() + " [Dihentikan oleh user]" if answer_text else "Generasi dihentikan bro! 🛑"
+                        if answer_text:
+                            res = answer_text.strip() + " [Dihentikan oleh user]"
+                        else:
+                            res = "Generasi dihentikan bro! 🛑"
                         break
                     
                     if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
                         delta = chunk.choices[0].delta
                         if hasattr(delta, 'content') and delta.content:
-                            token = delta.content
-                            buffer += token
+                            buffer += delta.content
                             
-                            # Logika deteksi tag <think>
                             if "<think>" in buffer:
                                 in_think_tag = True
                                 buffer = buffer.replace("<think>", "")
@@ -728,45 +724,49 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                 thinking_text += parts[0]
                                 buffer = parts[1] if len(parts) > 1 else ""
                                 
-                                # Tampilkan durasi total berpikir
+                                # Show final thought time
                                 elapsed = int(time.time() - start_time)
                                 thinking_container.markdown(f"""
                                 <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
                                     <div class="thinking-container">
-                                        <span class="final-thought">💡 Berpikir selama {elapsed} detik</span>
+                                        <span class="final-thought">💡 Thought for {elapsed} seconds</span>
                                     </div>
                                 </div>
                                 """, unsafe_allow_html=True)
-                                time.sleep(0.5)
+                                time.sleep(1)
                                 thinking_container.empty()
                                 continue
                             
                             if in_think_tag:
-                                thinking_text += token
+                                thinking_text += delta.content
                                 current_time = time.time()
                                 elapsed = int(current_time - start_time)
                                 
-                                # Update teks "Thinking..." berdasarkan durasi
-                                if current_time - last_thinking_update >= 1.2:
-                                    stage_text = "🧠 Sedang berpikir..."
-                                    for text, start, end in thinking_stages:
-                                        if start <= elapsed < end:
-                                            stage_text = text
-                                            break
+                                # Determine current stage based on time
+                                for i, (stage_text, start_sec, end_sec) in enumerate(thinking_stages):
+                                    if start_sec <= elapsed < end_sec:
+                                        current_stage = i
+                                        break
+                                
+                                if current_time - last_thinking_update >= THINKING_INTERVAL:
+                                    stage_text, _, _ = thinking_stages[current_stage]
                                     
                                     thinking_container.markdown(f"""
                                     <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
                                         <div class="thinking-container">
                                             <div class="thinking-spinner"></div>
-                                            <span class="thinking-text">{stage_text} ({elapsed}s)</span>
+                                            <span class="thinking-text">{stage_text}</span>
                                         </div>
                                     </div>
                                     """, unsafe_allow_html=True)
                                     last_thinking_update = current_time
                             else:
-                                # Render jawaban final
-                                answer_text += token
-                                if time.time() - last_render_time >= 0.05:
+                                answer_text += delta.content
+                                current_time = time.time()
+                                
+                                if current_time - last_render_time >= RENDER_INTERVAL:
+                                    clean_answer = clean_text(answer_text)
+                                    
                                     response_container.markdown(f"""
                                     <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
                                         {ai_avatar_html}
@@ -776,18 +776,37 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                                                     max-width: 85%; border-left: 4px solid; 
                                                     border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
                                                     word-wrap: break-word;">
-                                            <div style="white-space: pre-wrap;">{clean_text(answer_text)}</div>
+                                            <div style="white-space: pre-wrap;">{clean_answer}</div>
                                         </div>
                                     </div>
                                     """, unsafe_allow_html=True)
-                                    last_render_time = time.time()
+                                    
+                                    last_render_time = current_time
+                
+                # Final render
+                thinking_container.empty()
+                if not st.session_state.stop_generation and answer_text:
+                    clean_answer = clean_text(answer_text)
+                    response_container.markdown(f"""
+                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                        {ai_avatar_html}
+                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                    color: #e9edef; padding: 15px 20px; 
+                                    border-radius: 5px 25px 25px 25px; 
+                                    max-width: 85%; border-left: 4px solid; 
+                                    border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                    word-wrap: break-word;">
+                            <div style="white-space: pre-wrap;">{clean_answer}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 if not res:
                     res = answer_text.strip() if answer_text else thinking_text.strip()
                     
             except Exception as e:
-                res = f"DeepSeek lagi limit atau error bro: {str(e)} 😅"
-
+                res = f"DeepSeek lagi sibuk nih bro! 😅 Coba model lain ya!"
+        
         # ========== GEMINI - WITH STOP ==========
         elif engine == "Gemini":
             messages_history = []
