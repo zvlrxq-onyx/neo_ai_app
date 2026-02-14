@@ -339,7 +339,7 @@ st.markdown("""
     }
     
     [data-testid="stChatInputTextArea"] {
-        border-radius: 25px !important;
+        border-radius: 12px !important;
         border: 2px solid #06b6d4 !important;
         background: #1a1a1a !important;
         padding: 12px 50px 12px 20px !important;
