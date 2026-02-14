@@ -453,6 +453,7 @@ st.markdown("""
 # --- 7. MODEL ENGINES WITH RATE LIMITS ---
 engines = {
     "Gemini 3 Flash Preview": {"type": "Gemini", "emoji": "✨", "limit": 10, "model": "gemini-3-flash-preview"},
+    "DeepSeek R1 Qwen 32B": {"type": "Groq", "emoji": "🧠", "limit": 15, "model": "deepseek-r1-distill-qwen-32b"},
     "LLaMA 4 Scout Vision": {"type": "Scout", "emoji": "👁️", "limit": 15, "model": "llama-4-scout"},
     "Mistral Small 24B": {"type": "Groq", "emoji": "🔥", "limit": 20, "model": "mistral-small-24b-instruct-25k"},
     "Gemma 2 9B": {"type": "Groq", "emoji": "💎", "limit": 30, "model": "gemma2-9b-it"},
