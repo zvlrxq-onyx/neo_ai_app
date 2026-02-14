@@ -528,7 +528,7 @@ engines = {
     "Gemini 3 Flash Preview": {"type": "Gemini", "emoji": "✨", "limit": 10, "model": "gemini-3-flash-preview"},
     "GPT-OSS 120B": {"type": "Groq", "emoji": "🤖", "limit": 20, "model": "openai/gpt-oss-120b"},
     "LLaMA 4 Scout Vision": {"type": "Scout", "emoji": "👁️", "limit": 15, "model": "llama-4-scout"},
-    "Mistral Small 24B": {"type": "Groq", "emoji": "🔥", "limit": 20, "model": "mistral-small-24b-instruct-25k"},
+    "Qwen3 32B": {"type": "Groq", "emoji": "🔥", "limit": 20, "model": "qwen/qwen3-32b"},
     "LLaMA 3.3 70B": {"type": "Groq", "emoji": "🦙", "limit": 15, "model": "llama-3.3-70b-versatile"},
     "LLaMA 3.1 8B": {"type": "Groq", "emoji": "⚡", "limit": 50, "model": "llama-3.1-8b-instant"},
     "Pollinations AI": {"type": "Pollinations", "emoji": "🎨", "limit": 100},
