@@ -689,27 +689,30 @@ for msg in st.session_state.messages:
     else:
         render_chat_bubble(msg["role"], msg["content"])
 
-# File Upload - Multi-Modal Support
-# Image uploader (bulat di kiri bawah - tetap fixed position)
-img_up = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed", key=f"img_uploader_{st.session_state.file_uploader_key}")
-if img_up: 
-    st.session_state.uploaded_image = img_up.getvalue()
-    st.session_state.uploaded_file_content = None
-    st.toast("✅ Image uploaded!", icon="📷")
-
-# File uploader (untuk semua file types - positioned below)
-file_up = st.file_uploader(
-    "📎 Upload Document/Code", 
-    type=["txt", "md", "py", "js", "jsx", "ts", "tsx", "html", "css", "json", "xml", "yml", "yaml", "php", "java", "cpp", "c", "h", "cs", "go", "rs", "rb", "swift", "kt", "sql", "sh", "bat", "pdf", "docx", "doc", "xlsx", "xls", "pptx", "ppt", "csv"],
-    key=f"file_uploader_{st.session_state.file_uploader_key}"
+# File Upload - Combined uploader for images and files
+up = st.file_uploader(
+    "", 
+    type=["png", "jpg", "jpeg", "txt", "md", "py", "js", "jsx", "ts", "tsx", "html", "css", "json", "xml", "yml", "yaml", "php", "java", "cpp", "c", "h", "cs", "go", "rs", "rb", "swift", "kt", "sql", "sh", "bat", "pdf", "docx", "doc", "xlsx", "xls", "pptx", "ppt", "csv"],
+    label_visibility="collapsed",
+    key=f"uploader_{st.session_state.file_uploader_key}"
 )
 
-if file_up:
-    file_content = extract_file_content(file_up)
-    st.session_state.uploaded_file_content = file_content
-    st.session_state.uploaded_file_name = file_up.name
-    st.session_state.uploaded_image = None
-    st.toast(f"✅ {file_up.name} uploaded!", icon="📄")
+if up:
+    file_name = up.name
+    file_extension = file_name.split('.')[-1].lower()
+    
+    # Check if it's an image
+    if file_extension in ['png', 'jpg', 'jpeg']:
+        st.session_state.uploaded_image = up.getvalue()
+        st.session_state.uploaded_file_content = None
+        st.toast("✅ Image uploaded!", icon="📷")
+    else:
+        # It's a file (code, PDF, doc, etc)
+        file_content = extract_file_content(up)
+        st.session_state.uploaded_file_content = file_content
+        st.session_state.uploaded_file_name = file_name
+        st.session_state.uploaded_image = None
+        st.toast(f"✅ {file_name} uploaded!", icon="📄")
 
 # Chat Input
 if prompt := st.chat_input("Message NEO AI..."):
