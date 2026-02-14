@@ -239,8 +239,78 @@ if "current_session_key" not in st.session_state:
 if "uploaded_image" not in st.session_state:
     st.session_state.uploaded_image = None
 
+if "uploaded_file_content" not in st.session_state:
+    st.session_state.uploaded_file_content = None
+
+if "uploaded_file_name" not in st.session_state:
+    st.session_state.uploaded_file_name = None
+
 if "file_uploader_key" not in st.session_state:
     st.session_state.file_uploader_key = 0
+
+def extract_file_content(file_obj):
+    """Extract content from various file types"""
+    file_name = file_obj.name
+    file_extension = file_name.split('.')[-1].lower()
+    
+    try:
+        # Text-based files
+        if file_extension in ['txt', 'md', 'py', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'json', 'xml', 'yml', 'yaml', 'php', 'java', 'cpp', 'c', 'h', 'cs', 'go', 'rs', 'rb', 'swift', 'kt', 'sql', 'sh', 'bat', 'env', 'gitignore', 'log']:
+            content = file_obj.read().decode('utf-8', errors='ignore')
+            return f"File: {file_name}\nType: {file_extension.upper()} Code/Text File\n\nContent:\n{content}"
+        
+        # PDF files
+        elif file_extension == 'pdf':
+            import PyPDF2
+            pdf_reader = PyPDF2.PdfReader(file_obj)
+            text = ""
+            for page_num, page in enumerate(pdf_reader.pages):
+                text += f"\n--- Page {page_num + 1} ---\n"
+                text += page.extract_text()
+            return f"File: {file_name}\nType: PDF Document\nPages: {len(pdf_reader.pages)}\n\nContent:\n{text}"
+        
+        # Word documents
+        elif file_extension in ['docx', 'doc']:
+            from docx import Document
+            doc = Document(file_obj)
+            text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+            return f"File: {file_name}\nType: Word Document\nParagraphs: {len(doc.paragraphs)}\n\nContent:\n{text}"
+        
+        # Excel files
+        elif file_extension in ['xlsx', 'xls']:
+            import pandas as pd
+            df = pd.read_excel(file_obj, sheet_name=None)
+            text = f"File: {file_name}\nType: Excel Spreadsheet\nSheets: {len(df)}\n\n"
+            for sheet_name, sheet_data in df.items():
+                text += f"\n--- Sheet: {sheet_name} ---\n"
+                text += f"Rows: {len(sheet_data)}, Columns: {len(sheet_data.columns)}\n"
+                text += sheet_data.to_string(max_rows=50)
+                text += "\n"
+            return text
+        
+        # PowerPoint files
+        elif file_extension in ['pptx', 'ppt']:
+            from pptx import Presentation
+            prs = Presentation(file_obj)
+            text = f"File: {file_name}\nType: PowerPoint Presentation\nSlides: {len(prs.slides)}\n\n"
+            for slide_num, slide in enumerate(prs.slides):
+                text += f"\n--- Slide {slide_num + 1} ---\n"
+                for shape in slide.shapes:
+                    if hasattr(shape, "text"):
+                        text += shape.text + "\n"
+            return text
+        
+        # CSV files
+        elif file_extension == 'csv':
+            import pandas as pd
+            df = pd.read_csv(file_obj)
+            return f"File: {file_name}\nType: CSV File\nRows: {len(df)}, Columns: {len(df.columns)}\n\nPreview:\n{df.head(20).to_string()}"
+        
+        else:
+            return f"File: {file_name}\nType: {file_extension.upper()}\n\nError: File type not supported yet. Supported types: Code files (.py, .js, .php, etc), PDF, Word (.docx), Excel (.xlsx), PowerPoint (.pptx), CSV, and text files."
+    
+    except Exception as e:
+        return f"File: {file_name}\nError reading file: {str(e)}"
 
 # --- 4. API KEYS ---
 try:
@@ -619,11 +689,29 @@ for msg in st.session_state.messages:
     else:
         render_chat_bubble(msg["role"], msg["content"])
 
-# File Upload
-up = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed", key=f"uploader_{st.session_state.file_uploader_key}")
-if up: 
-    st.session_state.uploaded_image = up.getvalue()
-    st.toast("✅ Image uploaded!", icon="📷")
+# File Upload - Multi-Modal Support
+col_upload1, col_upload2 = st.columns([1, 20])
+with col_upload1:
+    # Image uploader (bulat di kiri bawah)
+    img_up = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed", key=f"img_uploader_{st.session_state.file_uploader_key}")
+    if img_up: 
+        st.session_state.uploaded_image = img_up.getvalue()
+        st.session_state.uploaded_file_content = None
+        st.toast("✅ Image uploaded!", icon="📷")
+
+# File uploader (untuk semua file types)
+file_up = st.file_uploader(
+    "📎 Upload Document/Code", 
+    type=["txt", "md", "py", "js", "jsx", "ts", "tsx", "html", "css", "json", "xml", "yml", "yaml", "php", "java", "cpp", "c", "h", "cs", "go", "rs", "rb", "swift", "kt", "sql", "sh", "bat", "pdf", "docx", "doc", "xlsx", "xls", "pptx", "ppt", "csv"],
+    key=f"file_uploader_{st.session_state.file_uploader_key}"
+)
+
+if file_up:
+    file_content = extract_file_content(file_up)
+    st.session_state.uploaded_file_content = file_content
+    st.session_state.uploaded_file_name = file_up.name
+    st.session_state.uploaded_image = None
+    st.toast(f"✅ {file_up.name} uploaded!", icon="📄")
 
 # Chat Input
 if prompt := st.chat_input("Message NEO AI..."):
@@ -686,6 +774,15 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         engine_config = engines[selected_model]
         engine_type = engine_config["type"]
         
+        # Prepare user message with file content if available
+        final_user_msg = user_msg
+        if st.session_state.uploaded_file_content:
+            final_user_msg = f"{st.session_state.uploaded_file_content}\n\nUser Question: {user_msg}"
+            # Clear file content after using
+            st.session_state.uploaded_file_content = None
+            st.session_state.uploaded_file_name = None
+            st.session_state.file_uploader_key += 1
+        
         # ========== GEMINI ==========
         if engine_type == "Gemini":
             messages_history = []
@@ -704,7 +801,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             try:
                 chat = client_gemini.start_chat(history=messages_history)
-                stream = chat.send_message(user_msg, stream=True)
+                stream = chat.send_message(final_user_msg, stream=True)
                 
                 for chunk in stream:
                     if chunk.text:
@@ -769,7 +866,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 messages = [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": [
-                        {"type": "text", "text": f"{user_msg} (Image info: {pixel_info})"},
+                        {"type": "text", "text": f"{final_user_msg} (Image info: {pixel_info})"},
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                     ]}
                 ]
@@ -791,7 +888,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 for m in st.session_state.messages[:-1]:
                     if m.get("type") != "image":
                         messages.append({"role": m["role"], "content": m["content"]})
-                messages.append({"role": "user", "content": user_msg})
+                messages.append({"role": "user", "content": final_user_msg})
                 
                 stream = client_groq.chat.completions.create(
                     model="llama-3.3-70b-versatile",
@@ -848,7 +945,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
                     messages.append({"role": m["role"], "content": m["content"]})
-            messages.append({"role": "user", "content": user_msg})
+            messages.append({"role": "user", "content": final_user_msg})
             
             response_container = st.empty()
             res_text = ""
@@ -909,6 +1006,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         
         # ========== POLLINATIONS AI ==========
         elif engine_type == "Pollinations":
+            # Image generation doesn't use file content, only the prompt
             encoded_prompt = urllib.parse.quote(user_msg)
             image_url = f"{POLLINATIONS_API}{encoded_prompt}"
             
