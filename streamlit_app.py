@@ -453,6 +453,7 @@ st.markdown("""
 # --- 7. MODEL ENGINES WITH RATE LIMITS ---
 engines = {
     "Gemini 3 Flash Preview": {"type": "Gemini", "emoji": "✨", "limit": 10, "model": "gemini-3-flash-preview"},
+    "LLaMA 4 Scout Vision": {"type": "Scout", "emoji": "👁️", "limit": 15, "model": "llama-4-scout"},
     "Mistral Small 24B": {"type": "Groq", "emoji": "🔥", "limit": 20, "model": "mistral-small-24b-instruct-25k"},
     "Gemma 2 9B": {"type": "Groq", "emoji": "💎", "limit": 30, "model": "gemma2-9b-it"},
     "LLaMA 3.3 70B": {"type": "Groq", "emoji": "🦙", "limit": 15, "model": "llama-3.3-70b-versatile"},
@@ -744,6 +745,97 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 res = res_text
             except Exception as e:
                 res = f"Gemini error bro: {str(e)} 😰"
+        
+        # ========== LLAMA 4 SCOUT VISION ==========
+        elif engine_type == "Scout":
+            current_image_data = st.session_state.uploaded_image
+            
+            response_container = st.empty()
+            res_text = ""
+            
+            last_render_time = time.time()
+            RENDER_INTERVAL = 0.1
+            
+            ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
+            
+            if current_image_data:
+                # Image uploaded - use vision mode
+                pixel_info = analyze_image_pixels(current_image_data)
+                base64_image = base64.b64encode(current_image_data).decode('utf-8')
+                
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": f"{user_msg} (Image info: {pixel_info})"},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                    ]}
+                ]
+                
+                stream = client_groq.chat.completions.create(
+                    model="llama-3.2-90b-vision-preview",
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=1024,
+                    stream=True
+                )
+                
+                st.session_state.uploaded_image = None
+            else:
+                # No image - use text mode
+                messages = [{"role": "system", "content": system_prompt}]
+                for m in st.session_state.messages[:-1]:
+                    if m.get("type") != "image":
+                        messages.append({"role": m["role"], "content": m["content"]})
+                messages.append({"role": "user", "content": user_msg})
+                
+                stream = client_groq.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=1024,
+                    stream=True
+                )
+            
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    res_text += chunk.choices[0].delta.content
+                    current_time = time.time()
+                    
+                    if current_time - last_render_time >= RENDER_INTERVAL:
+                        clean_res = clean_text(res_text)
+                        
+                        response_container.markdown(f"""
+                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                            {ai_avatar_html}
+                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                        color: #e9edef; padding: 15px 20px; 
+                                        border-radius: 5px 25px 25px 25px; 
+                                        max-width: 85%; border-left: 4px solid; 
+                                        border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                        word-wrap: break-word;">
+                                <div style="white-space: pre-wrap;">{clean_res}</div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        last_render_time = current_time
+            
+            clean_res = clean_text(res_text)
+            response_container.markdown(f"""
+            <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                {ai_avatar_html}
+                <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                            color: #e9edef; padding: 15px 20px; 
+                            border-radius: 5px 25px 25px 25px; 
+                            max-width: 85%; border-left: 4px solid; 
+                            border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                            word-wrap: break-word;">
+                    <div style="white-space: pre-wrap;">{clean_res}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            res = res_text
         
         # ========== GROQ MODELS ==========
         elif engine_type == "Groq":
