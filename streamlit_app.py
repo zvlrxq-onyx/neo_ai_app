@@ -183,7 +183,7 @@ try:
     client_groq = Groq(api_key=st.secrets["GROQ_API_KEY"])
     client_hf = InferenceClient(token=st.secrets["HF_TOKEN"])
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    client_gemini = genai.GenerativeModel('gemini-2.0-flash-exp')
+    client_gemini = genai.GenerativeModel('gemini-2.5-flash')
     POLLINATIONS_API = "https://image.pollinations.ai/prompt/"
 except Exception as e:
     st.error(f"❌ API Keys Error: {e}")
@@ -283,8 +283,10 @@ st.markdown("""
         box-shadow: 0 0 20px rgba(139,92,246,0.6) !important;
     }
     
+    /* ARROW POINTING UP */
     [data-testid="stChatInputSubmitButton"] svg {
         color: white !important;
+        transform: rotate(-90deg) !important;
     }
     
     /* ANIMATIONS */
