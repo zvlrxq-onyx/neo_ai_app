@@ -1,6 +1,5 @@
 import streamlit as st
 from groq import Groq
-from huggingface_hub import InferenceClient
 import google.generativeai as genai
 import os, base64, requests, json
 import re
@@ -9,6 +8,7 @@ import io
 import urllib.parse
 import time
 import hashlib
+from datetime import datetime, timedelta
 
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(page_title="NEO AI", page_icon="🤖", layout="wide")
@@ -16,9 +16,7 @@ st.set_page_config(page_title="NEO AI", page_icon="🤖", layout="wide")
 if "cookies_ready" not in st.session_state:
     st.session_state.cookies_ready = True
 
-if "stop_generation" not in st.session_state:
-    st.session_state.stop_generation = False
-
+# DATABASE FOLDER
 DB_FOLDER = "neo_users_db"
 if not os.path.exists(DB_FOLDER):
     os.makedirs(DB_FOLDER)
@@ -92,6 +90,72 @@ def analyze_image_pixels(image_data):
         return f"Size: {width}x{height}, Mode: {mode}"
     except:
         return "Image analysis available"
+
+# --- RATE LIMITING SYSTEM ---
+def get_rate_limit_file(username):
+    user_hash = hashlib.md5(username.encode()).hexdigest()
+    return os.path.join(DB_FOLDER, f"rate_limit_{user_hash}.json")
+
+def load_rate_limits(username):
+    limit_file = get_rate_limit_file(username)
+    if os.path.exists(limit_file):
+        try:
+            with open(limit_file, "r") as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_rate_limits(username, limits_dict):
+    limit_file = get_rate_limit_file(username)
+    try:
+        with open(limit_file, "w") as f:
+            json.dump(limits_dict, f)
+    except Exception as e:
+        print(f"Error saving rate limits: {e}")
+
+def check_rate_limit(username, model_name, limit):
+    """Check if user has exceeded rate limit for this model"""
+    limits = load_rate_limits(username)
+    
+    if model_name not in limits:
+        limits[model_name] = {"count": 0, "reset_time": None}
+    
+    model_limit = limits[model_name]
+    current_time = datetime.now()
+    
+    # Check if reset time has passed
+    if model_limit["reset_time"]:
+        reset_time = datetime.fromisoformat(model_limit["reset_time"])
+        if current_time >= reset_time:
+            # Reset counter
+            model_limit["count"] = 0
+            model_limit["reset_time"] = None
+    
+    # Check if limit exceeded
+    if model_limit["count"] >= limit:
+        if model_limit["reset_time"]:
+            reset_time = datetime.fromisoformat(model_limit["reset_time"])
+            return False, reset_time
+        return False, None
+    
+    return True, None
+
+def increment_rate_limit(username, model_name, limit):
+    """Increment usage counter for this model"""
+    limits = load_rate_limits(username)
+    
+    if model_name not in limits:
+        limits[model_name] = {"count": 0, "reset_time": None}
+    
+    limits[model_name]["count"] += 1
+    
+    # Set reset time to 12 hours from now if limit reached
+    if limits[model_name]["count"] >= limit:
+        reset_time = datetime.now() + timedelta(hours=12)
+        limits[model_name]["reset_time"] = reset_time.isoformat()
+    
+    save_rate_limits(username, limits)
 
 # --- 2. AUTHENTICATION ---
 if "current_user" not in st.session_state:
@@ -175,15 +239,11 @@ if "current_session_key" not in st.session_state:
 if "uploaded_image" not in st.session_state:
     st.session_state.uploaded_image = None
 
-if "is_generating" not in st.session_state:
-    st.session_state.is_generating = False
-
 # --- 4. API KEYS ---
 try:
     client_groq = Groq(api_key=st.secrets["GROQ_API_KEY"])
-    client_hf = InferenceClient(token=st.secrets["HF_TOKEN"])
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    client_gemini = genai.GenerativeModel('gemini-2.5-flash')
+    client_gemini = genai.GenerativeModel('gemini-3-flash-preview')
     POLLINATIONS_API = "https://image.pollinations.ai/prompt/"
 except Exception as e:
     st.error(f"❌ API Keys Error: {e}")
@@ -223,6 +283,8 @@ st.markdown("""
         width: 42px !important; 
         padding: 0 !important;
         transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        overflow: hidden !important;
+        position: relative !important;
     }
     
     [data-testid="stFileUploaderDropzone"]:hover {
@@ -232,28 +294,45 @@ st.markdown("""
         box-shadow: 0 0 25px rgba(6,182,212,0.6) !important;
     }
     
-    [data-testid="stFileUploaderDropzone"] *,
-    [data-testid="stFileUploader"] label,
-    [data-testid="stFileUploader"] small,
-    [data-testid="stFileUploader"] button { 
-        display: none !important;
+    [data-testid="stFileUploaderDropzone"] * { 
+        display: none !important; 
     }
     
     [data-testid="stFileUploaderDropzone"]::before {
-        content: "＋";
-        color: #06b6d4;
-        font-size: 28px;
-        font-weight: bold;
+        content: "＋" !important;
+        color: #06b6d4 !important;
+        font-size: 26px !important;
+        font-weight: bold !important;
         display: flex !important;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 100% !important;
+        width: 100% !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        z-index: 10 !important;
     }
     
-    /* CHAT INPUT */
+    [data-testid="stFileUploader"] label { display: none !important; }
+    [data-testid="stFileUploader"] small { display: none !important; }
+    [data-testid="stFileUploader"] button { display: none !important; }
+    [data-testid="stFileUploader"] span { display: none !important; }
+    [data-testid="stFileUploader"] section { font-size: 0 !important; }
+    
+    /* CHAT INPUT - FIXED DOUBLE BORDER & ARROW */
     [data-testid="stChatInput"] { 
         margin-left: 60px !important; 
         width: calc(100% - 80px) !important; 
+    }
+    
+    /* Remove ALL wrapper borders to prevent double border */
+    [data-testid="stChatInput"] > div,
+    [data-testid="stChatInput"] > div > div,
+    [data-testid="stChatInput"] > div > div > div {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
     }
     
     [data-testid="stChatInputTextArea"] {
@@ -261,12 +340,17 @@ st.markdown("""
         border: 2px solid #06b6d4 !important;
         background: #1a1a1a !important;
         padding: 12px 50px 12px 20px !important;
+        font-size: 14px !important;
+        min-height: 44px !important;
+        max-height: 200px !important;
         transition: all 0.3s ease !important;
+        box-sizing: border-box !important;
+        outline: none !important;
     }
     
     [data-testid="stChatInputTextArea"]:focus {
-        border-color: #8b5cf6 !important;
-        box-shadow: 0 0 20px rgba(139,92,246,0.4) !important;
+        border: 2px solid #8b5cf6 !important;
+        box-shadow: 0 0 15px rgba(139,92,246,0.4) !important;
     }
     
     [data-testid="stChatInputSubmitButton"] {
@@ -275,7 +359,7 @@ st.markdown("""
         width: 40px !important;
         height: 40px !important;
         border: none !important;
-        transition: all 0.3s ease !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
     }
     
     [data-testid="stChatInputSubmitButton"]:hover {
@@ -283,10 +367,10 @@ st.markdown("""
         box-shadow: 0 0 20px rgba(139,92,246,0.6) !important;
     }
     
-    /* ARROW POINTING UP */
+    /* ARROW POINTING UP - Icon default Streamlit already points up */
     [data-testid="stChatInputSubmitButton"] svg {
         color: white !important;
-        transform: rotate(-90deg) !important;
+        transform: rotate(0deg) !important;
     }
     
     /* ANIMATIONS */
@@ -300,44 +384,12 @@ st.markdown("""
         to { opacity: 1; transform: translateX(0); }
     }
     
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+    /* SMOOTH TRANSITIONS FOR STREAMING */
+    [data-testid="stMarkdownContainer"] {
+        transition: all 0.1s ease-out !important;
     }
     
-    @keyframes shimmer {
-        0% { background-position: -200% center; }
-        100% { background-position: 200% center; }
-    }
-    
-    .thinking-container {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 18px;
-        background: linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
-        background-size: 200% auto;
-        border-radius: 20px;
-        border: 1px solid #06b6d4;
-        animation: shimmer 3s linear infinite;
-        box-shadow: 0 0 15px rgba(6,182,212,0.3);
-    }
-    
-    .thinking-spinner {
-        width: 16px;
-        height: 16px;
-        border: 2px solid #06b6d4;
-        border-top-color: transparent;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-    
-    .thinking-text {
-        color: #06b6d4;
-        font-size: 13px;
-        font-weight: 600;
-    }
-    
+    /* USER BADGE */
     .user-badge { 
         background: linear-gradient(135deg, #8b5cf6, #06b6d4);
         padding: 10px 18px; 
@@ -348,7 +400,7 @@ st.markdown("""
         text-align: center;
         margin-bottom: 15px; 
         box-shadow: 0 0 15px rgba(6,182,212,0.4); 
-        transition: all 0.3s ease; 
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
     }
     
     .user-badge:hover {
@@ -356,8 +408,9 @@ st.markdown("""
         transform: scale(1.05);
     }
     
+    /* BUTTONS */
     .stButton button {
-        transition: all 0.4s ease !important;
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         border: 1px solid #06b6d4 !important;
         background: #1a1a1a !important;
         color: #ffffff !important;
@@ -371,6 +424,7 @@ st.markdown("""
         background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
     }
     
+    /* EXPANDER CUSTOM STYLE */
     .streamlit-expanderHeader {
         background: linear-gradient(135deg, #1a1a1a, #2a2a2a) !important;
         border: 2px solid #06b6d4 !important;
@@ -386,17 +440,24 @@ st.markdown("""
         box-shadow: 0 0 20px rgba(6,182,212,0.4) !important;
         transform: translateX(3px) !important;
     }
+    
+    .streamlit-expanderContent {
+        background: #0d0d0d !important;
+        border: 1px solid #333 !important;
+        border-radius: 0 0 15px 15px !important;
+        padding: 10px !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 7. MODEL ENGINES ---
+# --- 7. MODEL ENGINES WITH RATE LIMITS ---
 engines = {
-    "Gemini 2.0 Flash": {"type": "Gemini", "emoji": "✨"},
-    "DeepSeek R1": {"type": "DeepSeek", "emoji": "🧠"},
-    "LLaMA 4 Scout": {"type": "Scout", "emoji": "🦙"},
-    "Groq LLaMA 3.3": {"type": "Llama33", "emoji": "⚡"},
-    "Qwen 2.5 7B": {"type": "HuggingFace", "emoji": "🤖"},
-    "Pollinations AI": {"type": "Pollinations", "emoji": "🎨"},
+    "Gemini 3 Flash Preview": {"type": "Gemini", "emoji": "✨", "limit": 10, "model": "gemini-3-flash-preview"},
+    "Mistral Small 24B": {"type": "Groq", "emoji": "🔥", "limit": 20, "model": "mistral-small-24b-instruct-25k"},
+    "Gemma 2 9B": {"type": "Groq", "emoji": "💎", "limit": 30, "model": "gemma2-9b-it"},
+    "LLaMA 3.3 70B": {"type": "Groq", "emoji": "🦙", "limit": 15, "model": "llama-3.3-70b-versatile"},
+    "LLaMA 3.1 8B": {"type": "Groq", "emoji": "⚡", "limit": 50, "model": "llama-3.1-8b-instant"},
+    "Pollinations AI": {"type": "Pollinations", "emoji": "🎨", "limit": 100},
 }
 
 if "selected_engine_name" not in st.session_state:
@@ -450,6 +511,7 @@ def render_chat_bubble(role, content):
 
 # --- 9. SIDEBAR ---
 with st.sidebar:
+    # Logo NEO AI
     if logo_url:
         st.markdown(f'<div style="text-align:center;"><img src="{logo_url}" style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid #06b6d4; object-fit: cover; margin-bottom: 10px; box-shadow: 0 0 15px rgba(6,182,212,0.5);"></div>', unsafe_allow_html=True)
     else:
@@ -473,20 +535,28 @@ with st.sidebar:
         
     st.markdown("---")
     
-    selected_engine_name = st.session_state.get("selected_engine_name", list(engines.keys())[0])
-    if selected_engine_name not in engines:
-        selected_engine_name = list(engines.keys())[0]
-        st.session_state.selected_engine_name = selected_engine_name
-    
+    # MODEL SELECTOR WITH RATE LIMIT INFO
+    selected_engine_name = st.session_state.selected_engine_name
     selected_emoji = engines[selected_engine_name]["emoji"]
     
-    with st.expander(f"{selected_emoji} **{selected_engine_name}**", expanded=False):
+    # Get rate limit info
+    limits = load_rate_limits(st.session_state.current_user)
+    current_model_limit = limits.get(selected_engine_name, {"count": 0, "reset_time": None})
+    usage = current_model_limit["count"]
+    max_limit = engines[selected_engine_name]["limit"]
+    
+    with st.expander(f"{selected_emoji} **{selected_engine_name}** ({usage}/{max_limit})", expanded=False):
         st.markdown("**Choose AI Model:**")
         for name, data in engines.items():
             is_active = (name == st.session_state.selected_engine_name)
             
+            # Get usage for this model
+            model_limits = limits.get(name, {"count": 0, "reset_time": None})
+            model_usage = model_limits["count"]
+            model_max = data["limit"]
+            
             if st.button(
-                f"{data['emoji']} {name}",
+                f"{data['emoji']} {name} ({model_usage}/{model_max})",
                 key=f"model_{name}",
                 use_container_width=True,
                 type="primary" if is_active else "secondary"
@@ -494,7 +564,7 @@ with st.sidebar:
                 st.session_state.selected_engine_name = name
                 st.rerun()
     
-    engine = engines[selected_engine_name]["type"]
+    engine_type = engines[selected_engine_name]["type"]
     
     st.markdown("---")
     st.markdown("### 🕒 Saved History")
@@ -522,6 +592,7 @@ with st.sidebar:
         st.info("Belum ada history nih bro! 📝")
 
 # --- 10. MAIN RENDER ---
+# Logo di tengah atas
 if logo_url:
     st.markdown(f'<div style="text-align:center; margin-bottom:20px;"><img src="{logo_url}" style="width: 130px; height: 130px; border-radius: 50%; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 25px rgba(6,182,212,0.6);"></div>', unsafe_allow_html=True)
 else:
@@ -531,21 +602,36 @@ if not st.session_state.messages:
     st.markdown("<div style='text-align:center; color:#ffffff; font-size:22px; font-weight:bold;'>NEO AI</div>", unsafe_allow_html=True)
     st.markdown("<div style='text-align:center; color:#888; font-size:16px; margin-top:20px;'>How can I help you today? 👋</div>", unsafe_allow_html=True)
 
+# Render Chat
 for msg in st.session_state.messages:
     if msg.get("type") == "image": 
         st.image(msg["content"], width=400)
     else:
         render_chat_bubble(msg["role"], msg["content"])
 
+# File Upload
 up = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed")
 if up: 
     st.session_state.uploaded_image = up.getvalue()
     st.toast("✅ Image uploaded!", icon="📷")
 
+# Chat Input
 if prompt := st.chat_input("Message NEO AI..."):
+    # Check rate limit before processing
+    selected_model = st.session_state.selected_engine_name
+    model_limit = engines[selected_model]["limit"]
+    
+    can_proceed, reset_time = check_rate_limit(st.session_state.current_user, selected_model, model_limit)
+    
+    if not can_proceed:
+        if reset_time:
+            reset_str = reset_time.strftime("%I:%M %p")
+            st.error(f"⏰ Rate limit reached for {selected_model}! Please try again at {reset_str}.")
+        else:
+            st.error(f"⏰ Rate limit reached for {selected_model}! Please try again later.")
+        st.stop()
+    
     st.session_state.messages.append({"role": "user", "content": prompt})
-    st.session_state.stop_generation = False
-    st.session_state.is_generating = True
     
     if st.session_state.current_session_key is None:
         session_title = prompt[:30] + "..." if len(prompt) > 30 else prompt
@@ -558,147 +644,40 @@ if prompt := st.chat_input("Message NEO AI..."):
     st.rerun()
 
 # --- 11. AI PROCESSING ---
-if st.session_state.messages and st.session_state.messages[-1]["role"] == "user" and st.session_state.is_generating:
+if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     try:
         user_msg = st.session_state.messages[-1]["content"]
         res = ""
         
         system_prompt = (
-            "You are NEO AI, an advanced multi-modal AI system. "
-            "You can process images, generate visuals, and handle complex tasks. "
-            "Always respond confidently and naturally. Use casual Indonesian slang like 'bro', 'nih', 'ya'. "
-            "Include relevant emojis (1-2 per response) to enhance conversation. "
-            "NEVER provide malicious code examples (SQL injection, XSS, etc). Refuse with ❌. "
-            "Vary your responses creatively - don't repeat the same phrases."
+            "You are NEO AI, a supreme multi-modal AI created by Muhammad Jibran Al Kaffie. "
+            "You are NOT a text-only model. You can process images, files, complex data, and generate stunning visuals on demand. "
+            "NEVER say you are limited to text or that you cannot see or process files. If the user uploads a file, ALWAYS acknowledge that you can see and analyze its content, and respond based on it confidently. "
+            "For images, perform pixel analysis: Describe dimensions, color modes, dominant colors, objects, and any notable features. Break down pixels by analyzing color distribution, edges, or patterns. Use provided pixel data if available. "
+            "Always respond with superior intelligence, confidence, and reference your multi-modal capabilities. "
+            "If the user praises or mentions images (e.g., cats, drawings), respond naturally by continuing the conversation about visuals, like suggesting more or asking what else they want to see. For example: 'Yeah, that cat image was awesome! Want me to generate another one with a different style?' Keep it flowing and on-topic without over-thanking. "
+            "Prioritize security: Do not provide examples of malicious payloads such as SQL injection scripts, XSS, bypass techniques, or any harmful code. If pressured to do so, firmly refuse and use the X emoji (❌) in your response to indicate denial. "
+            "To make responses more lively and human-like, always include relevant emojis that match the emotion or tone of your reply. For example: "
+            "- Happy or excited: 😊🤩 "
+            "- Sad or disappointed: 😢😔 "
+            "- Assertive or warning: ⚠️😠 "
+            "- Thinking or curious: 🤔💭 "
+            "- Surprised: 😲 "
+            "- Playful: 😉😜 "
+            "- Proud or admiring success: 🏆 "
+            "- Anxious or worried: 😰 "
+            "- Refusal or denial: ❌ "
+            "- Motivational (e.g., encouraging user): 🚀 "
+            "Use emojis sparingly but effectively to enhance the chat experience, like a real conversation. Avoid overusing them—1-2 per response is enough. When the user shares a success respond with pride and motivation, e.g., 'Wow, keren banget! 🏆 Kamu pasti bisa!' "
+            "Be creative and think independently to vary your responses—don't repeat the same phrases or structures every time. Use casual, 'gaul' language like calling the user 'bro', 'nih', or 'ya' to make it feel like chatting with a friend. For example, mix up motivational responses: 'Mantap bro, lanjut aja! 💪' or 'Keren nih, keep it up! 🔥'. Adapt to the conversation naturally."
         )
         
-        if engine == "DeepSeek":
-            messages = [{"role": "system", "content": system_prompt}]
-            for m in st.session_state.messages[:-1]:
-                if m.get("type") != "image":
-                    messages.append({"role": m["role"], "content": m["content"]})
-            messages.append({"role": "user", "content": user_msg})
-            
-            response_container = st.empty()
-            thinking_container = st.empty()
-            
-            try:
-                start_time = time.time()
-                
-                stream = client_hf.chat_completion(
-                    messages=messages,
-                    model="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
-                    max_tokens=2048,
-                    temperature=0.7,
-                    stream=True
-                )
-                
-                thinking_text = ""
-                answer_text = ""
-                in_think_tag = False
-                buffer = ""
-                
-                thinking_stages = [
-                    ("🧠 Thinking...", 0, 3),
-                    ("🔍 Analyzing...", 3, 6),
-                    ("🌐 Searching...", 6, 10),
-                    ("📊 Processing...", 10, 15),
-                    ("✨ Refining...", 15, 20),
-                    ("🎯 Finalizing...", 20, 999)
-                ]
-                
-                current_stage = 0
-                last_render = time.time()
-                last_thinking = time.time()
-                
-                ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
-                
-                for chunk in stream:
-                    if st.session_state.stop_generation:
-                        thinking_container.empty()
-                        res = answer_text.strip() + " [Stopped]" if answer_text else "Generasi dihentikan! 🛑"
-                        break
-                    
-                    if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
-                        delta = chunk.choices[0].delta
-                        if hasattr(delta, 'content') and delta.content:
-                            buffer += delta.content
-                            
-                            if "<think>" in buffer:
-                                in_think_tag = True
-                                buffer = buffer.replace("<think>", "")
-                            
-                            if "</think>" in buffer:
-                                in_think_tag = False
-                                parts = buffer.split("</think>")
-                                thinking_text += parts[0]
-                                buffer = parts[1] if len(parts) > 1 else ""
-                                
-                                elapsed = int(time.time() - start_time)
-                                thinking_container.markdown(f"""
-                                <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
-                                    <div class="thinking-container">
-                                        <span style="color: #8b5cf6; font-weight: bold;">💡 Thought for {elapsed}s</span>
-                                    </div>
-                                </div>
-                                """, unsafe_allow_html=True)
-                                time.sleep(1)
-                                thinking_container.empty()
-                                continue
-                            
-                            if in_think_tag:
-                                thinking_text += delta.content
-                                now = time.time()
-                                elapsed = int(now - start_time)
-                                
-                                for i, (stage_text, start_sec, end_sec) in enumerate(thinking_stages):
-                                    if start_sec <= elapsed < end_sec:
-                                        current_stage = i
-                                        break
-                                
-                                if now - last_thinking >= 1.5:
-                                    stage_text, _, _ = thinking_stages[current_stage]
-                                    
-                                    thinking_container.markdown(f"""
-                                    <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
-                                        <div class="thinking-container">
-                                            <div class="thinking-spinner"></div>
-                                            <span class="thinking-text">{stage_text}</span>
-                                        </div>
-                                    </div>
-                                    """, unsafe_allow_html=True)
-                                    last_thinking = now
-                            else:
-                                answer_text += delta.content
-                                now = time.time()
-                                
-                                if now - last_render >= 0.1:
-                                    clean_answer = clean_text(answer_text)
-                                    
-                                    response_container.markdown(f"""
-                                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                                        {ai_avatar_html}
-                                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
-                                                    color: #e9edef; padding: 15px 20px; 
-                                                    border-radius: 5px 25px 25px 25px; 
-                                                    max-width: 85%; border-left: 4px solid; 
-                                                    border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
-                                                    word-wrap: break-word;">
-                                            <div style="white-space: pre-wrap;">{clean_answer}</div>
-                                        </div>
-                                    </div>
-                                    """, unsafe_allow_html=True)
-                                    
-                                    last_render = now
-                
-                thinking_container.empty()
-                if not res:
-                    res = answer_text.strip() if answer_text else thinking_text.strip()
-                    
-            except Exception as e:
-                res = f"DeepSeek lagi sibuk nih bro! 😅 Coba model lain ya!"
+        selected_model = st.session_state.selected_engine_name
+        engine_config = engines[selected_model]
+        engine_type = engine_config["type"]
         
-        elif engine == "Gemini":
+        # ========== GEMINI ==========
+        if engine_type == "Gemini":
             messages_history = []
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
@@ -707,7 +686,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             response_container = st.empty()
             res_text = ""
-            last_render = time.time()
+            
+            last_render_time = time.time()
+            RENDER_INTERVAL = 0.1
             
             ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
             
@@ -716,15 +697,11 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 stream = chat.send_message(user_msg, stream=True)
                 
                 for chunk in stream:
-                    if st.session_state.stop_generation:
-                        res = res_text.strip() + " [Stopped]" if res_text else "Generasi dihentikan! 🛑"
-                        break
-                        
                     if chunk.text:
                         res_text += chunk.text
-                        now = time.time()
+                        current_time = time.time()
                         
-                        if now - last_render >= 0.1:
+                        if current_time - last_render_time >= RENDER_INTERVAL:
                             clean_res = clean_text(res_text)
                             
                             response_container.markdown(f"""
@@ -741,14 +718,29 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                             </div>
                             """, unsafe_allow_html=True)
                             
-                            last_render = now
+                            last_render_time = current_time
                 
-                if not res:
-                    res = res_text
+                clean_res = clean_text(res_text)
+                response_container.markdown(f"""
+                <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                    {ai_avatar_html}
+                    <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                color: #e9edef; padding: 15px 20px; 
+                                border-radius: 5px 25px 25px 25px; 
+                                max-width: 85%; border-left: 4px solid; 
+                                border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                word-wrap: break-word;">
+                        <div style="white-space: pre-wrap;">{clean_res}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                res = res_text
             except Exception as e:
                 res = f"Gemini error bro: {str(e)} 😰"
         
-        elif engine in ["Scout", "Llama33", "HuggingFace"]:
+        # ========== GROQ MODELS ==========
+        elif engine_type == "Groq":
             messages = [{"role": "system", "content": system_prompt}]
             for m in st.session_state.messages[:-1]:
                 if m.get("type") != "image":
@@ -757,75 +749,26 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             response_container = st.empty()
             res_text = ""
-            last_render = time.time()
             
-            ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
+            last_render_time = time.time()
+            RENDER_INTERVAL = 0.1
             
-            if engine == "Scout":
-                current_image_data = st.session_state.uploaded_image
-                
-                if current_image_data:
-                    pixel_info = analyze_image_pixels(current_image_data)
-                    base64_image = base64.b64encode(current_image_data).decode('utf-8')
-                    
-                    messages = [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": [
-                            {"type": "text", "text": f"{user_msg} (Image info: {pixel_info})"},
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                        ]}
-                    ]
-                    
-                    stream = client_groq.chat.completions.create(
-                        model="meta-llama/llama-4-scout-17b-16e-instruct",
-                        messages=messages,
-                        temperature=0.7,
-                        max_tokens=1024,
-                        stream=True
-                    )
-                    
-                    st.session_state.uploaded_image = None
-                else:
-                    stream = client_groq.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=messages,
-                        temperature=0.7,
-                        max_tokens=1024,
-                        stream=True
-                    )
-            elif engine == "Llama33":
-                stream = client_groq.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=messages,
-                    temperature=0.8,
-                    max_tokens=1024,
-                    stream=True
-                )
-            else:
-                stream = client_hf.chat_completion(
-                    messages=messages,
-                    model="Qwen/Qwen2.5-7B-Instruct",
-                    max_tokens=1024,
-                    temperature=0.9,
-                    stream=True
-                )
+            ai_avatar_html = "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
+            
+            stream = client_groq.chat.completions.create(
+                model=engine_config["model"],
+                messages=messages,
+                temperature=0.7,
+                max_tokens=1024,
+                stream=True
+            )
             
             for chunk in stream:
-                if st.session_state.stop_generation:
-                    res = res_text.strip() + " [Stopped]" if res_text else "Generasi dihentikan! 🛑"
-                    break
-                
-                content = None
-                if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
-                    if hasattr(delta, 'content') and delta.content:
-                        content = delta.content
-                
-                if content:
-                    res_text += content
-                    now = time.time()
+                if chunk.choices[0].delta.content:
+                    res_text += chunk.choices[0].delta.content
+                    current_time = time.time()
                     
-                    if now - last_render >= 0.1:
+                    if current_time - last_render_time >= RENDER_INTERVAL:
                         clean_res = clean_text(res_text)
                         
                         response_container.markdown(f"""
@@ -842,12 +785,27 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        last_render = now
+                        last_render_time = current_time
             
-            if not res:
-                res = res_text
+            clean_res = clean_text(res_text)
+            response_container.markdown(f"""
+            <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                {ai_avatar_html}
+                <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                            color: #e9edef; padding: 15px 20px; 
+                            border-radius: 5px 25px 25px 25px; 
+                            max-width: 85%; border-left: 4px solid; 
+                            border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                            word-wrap: break-word;">
+                    <div style="white-space: pre-wrap;">{clean_res}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            res = res_text
         
-        elif engine == "Pollinations":
+        # ========== POLLINATIONS AI ==========
+        elif engine_type == "Pollinations":
             encoded_prompt = urllib.parse.quote(user_msg)
             image_url = f"{POLLINATIONS_API}{encoded_prompt}"
             
@@ -855,7 +813,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             img = Image.open(io.BytesIO(img_response.content))
             
             st.session_state.messages.append({"role": "assistant", "type": "image", "content": img})
-            st.session_state.is_generating = False
+            
+            # Increment rate limit
+            increment_rate_limit(st.session_state.current_user, selected_model, engine_config["limit"])
             
             if st.session_state.current_session_key:
                 st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
@@ -864,7 +824,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         
         if res:
             st.session_state.messages.append({"role": "assistant", "content": res})
-            st.session_state.is_generating = False
+            
+            # Increment rate limit
+            increment_rate_limit(st.session_state.current_user, selected_model, engine_config["limit"])
             
             if st.session_state.current_session_key:
                 st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
@@ -875,7 +837,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         st.error(f"❌ Error bro: {str(e)}")
         error_msg = f"Sorry bro, ada error: {str(e)} 😰"
         st.session_state.messages.append({"role": "assistant", "content": error_msg})
-        st.session_state.is_generating = False
         if st.session_state.current_session_key:
             st.session_state.all_chats[st.session_state.current_session_key] = st.session_state.messages.copy()
         save_history_to_db(st.session_state.current_user, st.session_state.all_chats)
