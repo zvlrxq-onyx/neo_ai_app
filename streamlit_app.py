@@ -457,6 +457,116 @@ st.markdown("""
         to { opacity: 1; transform: translateX(0); }
     }
     
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes shimmer {
+        0% { background-position: -200% center; }
+        100% { background-position: 200% center; }
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes glow {
+        0%, 100% { box-shadow: 0 0 20px rgba(139,92,246,0.4), 0 0 40px rgba(6,182,212,0.2); }
+        50% { box-shadow: 0 0 30px rgba(139,92,246,0.6), 0 0 60px rgba(6,182,212,0.4); }
+    }
+    
+    /* PREMIUM THINKING BOX - QWEN */
+    .thinking-box {
+        display: inline-flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px 25px;
+        background: linear-gradient(135deg, #1a1a1a 0%, #2a1a3a 50%, #1a2a3a 100%);
+        background-size: 200% 200%;
+        border-radius: 20px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+        position: relative;
+        animation: shimmer 3s ease infinite, glow 2s ease-in-out infinite, fadeIn 0.5s ease-out;
+        overflow: hidden;
+    }
+    
+    .thinking-box::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, #8b5cf6, #06b6d4, #8b5cf6, #06b6d4);
+        background-size: 300% 300%;
+        border-radius: 20px;
+        z-index: -1;
+        animation: shimmer 3s linear infinite;
+    }
+    
+    .thinking-box::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(6,182,212,0.1));
+        border-radius: 18px;
+        z-index: -1;
+    }
+    
+    .thinking-spinner-premium {
+        width: 24px;
+        height: 24px;
+        border: 3px solid transparent;
+        border-top-color: #8b5cf6;
+        border-right-color: #06b6d4;
+        border-radius: 50%;
+        animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        filter: drop-shadow(0 0 8px rgba(139,92,246,0.6));
+    }
+    
+    .thinking-text-premium {
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        background: linear-gradient(90deg, #8b5cf6, #06b6d4, #8b5cf6);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: shimmer 2s linear infinite;
+    }
+    
+    .thinking-dots {
+        display: flex;
+        gap: 4px;
+    }
+    
+    .thinking-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+        animation: pulse 1.4s ease-in-out infinite;
+        box-shadow: 0 0 8px rgba(139,92,246,0.6);
+    }
+    
+    .thinking-dot:nth-child(1) { animation-delay: 0s; }
+    .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+    
     /* SMOOTH TRANSITIONS FOR STREAMING */
     [data-testid="stMarkdownContainer"] {
         transition: all 0.1s ease-out !important;
@@ -969,10 +1079,15 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         if not show_thinking and len(full_response) > 50:
                             show_thinking = True
                             thinking_container.markdown(f"""
-                            <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
-                                <div class="thinking-container">
-                                    <div class="thinking-spinner"></div>
-                                    <span class="thinking-text">🧠 Analyzing prompt...</span>
+                            <div style="display: flex; justify-content: flex-start; margin-bottom: 15px;">
+                                <div class="thinking-box">
+                                    <div class="thinking-spinner-premium"></div>
+                                    <span class="thinking-text-premium">⚡ Analyzing Prompt</span>
+                                    <div class="thinking-dots">
+                                        <div class="thinking-dot"></div>
+                                        <div class="thinking-dot"></div>
+                                        <div class="thinking-dot"></div>
+                                    </div>
                                 </div>
                             </div>
                             """, unsafe_allow_html=True)
