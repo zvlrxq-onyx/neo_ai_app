@@ -772,7 +772,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 ]
                 
                 stream = client_groq.chat.completions.create(
-                    model="llama-3.2-90b-vision-preview",
+                    model="meta-llama/Llama-4-Scout-17B-16E-Instruct",
                     messages=messages,
                     temperature=0.7,
                     max_tokens=1024,
