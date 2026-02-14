@@ -239,6 +239,9 @@ if "current_session_key" not in st.session_state:
 if "uploaded_image" not in st.session_state:
     st.session_state.uploaded_image = None
 
+if "file_uploader_key" not in st.session_state:
+    st.session_state.file_uploader_key = 0
+
 # --- 4. API KEYS ---
 try:
     client_groq = Groq(api_key=st.secrets["GROQ_API_KEY"])
@@ -617,7 +620,7 @@ for msg in st.session_state.messages:
         render_chat_bubble(msg["role"], msg["content"])
 
 # File Upload
-up = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed")
+up = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed", key=f"uploader_{st.session_state.file_uploader_key}")
 if up: 
     st.session_state.uploaded_image = up.getvalue()
     st.toast("✅ Image uploaded!", icon="📷")
@@ -779,7 +782,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     stream=True
                 )
                 
+                # Clear uploaded image and reset file uploader
                 st.session_state.uploaded_image = None
+                st.session_state.file_uploader_key += 1
             else:
                 # No image - use text mode
                 messages = [{"role": "system", "content": system_prompt}]
