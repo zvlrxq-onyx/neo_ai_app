@@ -938,12 +938,18 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             messages.append({"role": "user", "content": final_user_msg})
             
             response_container = st.empty()
+            thinking_container = st.empty()
             res_text = ""
+            thinking_text = ""
             
             last_render_time = time.time()
             RENDER_INTERVAL = 0.1
             
             ai_avatar_html = "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
+            
+            # Check if this is Qwen model (has thinking process)
+            is_qwen = "qwen" in engine_config["model"].lower()
+            in_thinking = False
             
             stream = client_groq.chat.completions.create(
                 model=engine_config["model"],
@@ -955,7 +961,38 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             for chunk in stream:
                 if chunk.choices[0].delta.content:
-                    res_text += chunk.choices[0].delta.content
+                    content = chunk.choices[0].delta.content
+                    
+                    if is_qwen:
+                        # Detect Qwen thinking process (biasanya sebelum jawaban final)
+                        # Thinking usually starts with analysis/reasoning patterns
+                        if not in_thinking and any(phrase in content.lower() for phrase in ["okay,", "looking", "let me", "i should", "need to", "alright,", "wait,"]):
+                            in_thinking = True
+                            thinking_text += content
+                            
+                            # Show thinking indicator
+                            thinking_container.markdown(f"""
+                            <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+                                <div class="thinking-container">
+                                    <div class="thinking-spinner"></div>
+                                    <span class="thinking-text">🧠 Analyzing prompt...</span>
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            continue
+                        
+                        # Thinking ends when we see actual Indonesian/English response
+                        if in_thinking:
+                            thinking_text += content
+                            # Check if thinking is done (usually ends with reasoning conclusion)
+                            if len(thinking_text) > 200 and ("\n\n" in content or "!" in content or "?" in content):
+                                in_thinking = False
+                                thinking_container.empty()
+                                continue
+                            continue
+                    
+                    # Normal output (not thinking)
+                    res_text += content
                     current_time = time.time()
                     
                     if current_time - last_render_time >= RENDER_INTERVAL:
@@ -977,6 +1014,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         
                         last_render_time = current_time
             
+            thinking_container.empty()
             clean_res = clean_text(res_text)
             response_container.markdown(f"""
             <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
