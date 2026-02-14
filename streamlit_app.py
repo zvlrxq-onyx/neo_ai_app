@@ -846,7 +846,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             except Exception as e:
                 res = f"Gemini error bro: {str(e)} 😰"
         
-        # ========== LLAMA 4 SCOUT VISION ==========
+        # ========== LLAMA 4 SCOUT VISION (IMAGE ONLY) ==========
         elif engine_type == "Scout":
             current_image_data = st.session_state.uploaded_image
             
@@ -858,7 +858,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             
             ai_avatar_html = f"<img src='{logo_url}' style='width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; border: 2px solid #06b6d4; object-fit: cover; box-shadow: 0 0 10px rgba(6,182,212,0.4);'>" if logo_url else "<div style='width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 2px solid #06b6d4; font-size: 20px;'>🤖</div>"
             
-            if current_image_data:
+            if not current_image_data:
+                # No image uploaded - show error
+                res = "❌ LLaMA 4 Scout is for vision only! Please upload an image first, or switch to LLaMA 3.3 70B for text/file processing."
+            else:
                 # Image uploaded - use vision mode
                 pixel_info = analyze_image_pixels(current_image_data)
                 base64_image = base64.b64encode(current_image_data).decode('utf-8')
@@ -866,7 +869,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 messages = [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": [
-                        {"type": "text", "text": f"{final_user_msg} (Image info: {pixel_info})"},
+                        {"type": "text", "text": f"{user_msg} (Image info: {pixel_info})"},
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                     ]}
                 ]
@@ -882,62 +885,48 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 # Clear uploaded image and reset file uploader
                 st.session_state.uploaded_image = None
                 st.session_state.file_uploader_key += 1
-            else:
-                # No image - use text mode
-                messages = [{"role": "system", "content": system_prompt}]
-                for m in st.session_state.messages[:-1]:
-                    if m.get("type") != "image":
-                        messages.append({"role": m["role"], "content": m["content"]})
-                messages.append({"role": "user", "content": final_user_msg})
                 
-                stream = client_groq.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=messages,
-                    temperature=0.7,
-                    max_tokens=1024,
-                    stream=True
-                )
-            
-            for chunk in stream:
-                if chunk.choices[0].delta.content:
-                    res_text += chunk.choices[0].delta.content
-                    current_time = time.time()
-                    
-                    if current_time - last_render_time >= RENDER_INTERVAL:
-                        clean_res = clean_text(res_text)
+                for chunk in stream:
+                    if chunk.choices[0].delta.content:
+                        res_text += chunk.choices[0].delta.content
+                        current_time = time.time()
                         
-                        response_container.markdown(f"""
-                        <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                            {ai_avatar_html}
-                            <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
-                                        color: #e9edef; padding: 15px 20px; 
-                                        border-radius: 5px 25px 25px 25px; 
-                                        max-width: 85%; border-left: 4px solid; 
-                                        border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
-                                        word-wrap: break-word;">
-                                <div style="white-space: pre-wrap;">{clean_res}</div>
+                        if current_time - last_render_time >= RENDER_INTERVAL:
+                            clean_res = clean_text(res_text)
+                            
+                            response_container.markdown(f"""
+                            <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                                {ai_avatar_html}
+                                <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                            color: #e9edef; padding: 15px 20px; 
+                                            border-radius: 5px 25px 25px 25px; 
+                                            max-width: 85%; border-left: 4px solid; 
+                                            border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                            word-wrap: break-word;">
+                                    <div style="white-space: pre-wrap;">{clean_res}</div>
+                                </div>
                             </div>
+                            """, unsafe_allow_html=True)
+                            
+                            last_render_time = current_time
+                
+                if res_text:
+                    clean_res = clean_text(res_text)
+                    response_container.markdown(f"""
+                    <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+                        {ai_avatar_html}
+                        <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                                    color: #e9edef; padding: 15px 20px; 
+                                    border-radius: 5px 25px 25px 25px; 
+                                    max-width: 85%; border-left: 4px solid; 
+                                    border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
+                                    word-wrap: break-word;">
+                            <div style="white-space: pre-wrap;">{clean_res}</div>
                         </div>
-                        """, unsafe_allow_html=True)
-                        
-                        last_render_time = current_time
-            
-            clean_res = clean_text(res_text)
-            response_container.markdown(f"""
-            <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
-                {ai_avatar_html}
-                <div style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
-                            color: #e9edef; padding: 15px 20px; 
-                            border-radius: 5px 25px 25px 25px; 
-                            max-width: 85%; border-left: 4px solid; 
-                            border-image: linear-gradient(180deg, #8b5cf6, #06b6d4) 1; 
-                            word-wrap: break-word;">
-                    <div style="white-space: pre-wrap;">{clean_res}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            res = res_text
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    res = res_text
         
         # ========== GROQ MODELS ==========
         elif engine_type == "Groq":
