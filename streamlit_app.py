@@ -537,6 +537,12 @@ with st.sidebar:
     
     # MODEL SELECTOR WITH RATE LIMIT INFO
     selected_engine_name = st.session_state.selected_engine_name
+    
+    # Validate selected engine exists
+    if selected_engine_name not in engines:
+        selected_engine_name = list(engines.keys())[0]
+        st.session_state.selected_engine_name = selected_engine_name
+    
     selected_emoji = engines[selected_engine_name]["emoji"]
     
     # Get rate limit info
