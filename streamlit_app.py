@@ -690,16 +690,14 @@ for msg in st.session_state.messages:
         render_chat_bubble(msg["role"], msg["content"])
 
 # File Upload - Multi-Modal Support
-col_upload1, col_upload2 = st.columns([1, 20])
-with col_upload1:
-    # Image uploader (bulat di kiri bawah)
-    img_up = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed", key=f"img_uploader_{st.session_state.file_uploader_key}")
-    if img_up: 
-        st.session_state.uploaded_image = img_up.getvalue()
-        st.session_state.uploaded_file_content = None
-        st.toast("✅ Image uploaded!", icon="📷")
+# Image uploader (bulat di kiri bawah - tetap fixed position)
+img_up = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed", key=f"img_uploader_{st.session_state.file_uploader_key}")
+if img_up: 
+    st.session_state.uploaded_image = img_up.getvalue()
+    st.session_state.uploaded_file_content = None
+    st.toast("✅ Image uploaded!", icon="📷")
 
-# File uploader (untuk semua file types)
+# File uploader (untuk semua file types - positioned below)
 file_up = st.file_uploader(
     "📎 Upload Document/Code", 
     type=["txt", "md", "py", "js", "jsx", "ts", "tsx", "html", "css", "json", "xml", "yml", "yaml", "php", "java", "cpp", "c", "h", "cs", "go", "rs", "rb", "swift", "kt", "sql", "sh", "bat", "pdf", "docx", "doc", "xlsx", "xls", "pptx", "ppt", "csv"],
